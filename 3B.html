@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 4 English Vocabulary</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a237e, #283593, #3949ab);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        header {
+            background: linear-gradient(to right, #1a237e, #283593, #3949ab);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        h1 {
+            font-size: 2.3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .day-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+        
+        .mode-container {
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .mode-title {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .mode-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .mode-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px 25px;
+            width: 260px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 3px solid transparent;
+            text-align: center;
+        }
+        
+        .mode-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+            border-color: #0d6efd;
+        }
+        
+        .mode-card.learning:hover {
+            border-color: #198754;
+        }
+        
+        .mode-card.sequenced:hover {
+            border-color: #0dcaf0;
+        }
+        
+        .mode-card.scrambled:hover {
+            border-color: #ffc107;
+        }
+        
+        .mode-card.dictation:hover {
+            border-color: #9b59b6;
+        }
+        
+        .mode-icon {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .learning .mode-icon {
+            color: #198754;
+        }
+        
+        .sequenced .mode-icon {
+            color: #0dcaf0;
+        }
+        
+        .scrambled .mode-icon {
+            color: #ffc107;
+        }
+        
+        .dictation .mode-icon {
+            color: #9b59b6;
+        }
+        
+        .mode-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        
+        .mode-desc {
+            color: #6c757d;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        
+        .progress-container {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            height: 18px;
+            margin: 20px 0 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.6s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        
+        .quiz-content {
+            padding: 30px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            display: none;
+        }
+        
+        .learning-content {
+            padding: 30px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            display: none;
+        }
+        
+        .dictation-content {
+            padding: 30px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            display: none;
+        }
+        
+        .question-container {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .learning-container {
+            width: 100%;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .dictation-container {
+            width: 100%;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .word-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .word {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #2c3e50;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+            background: linear-gradient(45deg, #3949ab, #5c6bc0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dictation-word {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #2c3e50;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 300px;
+            border-radius: 15px;
+            background-color: #f8f9fa;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .pronunciation-btn {
+            background: #e9ecef;
+            border: none;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .pronunciation-btn:hover {
+            background: #d1ecf1;
+            transform: scale(1.1);
+        }
+        
+        .pronunciation-btn i {
+            font-size: 2.5rem;
+            color: #3949ab;
+        }
+        
+        .dictation-btn {
+            background: #9b59b6;
+            border: none;
+            border-radius: 50%;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .dictation-btn:hover {
+            background: #8e44ad;
+            transform: scale(1.05);
+        }
+        
+        .dictation-btn i {
+            font-size: 3.5rem;
+            color: white;
+        }
+        
+        .meaning {
+            font-size: 2.2rem;
+            color: #198754;
+            font-weight: 600;
+            margin: 20px 0 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            display: inline-block;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .dictation-meaning {
+            font-size: 1.8rem;
+            color: #9b59b6;
+            font-weight: 600;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            display: inline-block;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+            width: 100%;
+            max-width: 550px;
+            margin: 0 auto;
+        }
+        
+        .option {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px 15px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .option:hover {
+            background: #e9ecef;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+        
+        .option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.5), transparent);
+            transform: translateX(-100%);
+        }
+        
+        .option:hover::before {
+            animation: optionShimmer 1.5s infinite;
+        }
+        
+        @keyframes optionShimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        
+        .option.selected {
+            background: #d1ecf1;
+            border-color: #0dcaf0;
+        }
+        
+        .option.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            animation: pulse 0.5s;
+        }
+        
+        .option.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+            animation: shake 0.5s;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-8px); }
+            100% { transform: translateX(0); }
+        }
+        
+        .counter {
+            font-size: 1.2rem;
+            color: #6c757d;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+        
+        .learning-counter {
+            font-size: 1.2rem;
+            color: #6c757d;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+        
+        .dictation-counter {
+            font-size: 1.3rem;
+            color: #9b59b6;
+            margin: 20px 0;
+            font-weight: 600;
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .result-container {
+            text-align: center;
+            padding: 30px;
+            display: none;
+            animation: fadeIn 0.8s ease;
+        }
+        
+        .score {
+            font-size: 5.5rem;
+            font-weight: 800;
+            color: #0d6efd;
+            margin: 20px 0;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+            background: linear-gradient(45deg, #3949ab, #5c6bc0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .score-text {
+            font-size: 1.6rem;
+            margin-bottom: 30px;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .wrong-words-container {
+            background: #f8f9fa;
+            border-radius: 18px;
+            padding: 25px;
+            margin: 25px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+        
+        .wrong-words-title {
+            color: #dc3545;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .wrong-word {
+            padding: 14px 18px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+        
+        .wrong-word:hover {
+            background: #e9ecef;
+        }
+        
+        .wrong-word:last-child {
+            border-bottom: none;
+        }
+        
+        .word-def {
+            font-weight: 700;
+            color: #212529;
+            font-size: 1.2rem;
+        }
+        
+        .meaning-text {
+            color: #495057;
+            text-align: right;
+            font-size: 1.1rem;
+            flex: 1;
+            max-width: 60%;
+            padding-left: 15px;
+        }
+        
+        .btn-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto 0;
+        }
+        
+        .btn {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 16px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-width: 200px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .download-btn {
+            background: #198754;
+        }
+        
+        .download-btn:hover {
+            background: #157347;
+        }
+        
+        .restart-btn {
+            background: #6c757d;
+        }
+        
+        .restart-btn:hover {
+            background: #5a6268;
+        }
+        
+        .mode-btn {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .mode-btn:hover {
+            background: #e0a800;
+        }
+        
+        .prev-btn {
+            background: #6c757d;
+        }
+        
+        .prev-btn:hover {
+            background: #5a6268;
+        }
+        
+        .next-btn {
+            background: #0dcaf0;
+        }
+        
+        .next-btn:hover {
+            background: #0dcaf0;
+        }
+        
+        .reveal-btn {
+            background: #9b59b6;
+            min-width: 250px;
+        }
+        
+        .reveal-btn:hover {
+            background: #8e44ad;
+        }
+        
+        .dictation-next-btn {
+            background: #2ecc71;
+            min-width: 250px;
+        }
+        
+        .dictation-next-btn:hover {
+            background: #27ae60;
+        }
+        
+        .floating {
+            position: absolute;
+            opacity: 0.1;
+            z-index: 1;
+        }
+        
+        .floating-1 {
+            top: 20px;
+            left: 20px;
+            font-size: 5rem;
+            transform: rotate(-15deg);
+        }
+        
+        .floating-2 {
+            bottom: 20px;
+            right: 20px;
+            font-size: 4rem;
+            transform: rotate(15deg);
+        }
+        
+        .floating-3 {
+            top: 50%;
+            left: 30px;
+            font-size: 3.5rem;
+            transform: rotate(10deg);
+        }
+        
+        .floating-4 {
+            bottom: 40%;
+            right: 30px;
+            font-size: 3rem;
+            transform: rotate(-5deg);
+        }
+        
+        .statistics {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            text-align: center;
+            padding: 15px;
+            min-width: 150px;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            color: #6c757d;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 15px;
+            }
+            
+            header {
+                padding: 20px 15px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .day-indicator {
+                position: relative;
+                top: 0;
+                right: 0;
+                display: block;
+                margin: 10px auto;
+                width: fit-content;
+            }
+            
+            .subtitle {
+                font-size: 0.95rem;
+            }
+            
+            .quiz-content, .learning-content, .dictation-content {
+                padding: 20px 15px;
+            }
+            
+            .word {
+                font-size: 2.2rem;
+                margin: 20px 0;
+            }
+            
+            .dictation-word {
+                font-size: 2.2rem;
+                min-width: 250px;
+            }
+            
+            .meaning {
+                font-size: 1.8rem;
+                padding: 15px;
+            }
+            
+            .dictation-meaning {
+                font-size: 1.5rem;
+                padding: 15px;
+            }
+            
+            .option {
+                padding: 16px 12px;
+                font-size: 1.1rem;
+            }
+            
+            .score {
+                font-size: 4.5rem;
+            }
+            
+            .score-text {
+                font-size: 1.3rem;
+            }
+            
+            .mode-options {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .mode-card {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .wrong-word {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .meaning-text {
+                text-align: left;
+                padding-left: 0;
+                max-width: 100%;
+            }
+            
+            .floating {
+                display: none;
+            }
+            
+            .statistics {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .stat-box {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .pronunciation-btn {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .dictation-btn {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .dictation-btn i {
+                font-size: 2.5rem;
+            }
+        }
+        
+        /* Pronunciation settings */
+        .pronunciation-settings {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .settings-title {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .settings-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .setting-item label {
+            font-size: 1rem;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .setting-item select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            background: white;
+            font-size: 1rem;
+        }
+        
+        .voice-info {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .unit-summary {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        
+        .unit-title {
+            font-size: 1.5rem;
+            color: #3949ab;
+            margin-bottom: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .unit-words {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .vocab-item {
+            padding: 12px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .vocab-word {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .vocab-meaning {
+            color: #495057;
+        }
+        
+        .summary-container {
+            padding: 30px;
+        }
+        
+        .summary-title {
+            text-align: center;
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="floating floating-1"><i class="fas fa-book-open"></i></div>
+        <div class="floating floating-2"><i class="fas fa-lightbulb"></i></div>
+        <div class="floating floating-3"><i class="fas fa-feather-alt"></i></div>
+        <div class="floating floating-4"><i class="fas fa-globe"></i></div>
+        
+        <header>
+            <div class="header-content">
+                <h1><i class="fas fa-language"></i> 三年级（下）</h1>
+                <div class="subtitle">Master 71 new vocabulary words with interactive learning</div>
+                <div class="day-indicator">单词</div>
+            </div>
+        </header>
+        
+        <!-- Mode Selection Screen -->
+        <div class="mode-container" id="modeContainer">
+            <div class="mode-title">Select Your Learning Mode</div>
+            <div class="mode-options">
+                <div class="mode-card learning" data-mode="learning">
+                    <div class="mode-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="mode-name">Learning Mode</div>
+                    <div class="mode-desc">Study vocabulary with meanings and pronunciation</div>
+                </div>
+                <div class="mode-card sequenced" data-mode="sequenced">
+                    <div class="mode-icon"><i class="fas fa-list-ol"></i></div>
+                    <div class="mode-name">Sequenced Test</div>
+                    <div class="mode-desc">Test your knowledge in the original word order</div>
+                </div>
+                <div class="mode-card scrambled" data-mode="scrambled">
+                    <div class="mode-icon"><i class="fas fa-random"></i></div>
+                    <div class="mode-name">Scrambled Test</div>
+                    <div class="mode-desc">Challenge yourself with words in random order</div>
+                </div>
+                <div class="mode-card dictation" data-mode="dictation">
+                    <div class="mode-icon"><i class="fas fa-headphones"></i></div>
+                    <div class="mode-name">Dictation Mode</div>
+                    <div class="mode-desc">Listen to words and test your spelling skills</div>
+                </div>
+                <div class="mode-card" id="summaryCard">
+                    <div class="mode-icon"><i class="fas fa-list"></i></div>
+                    <div class="mode-name">Vocabulary Summary</div>
+                    <div class="mode-desc">View all vocabulary words organized by unit</div>
+                </div>
+            </div>
+            
+            <!-- Pronunciation settings -->
+            <div class="pronunciation-settings" id="pronunciationSettings">
+                <div class="settings-title">Pronunciation Settings</div>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <label for="voiceSelect">Voice:</label>
+                        <select id="voiceSelect">
+                            <option value="">System Default</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label for="rateSelect">Speed:</label>
+                        <select id="rateSelect">
+                            <option value="0.7">Slow</option>
+                            <option value="1.0" selected>Normal</option>
+                            <option value="1.3">Fast</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label for="pitchSelect">Pitch:</label>
+                        <select id="pitchSelect">
+                            <option value="0.8">Low</option>
+                            <option value="1.0" selected>Normal</option>
+                            <option value="1.2">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="voice-info" id="voiceInfo">
+                    Using system default voice
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vocabulary Summary -->
+        <div class="summary-container" id="summaryContainer" style="display: none;">
+            <div class="summary-title">Grade 4 Vocabulary Summary</div>
+            
+            <!-- Unit 1 -->
+            <div class="unit-summary">
+                <div class="unit-title"><i class="fas fa-bookmark" style="color: #e74c3c;"></i> Unit 1</div>
+                <div class="unit-words">
+                    <div class="vocab-item"><span class="vocab-word">UK</span><span class="vocab-meaning">英国</span></div>
+                    <div class="vocab-item"><span class="vocab-word">Canada</span><span class="vocab-meaning">加拿大</span></div>
+                    <div class="vocab-item"><span class="vocab-word">USA</span><span class="vocab-meaning">美国</span></div>
+                    <div class="vocab-item"><span class="vocab-word">China</span><span class="vocab-meaning">中国</span></div>
+                    <div class="vocab-item"><span class="vocab-word">she</span><span class="vocab-meaning">她</span></div>
+                    <div class="vocab-item"><span class="vocab-word">student</span><span class="vocab-meaning">学生</span></div>
+                    <div class="vocab-item"><span class="vocab-word">pupil</span><span class="vocab-meaning">学生；（尤指）小学生</span></div>
+                    <div class="vocab-item"><span class="vocab-word">he</span><span class="vocab-meaning">他</span></div>
+                    <div class="vocab-item"><span class="vocab-word">teacher</span><span class="vocab-meaning">教师</span></div>
+                    <div class="vocab-item"><span class="vocab-word">boy</span><span class="vocab-meaning">男孩</span></div>
+                    <div class="vocab-item"><span class="vocab-word">and</span><span class="vocab-meaning">和；与</span></div>
+                    <div class="vocab-item"><span class="vocab-word">girl</span><span class="vocab-meaning">女孩</span></div>
+                    <div class="vocab-item"><span class="vocab-word">new</span><span class="vocab-meaning">新的</span></div>
+                    <div class="vocab-item"><span class="vocab-word">friend</span><span class="vocab-meaning">朋友</span></div>
+                    <div class="vocab-item"><span class="vocab-word">today</span><span class="vocab-meaning">今天</span></div>
+                </div>
+            </div>
+            
+            <!-- Unit 2 -->
+            <div class="unit-summary">
+                <div class="unit-title"><i class="fas fa-bookmark" style="color: #3498db;"></i> Unit 2</div>
+                <div class="unit-words">
+                    <div class="vocab-item"><span class="vocab-word">father</span><span class="vocab-meaning">父亲；爸爸</span></div>
+                    <div class="vocab-item"><span class="vocab-word">dad</span><span class="vocab-meaning">（口语）爸爸；爹爹</span></div>
+                    <div class="vocab-item"><span class="vocab-word">man</span><span class="vocab-meaning">男人</span></div>
+                    <div class="vocab-item"><span class="vocab-word">woman</span><span class="vocab-meaning">女人</span></div>
+                    <div class="vocab-item"><span class="vocab-word">mother</span><span class="vocab-meaning">母亲；妈妈</span></div>
+                    <div class="vocab-item"><span class="vocab-word">sister</span><span class="vocab-meaning">姐；妹</span></div>
+                    <div class="vocab-item"><span class="vocab-word">brother</span><span class="vocab-meaning">兄；弟</span></div>
+                    <div class="vocab-item"><span class="vocab-word">grandmother</span><span class="vocab-meaning">（外）祖母</span></div>
+                    <div class="vocab-item"><span class="vocab-word">grandma</span><span class="vocab-meaning">（口语）（外）祖母</span></div>
+                    <div class="vocab-item"><span class="vocab-word">grandfather</span><span class="vocab-meaning">（外）祖父</span></div>
+                    <div class="vocab-item"><span class="vocab-word">grandpa</span><span class="vocab-meaning">（口语）（外）祖父</span></div>
+                    <div class="vocab-item"><span class="vocab-word">family</span><span class="vocab-meaning">家；家庭</span></div>
+                </div>
+            </div>
+            
+            <!-- Unit 3 -->
+            <div class="unit-summary">
+                <div class="unit-title"><i class="fas fa-bookmark" style="color: #2ecc71;"></i> Unit 3</div>
+                <div class="unit-words">
+                    <div class="vocab-item"><span class="vocab-word">thin</span><span class="vocab-meaning">瘦的</span></div>
+                    <div class="vocab-item"><span class="vocab-word">fat</span><span class="vocab-meaning">胖的；肥的</span></div>
+                    <div class="vocab-item"><span class="vocab-word">tall</span><span class="vocab-meaning">高的</span></div>
+                    <div class="vocab-item"><span class="vocab-word">short</span><span class="vocab-meaning">矮的；短的</span></div>
+                    <div class="vocab-item"><span class="vocab-word">long</span><span class="vocab-meaning">长的</span></div>
+                    <div class="vocab-item"><span class="vocab-word">small</span><span class="vocab-meaning">小的</span></div>
+                    <div class="vocab-item"><span class="vocab-word">big</span><span class="vocab-meaning">大的</span></div>
+                    <div class="vocab-item"><span class="vocab-word">giraffe</span><span class="vocab-meaning">长颈鹿</span></div>
+                    <div class="vocab-item"><span class="vocab-word">so</span><span class="vocab-meaning">这么；那么</span></div>
+                    <div class="vocab-item"><span class="vocab-word">children</span><span class="vocab-meaning">（child 的复数）儿童</span></div>
+                    <div class="vocab-item"><span class="vocab-word">tail</span><span class="vocab-meaning">尾巴</span></div>
+                </div>
+            </div>
+            
+            <!-- Unit 4 -->
+            <div class="unit-summary">
+                <div class="unit-title"><i class="fas fa-bookmark" style="color: #9b59b6;"></i> Unit 4</div>
+                <div class="unit-words">
+                    <div class="vocab-item"><span class="vocab-word">on</span><span class="vocab-meaning">在……上</span></div>
+                    <div class="vocab-item"><span class="vocab-word">in</span><span class="vocab-meaning">在……里</span></div>
+                    <div class="vocab-item"><span class="vocab-word">under</span><span class="vocab-meaning">在……下面</span></div>
+                    <div class="vocab-item"><span class="vocab-word">chair</span><span class="vocab-meaning">椅子</span></div>
+                    <div class="vocab-item"><span class="vocab-word">desk</span><span class="vocab-meaning">书桌</span></div>
+                    <div class="vocab-item"><span class="vocab-word">cap</span><span class="vocab-meaning">帽子</span></div>
+                    <div class="vocab-item"><span class="vocab-word">ball</span><span class="vocab-meaning">球</span></div>
+                    <div class="vocab-item"><span class="vocab-word">car</span><span class="vocab-meaning">小汽车</span></div>
+                    <div class="vocab-item"><span class="vocab-word">boat</span><span class="vocab-meaning">小船</span></div>
+                    <div class="vocab-item"><span class="vocab-word">map</span><span class="vocab-meaning">地图</span></div>
+                    <div class="vocab-item"><span class="vocab-word">toy</span><span class="vocab-meaning">玩具</span></div>
+                    <div class="vocab-item"><span class="vocab-word">box</span><span class="vocab-meaning">盒；箱</span></div>
+                </div>
+            </div>
+            
+            <!-- Unit 5 -->
+            <div class="unit-summary">
+                <div class="unit-title"><i class="fas fa-bookmark" style="color: #e67e22;"></i> Unit 5</div>
+                <div class="unit-words">
+                    <div class="vocab-item"><span class="vocab-word">pear</span><span class="vocab-meaning">梨</span></div>
+                    <div class="vocab-item"><span class="vocab-word">apple</span><span class="vocab-meaning">苹果</span></div>
+                    <div class="vocab-item"><span class="vocab-word">orange</span><span class="vocab-meaning">橙子</span></div>
+                    <div class="vocab-item"><span class="vocab-word">banana</span><span class="vocab-meaning">香蕉</span></div>
+                    <div class="vocab-item"><span class="vocab-word">watermelon</span><span class="vocab-meaning">西瓜</span></div>
+                    <div class="vocab-item"><span class="vocab-word">strawberry</span><span class="vocab-meaning">草莓</span></div>
+                    <div class="vocab-item"><span class="vocab-word">grape</span><span class="vocab-meaning">葡萄</span></div>
+                    <div class="vocab-item"><span class="vocab-word">buy</span><span class="vocab-meaning">买</span></div>
+                    <div class="vocab-item"><span class="vocab-word">fruit</span><span class="vocab-meaning">水果</span></div>
+                </div>
+            </div>
+            
+            <!-- Unit 6 -->
+            <div class="unit-summary">
+                <div class="unit-title"><i class="fas fa-bookmark" style="color: #1abc9c;"></i> Unit 6</div>
+                <div class="unit-words">
+                    <div class="vocab-item"><span class="vocab-word">eleven</span><span class="vocab-meaning">十一</span></div>
+                    <div class="vocab-item"><span class="vocab-word">twelve</span><span class="vocab-meaning">十二</span></div>
+                    <div class="vocab-item"><span class="vocab-word">thirteen</span><span class="vocab-meaning">十三</span></div>
+                    <div class="vocab-item"><span class="vocab-word">fourteen</span><span class="vocab-meaning">十四</span></div>
+                    <div class="vocab-item"><span class="vocab-word">fifteen</span><span class="vocab-meaning">十五</span></div>
+                    <div class="vocab-item"><span class="vocab-word">sixteen</span><span class="vocab-meaning">十六</span></div>
+                    <div class="vocab-item"><span class="vocab-word">seventeen</span><span class="vocab-meaning">十七</span></div>
+                    <div class="vocab-item"><span class="vocab-word">eighteen</span><span class="vocab-meaning">十八</span></div>
+                    <div class="vocab-item"><span class="vocab-word">nineteen</span><span class="vocab-meaning">十九</span></div>
+                    <div class="vocab-item"><span class="vocab-word">twenty</span><span class="vocab-meaning">二十</span></div>
+                    <div class="vocab-item"><span class="vocab-word">kite</span><span class="vocab-meaning">风筝</span></div>
+                    <div class="vocab-item"><span class="vocab-word">beautiful</span><span class="vocab-meaning">美丽的</span></div>
+                </div>
+            </div>
+            
+            <div class="btn-container">
+                <button class="btn mode-btn" id="backToModesBtn">
+                    <i class="fas fa-arrow-left"></i> Back to Learning Modes
+                </button>
+            </div>
+        </div>
+        
+        <!-- Learning Mode Content -->
+        <div class="learning-content" id="learningContent">
+            <div class="learning-container" id="learningContainer">
+                <div class="word-container">
+                    <div class="word" id="learningWord">UK</div>
+                    <button class="pronunciation-btn" id="learningPronunciationBtn">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+                <div class="meaning" id="learningMeaning">英国</div>
+                <div class="learning-counter" id="learningCounter">1 of 71</div>
+            </div>
+            
+            <div class="btn-container">
+                <button class="btn prev-btn" id="prevBtn">
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <button class="btn mode-btn" id="changeModeBtn">
+                    <i class="fas fa-exchange-alt"></i> Change Mode
+                </button>
+                <button class="btn next-btn" id="nextBtn">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Quiz Content (for test modes) -->
+        <div class="quiz-content" id="quizContent">
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="counter" id="counter">Question 1 of 71</div>
+            
+            <div class="question-container" id="questionContainer">
+                <div class="word" id="word">UK</div>
+                <div class="options-container" id="optionsContainer">
+                    <!-- Options will be generated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dictation Mode Content -->
+        <div class="dictation-content" id="dictationContent">
+            <div class="dictation-container" id="dictationContainer">
+                <div class="dictation-counter" id="dictationCounter">Dictation 1 of 71</div>
+                
+                <button class="dictation-btn" id="dictationBtn">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+                
+                <div class="dictation-word" id="dictationWord">Click the speaker to hear the word</div>
+                
+                <div class="dictation-meaning" id="dictationMeaning">Meaning will appear after reveal</div>
+            </div>
+            
+            <div class="btn-container">
+                <button class="btn reveal-btn" id="revealBtn">
+                    <i class="fas fa-eye"></i> Reveal Word
+                </button>
+                <button class="btn dictation-next-btn" id="dictationNextBtn">
+                    Next Word <i class="fas fa-arrow-right"></i>
+                </button>
+                <button class="btn mode-btn" id="dictationModeBtn">
+                    <i class="fas fa-exchange-alt"></i> Change Mode
+                </button>
+            </div>
+        </div>
+        
+        <!-- Results Screen -->
+        <div class="result-container" id="resultContainer">
+            <h2>Quiz Completed!</h2>
+            <div class="score" id="finalScore">0%</div>
+            <div class="score-text" id="scoreText">You answered 0 out of 71 questions correctly</div>
+            
+            <div class="statistics" id="statisticsContainer">
+                <div class="stat-box">
+                    <div class="stat-value" id="correctStat">0</div>
+                    <div class="stat-label">Correct Answers</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="incorrectStat">0</div>
+                    <div class="stat-label">Incorrect Answers</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="timeStat">00:00</div>
+                    <div class="stat-label">Time Taken</div>
+                </div>
+            </div>
+            
+            <div class="wrong-words-container" id="wrongWordsContainer">
+                <div class="wrong-words-title">Words to Review</div>
+                <div class="wrong-words" id="wrongWordsList">
+                    <!-- Incorrect words will be listed here -->
+                </div>
+            </div>
+            
+            <div class="btn-container">
+                <button class="btn download-btn" id="downloadBtn">
+                    <i class="fas fa-download"></i> Download Words to Review
+                </button>
+                <button class="btn restart-btn" id="restartBtn">
+                    <i class="fas fa-redo"></i> Restart Quiz
+                </button>
+                <button class="btn mode-btn" id="modeBtn">
+                    <i class="fas fa-exchange-alt"></i> Change Mode
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Vocabulary data from the images
+        const vocabulary = [
+            // Unit 1
+            { word: "UK", meaning: "英国" },
+            { word: "Canada", meaning: "加拿大" },
+            { word: "USA", meaning: "美国" },
+            { word: "China", meaning: "中国" },
+            { word: "she", meaning: "她" },
+            { word: "student", meaning: "学生" },
+            { word: "pupil", meaning: "学生；（尤指）小学生" },
+            { word: "he", meaning: "他" },
+            { word: "teacher", meaning: "教师" },
+            { word: "boy", meaning: "男孩" },
+            { word: "and", meaning: "和；与" },
+            { word: "girl", meaning: "女孩" },
+            { word: "new", meaning: "新的" },
+            { word: "friend", meaning: "朋友" },
+            { word: "today", meaning: "今天" },
+            
+            // Unit 2
+            { word: "father", meaning: "父亲；爸爸" },
+            { word: "dad", meaning: "（口语）爸爸；爹爹" },
+            { word: "man", meaning: "男人" },
+            { word: "woman", meaning: "女人" },
+            { word: "mother", meaning: "母亲；妈妈" },
+            { word: "sister", meaning: "姐；妹" },
+            { word: "brother", meaning: "兄；弟" },
+            { word: "grandmother", meaning: "（外）祖母" },
+            { word: "grandma", meaning: "（口语）（外）祖母" },
+            { word: "grandfather", meaning: "（外）祖父" },
+            { word: "grandpa", meaning: "（口语）（外）祖父" },
+            { word: "family", meaning: "家；家庭" },
+            
+            // Unit 3
+            { word: "thin", meaning: "瘦的" },
+            { word: "fat", meaning: "胖的；肥的" },
+            { word: "tall", meaning: "高的" },
+            { word: "short", meaning: "矮的；短的" },
+            { word: "long", meaning: "长的" },
+            { word: "small", meaning: "小的" },
+            { word: "big", meaning: "大的" },
+            { word: "giraffe", meaning: "长颈鹿" },
+            { word: "so", meaning: "这么；那么" },
+            { word: "children", meaning: "（child 的复数）儿童" },
+            { word: "tail", meaning: "尾巴" },
+            
+            // Unit 4
+            { word: "on", meaning: "在……上" },
+            { word: "in", meaning: "在……里" },
+            { word: "under", meaning: "在……下面" },
+            { word: "chair", meaning: "椅子" },
+            { word: "desk", meaning: "书桌" },
+            { word: "cap", meaning: "帽子" },
+            { word: "ball", meaning: "球" },
+            { word: "car", meaning: "小汽车" },
+            { word: "boat", meaning: "小船" },
+            { word: "map", meaning: "地图" },
+            { word: "toy", meaning: "玩具" },
+            { word: "box", meaning: "盒；箱" },
+            
+            // Unit 5
+            { word: "pear", meaning: "梨" },
+            { word: "apple", meaning: "苹果" },
+            { word: "orange", meaning: "橙子" },
+            { word: "banana", meaning: "香蕉" },
+            { word: "watermelon", meaning: "西瓜" },
+            { word: "strawberry", meaning: "草莓" },
+            { word: "grape", meaning: "葡萄" },
+            { word: "buy", meaning: "买" },
+            { word: "fruit", meaning: "水果" },
+            
+            // Unit 6
+            { word: "eleven", meaning: "十一" },
+            { word: "twelve", meaning: "十二" },
+            { word: "thirteen", meaning: "十三" },
+            { word: "fourteen", meaning: "十四" },
+            { word: "fifteen", meaning: "十五" },
+            { word: "sixteen", meaning: "十六" },
+            { word: "seventeen", meaning: "十七" },
+            { word: "eighteen", meaning: "十八" },
+            { word: "nineteen", meaning: "十九" },
+            { word: "twenty", meaning: "二十" },
+            { word: "kite", meaning: "风筝" },
+            { word: "beautiful", meaning: "美丽的" }
+        ];
+
+        // DOM Elements
+        const modeContainer = document.getElementById('modeContainer');
+        const learningContent = document.getElementById('learningContent');
+        const quizContent = document.getElementById('quizContent');
+        const dictationContent = document.getElementById('dictationContent');
+        const resultContainer = document.getElementById('resultContainer');
+        const summaryContainer = document.getElementById('summaryContainer');
+        const learningPronunciationBtn = document.getElementById('learningPronunciationBtn');
+        const dictationBtn = document.getElementById('dictationBtn');
+        const learningWord = document.getElementById('learningWord');
+        const learningMeaning = document.getElementById('learningMeaning');
+        const learningCounter = document.getElementById('learningCounter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const changeModeBtn = document.getElementById('changeModeBtn');
+        const wordElement = document.getElementById('word');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const progressBar = document.getElementById('progressBar');
+        const counterElement = document.getElementById('counter');
+        const finalScoreElement = document.getElementById('finalScore');
+        const scoreTextElement = document.getElementById('scoreText');
+        const wrongWordsList = document.getElementById('wrongWordsList');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const modeBtn = document.getElementById('modeBtn');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const rateSelect = document.getElementById('rateSelect');
+        const pitchSelect = document.getElementById('pitchSelect');
+        const voiceInfo = document.getElementById('voiceInfo');
+        const dictationWord = document.getElementById('dictationWord');
+        const dictationMeaning = document.getElementById('dictationMeaning');
+        const dictationCounter = document.getElementById('dictationCounter');
+        const revealBtn = document.getElementById('revealBtn');
+        const dictationNextBtn = document.getElementById('dictationNextBtn');
+        const dictationModeBtn = document.getElementById('dictationModeBtn');
+        const summaryCard = document.getElementById('summaryCard');
+        const backToModesBtn = document.getElementById('backToModesBtn');
+        
+        // Stats elements
+        const correctStat = document.getElementById('correctStat');
+        const incorrectStat = document.getElementById('incorrectStat');
+        const timeStat = document.getElementById('timeStat');
+        
+        // Quiz state
+        let currentMode = null;
+        let currentIndex = 0;
+        let score = 0;
+        let wrongAnswers = [];
+        let testWords = [];
+        let isScrambled = false;
+        let startTime = null;
+        let timerInterval = null;
+        
+        // Dictation state
+        let dictationWords = [];
+        let dictationIndex = 0;
+        let currentDictationWord = null;
+        
+        // Speech synthesis
+        let voices = [];
+        let synth = window.speechSynthesis;
+        let selectedVoice = null;
+        
+        // Initialize speech synthesis
+        function initSpeechSynthesis() {
+            // Load voices when they become available
+            synth.onvoiceschanged = function() {
+                loadVoices();
+            };
+            
+            // Load voices immediately if already available
+            if (synth.getVoices().length > 0) {
+                loadVoices();
+            }
+        }
+        
+        // Load available voices
+        function loadVoices() {
+            voices = synth.getVoices();
+            voiceSelect.innerHTML = '<option value="">System Default</option>';
+            
+            // Filter for English voices
+            const englishVoices = voices.filter(voice => 
+                voice.lang.startsWith('en') || 
+                voice.lang.startsWith('en-US') || 
+                voice.lang.startsWith('en-GB')
+            );
+            
+            englishVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                voiceSelect.appendChild(option);
+            });
+            
+            // Update voice info
+            if (englishVoices.length > 0) {
+                voiceInfo.textContent = `Available voices: ${englishVoices.length} English voices found`;
+            } else {
+                voiceInfo.textContent = "No English voices found. Using system default.";
+            }
+        }
+        
+        // Speak a word
+        function speakWord(word) {
+            if (synth.speaking) {
+                synth.cancel();
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(word);
+            
+            // Apply selected settings
+            utterance.rate = parseFloat(rateSelect.value) || 1.0;
+            utterance.pitch = parseFloat(pitchSelect.value) || 1.0;
+            
+            // Apply selected voice if available
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            } else {
+                // Find the first available English voice
+                const englishVoice = voices.find(voice => 
+                    voice.lang.startsWith('en') && 
+                    voice.name === voiceSelect.value
+                );
+                
+                if (englishVoice) {
+                    utterance.voice = englishVoice;
+                }
+            }
+            
+            // Animate the speaker button while speaking
+            if (currentMode === 'learning') {
+                learningPronunciationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                learningPronunciationBtn.style.pointerEvents = 'none';
+                
+                utterance.onend = function() {
+                    learningPronunciationBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                    learningPronunciationBtn.style.pointerEvents = 'auto';
+                };
+            } else if (currentMode === 'dictation') {
+                dictationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                dictationBtn.style.pointerEvents = 'none';
+                
+                utterance.onend = function() {
+                    dictationBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                    dictationBtn.style.pointerEvents = 'auto';
+                };
+            }
+            
+            synth.speak(utterance);
+        }
+        
+        // Event listeners for voice selection
+        voiceSelect.addEventListener('change', function() {
+            const selectedVoiceName = this.value;
+            selectedVoice = voices.find(voice => voice.name === selectedVoiceName);
+        });
+
+        // Mode selection
+        document.querySelectorAll('.mode-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const mode = card.dataset.mode;
+                currentMode = mode;
+                modeContainer.style.display = 'none';
+                
+                if (mode === 'learning') {
+                    currentIndex = 0;
+                    updateLearningCard();
+                    learningContent.style.display = 'block';
+                } else if (mode === 'dictation') {
+                    // Prepare dictation mode
+                    dictationWords = [...vocabulary];
+                    shuffleArray(dictationWords);
+                    dictationIndex = 0;
+                    resetDictationCard();
+                    dictationContent.style.display = 'block';
+                } else if (card === summaryCard) {
+                    summaryContainer.style.display = 'block';
+                } else {
+                    // Prepare test mode
+                    testWords = [...vocabulary];
+                    isScrambled = mode === 'scrambled';
+                    
+                    if (isScrambled) {
+                        shuffleArray(testWords);
+                    }
+                    
+                    currentIndex = 0;
+                    score = 0;
+                    wrongAnswers = [];
+                    startTime = new Date();
+                    
+                    // Start timer
+                    if (timerInterval) clearInterval(timerInterval);
+                    timerInterval = setInterval(updateTimer, 1000);
+                    
+                    showQuestion();
+                    quizContent.style.display = 'block';
+                }
+            });
+        });
+
+        // Back to modes from summary
+        backToModesBtn.addEventListener('click', () => {
+            summaryContainer.style.display = 'none';
+            modeContainer.style.display = 'block';
+        });
+
+        // Reset dictation card
+        function resetDictationCard() {
+            currentDictationWord = dictationWords[dictationIndex];
+            dictationWord.textContent = "Click the speaker to hear the word";
+            dictationWord.style.color = "#6c757d";
+            dictationWord.style.fontStyle = "italic";
+            dictationMeaning.textContent = "Meaning will appear after reveal";
+            dictationCounter.textContent = `Dictation ${dictationIndex + 1} of ${dictationWords.length}`;
+            revealBtn.disabled = false;
+        }
+
+        // Pronunciation button events
+        learningPronunciationBtn.addEventListener('click', () => {
+            const currentWord = vocabulary[currentIndex].word;
+            speakWord(currentWord);
+        });
+
+        dictationBtn.addEventListener('click', () => {
+            if (currentDictationWord) {
+                speakWord(currentDictationWord.word);
+            }
+        });
+
+        // Reveal button for dictation mode
+        revealBtn.addEventListener('click', () => {
+            if (currentDictationWord) {
+                dictationWord.textContent = currentDictationWord.word;
+                dictationWord.style.color = "#2c3e50";
+                dictationWord.style.fontStyle = "normal";
+                dictationMeaning.textContent = currentDictationWord.meaning;
+                revealBtn.disabled = true;
+            }
+        });
+
+        // Next button for dictation mode
+        dictationNextBtn.addEventListener('click', () => {
+            if (dictationIndex < dictationWords.length - 1) {
+                dictationIndex++;
+                resetDictationCard();
+            } else {
+                // End of dictation words
+                dictationIndex = 0;
+                shuffleArray(dictationWords);
+                resetDictationCard();
+            }
+        });
+
+        // Dictation mode change button
+        dictationModeBtn.addEventListener('click', () => {
+            dictationContent.style.display = 'none';
+            modeContainer.style.display = 'block';
+        });
+
+        // Update timer display
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const now = new Date();
+            const diff = Math.floor((now - startTime) / 1000);
+            const minutes = Math.floor(diff / 60).toString().padStart(2, '0');
+            const seconds = (diff % 60).toString().padStart(2, '0');
+            
+            timeStat.textContent = `${minutes}:${seconds}`;
+        }
+
+        // Learning mode navigation
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateLearningCard();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < vocabulary.length - 1) {
+                currentIndex++;
+                updateLearningCard();
+            }
+        });
+
+        changeModeBtn.addEventListener('click', () => {
+            learningContent.style.display = 'none';
+            modeContainer.style.display = 'block';
+        });
+
+        // Update learning card
+        function updateLearningCard() {
+            const word = vocabulary[currentIndex];
+            learningWord.textContent = word.word;
+            learningMeaning.textContent = word.meaning;
+            learningCounter.textContent = `${currentIndex + 1} of ${vocabulary.length}`;
+            
+            // Disable previous button on first word
+            prevBtn.disabled = currentIndex === 0;
+            
+            // Disable next button on last word
+            nextBtn.disabled = currentIndex === vocabulary.length - 1;
+        }
+
+        // Display current question in test mode
+        function showQuestion() {
+            const currentWord = testWords[currentIndex];
+            wordElement.textContent = currentWord.word;
+            
+            // Clear previous options
+            optionsContainer.innerHTML = '';
+            
+            // Generate options (1 correct + 2 random incorrect)
+            const options = [currentWord.meaning];
+            
+            // Add 2 random incorrect meanings
+            while (options.length < 3) {
+                const randomIndex = Math.floor(Math.random() * vocabulary.length);
+                const randomMeaning = vocabulary[randomIndex].meaning;
+                if (randomIndex !== currentIndex && !options.includes(randomMeaning)) {
+                    options.push(randomMeaning);
+                }
+            }
+            
+            // Shuffle options
+            shuffleArray(options);
+            
+            // Create option elements
+            options.forEach(option => {
+                const optionElement = document.createElement('div');
+                optionElement.classList.add('option');
+                optionElement.textContent = option;
+                optionElement.addEventListener('click', () => selectOption(optionElement, option));
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            // Update progress
+            updateProgress();
+        }
+
+        // Select an option in test mode
+        function selectOption(optionElement, selectedMeaning) {
+            // Disable all options to prevent multiple selections
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.style.pointerEvents = 'none';
+            });
+            
+            // Get the current word
+            const currentWord = testWords[currentIndex];
+            
+            // Check if answer is correct
+            const isCorrect = selectedMeaning === currentWord.meaning;
+            
+            // Visual feedback
+            if (isCorrect) {
+                optionElement.classList.add('correct');
+                score++;
+            } else {
+                optionElement.classList.add('incorrect');
+                
+                // Also show the correct option
+                document.querySelectorAll('.option').forEach(opt => {
+                    if (opt.textContent === currentWord.meaning) {
+                        opt.classList.add('correct');
+                    }
+                });
+                
+                // Store wrong answer
+                wrongAnswers.push({
+                    word: currentWord.word,
+                    meaning: currentWord.meaning,
+                    selected: selectedMeaning
+                });
+            }
+            
+            // Move to next question after a delay
+            setTimeout(() => {
+                if (currentIndex < testWords.length - 1) {
+                    currentIndex++;
+                    showQuestion();
+                } else {
+                    showResults();
+                }
+            }, 1200);
+        }
+
+        // Update progress bar and counter
+        function updateProgress() {
+            const progress = ((currentIndex) / testWords.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            counterElement.textContent = `Question ${currentIndex + 1} of ${testWords.length}`;
+        }
+
+        // Show results
+        function showResults() {
+            // Stop timer
+            if (timerInterval) clearInterval(timerInterval);
+            
+            const percentage = Math.round((score / testWords.length) * 100);
+            
+            // Update result elements
+            finalScoreElement.textContent = `${percentage}%`;
+            scoreTextElement.textContent = `You answered ${score} out of ${testWords.length} questions correctly`;
+            
+            // Update statistics
+            correctStat.textContent = score;
+            incorrectStat.textContent = testWords.length - score;
+            
+            // Show wrong words
+            wrongWordsList.innerHTML = '';
+            if (wrongAnswers.length > 0) {
+                wrongAnswers.forEach(item => {
+                    const wordElement = document.createElement('div');
+                    wordElement.classList.add('wrong-word');
+                    wordElement.innerHTML = `
+                        <div class="word-def">${item.word}</div>
+                        <div class="meaning-text">${item.meaning}</div>
+                    `;
+                    wrongWordsList.appendChild(wordElement);
+                });
+            } else {
+                wrongWordsContainer.innerHTML = '<div class="wrong-words-title">Perfect Score! All answers correct!</div>';
+            }
+            
+            // Hide quiz, show results
+            quizContent.style.display = 'none';
+            resultContainer.style.display = 'block';
+        }
+
+        // Download wrong words as text file
+        downloadBtn.addEventListener('click', () => {
+            if (wrongAnswers.length === 0) {
+                alert("You have no words to review. Great job!");
+                return;
+            }
+            
+            let content = 'Vocabulary Words to Review:\n\n';
+            
+            wrongAnswers.forEach((item, index) => {
+                content += `${index + 1}. ${item.word} - ${item.meaning}\n`;
+            });
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'vocabulary-review.txt';
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        });
+
+        // Restart quiz
+        restartBtn.addEventListener('click', () => {
+            // Reset quiz state
+            currentIndex = 0;
+            score = 0;
+            wrongAnswers = [];
+            startTime = new Date();
+            
+            if (isScrambled) {
+                shuffleArray(testWords);
+            }
+            
+            // Restart timer
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            // Show quiz, hide results
+            resultContainer.style.display = 'none';
+            quizContent.style.display = 'block';
+            
+            // Start quiz again
+            showQuestion();
+        });
+
+        // Change mode button
+        modeBtn.addEventListener('click', () => {
+            resultContainer.style.display = 'none';
+            modeContainer.style.display = 'block';
+        });
+
+        // Helper function to shuffle array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        // Initialize speech synthesis when the page loads
+        initSpeechSynthesis();
+    </script>
+</body>
+</html>

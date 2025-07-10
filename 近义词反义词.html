@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>近义词反义词学习系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: #343a40;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #4e54c8, #8f94fb);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eaeaea;
+            padding: 5px 0;
+        }
+        
+        .mode-btn {
+            padding: 18px 40px;
+            font-size: 1.2rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #555;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .mode-btn.active {
+            color: #4e54c8;
+            background: white;
+        }
+        
+        .mode-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #4e54c8;
+        }
+        
+        .mode-btn:hover:not(.active) {
+            background: #eef2f7;
+            color: #4e54c8;
+        }
+        
+        .content-area {
+            padding: 30px;
+            min-height: 500px;
+        }
+        
+        .unit-selection {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 25px;
+            color: #495057;
+            text-align: center;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: #4e54c8;
+            border-radius: 2px;
+        }
+        
+        .unit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .unit-card {
+            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 25px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #dee2e6;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .unit-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-color: #4e54c8;
+            background: linear-gradient(to bottom, #e9ecef, #dae0e5);
+        }
+        
+        .unit-card.active {
+            background: linear-gradient(to bottom, #4e54c8, #3f51b5);
+            color: white;
+            border-color: #3f51b5;
+        }
+        
+        .unit-card i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #4e54c8;
+        }
+        
+        .unit-card.active i {
+            color: white;
+        }
+        
+        .unit-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+        
+        .unit-card p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        /* Study Mode Styles */
+        .study-content {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .word-section {
+            margin-bottom: 35px;
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .word-section h3 {
+            font-size: 1.6rem;
+            color: #4e54c8;
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 4px solid #4e54c8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .words-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .word-pair {
+            background: #f1f3f5;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .original-word {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            color: #495057;
+            padding-bottom: 10px;
+            border-bottom: 2px dashed #ced4da;
+        }
+        
+        .synonym, .antonym {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+            padding: 8px 15px;
+            border-radius: 8px;
+        }
+        
+        .synonym {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+        
+        .antonym {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        
+        /* Quiz Mode Styles */
+        .quiz-options {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 35px 0;
+        }
+        
+        .quiz-type-btn {
+            padding: 20px 40px;
+            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .quiz-type-btn i {
+            font-size: 2.5rem;
+            color: #4e54c8;
+        }
+        
+        .quiz-type-btn:hover {
+            background: linear-gradient(to bottom, #e9ecef, #dae0e5);
+            border-color: #4e54c8;
+            transform: translateY(-5px);
+        }
+        
+        .quiz-type-btn.active {
+            background: linear-gradient(to bottom, #4e54c8, #3f51b5);
+            color: white;
+            border-color: #3f51b5;
+        }
+        
+        .quiz-type-btn.active i {
+            color: white;
+        }
+        
+        .quiz-area {
+            text-align: center;
+            padding: 40px 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .progress-container {
+            margin: 30px 0;
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, #4e54c8, #8f94fb);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        
+        .question-area {
+            margin: 40px 0;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        }
+        
+        .question-type {
+            font-size: 1.4rem;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+        
+        .question-word {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin: 25px 0;
+            color: #343a40;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .answer-area {
+            margin: 30px 0;
+            padding: 30px;
+            background: #f1f3f5;
+            border-radius: 12px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4e54c8;
+        }
+        
+        .hidden-answer {
+            color: transparent;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            background: #e9ecef;
+            user-select: none;
+        }
+        
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .nav-btn {
+            padding: 15px 35px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .nav-btn i {
+            font-size: 1.2rem;
+        }
+        
+        .next-btn {
+            background: linear-gradient(to right, #4e54c8, #3f51b5);
+            color: white;
+            box-shadow: 0 5px 15px rgba(78, 84, 200, 0.3);
+        }
+        
+        .next-btn:hover {
+            background: linear-gradient(to right, #3f51b5, #303f9f);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(78, 84, 200, 0.4);
+        }
+        
+        .back-btn {
+            background: linear-gradient(to right, #6c757d, #5a6268);
+            color: white;
+        }
+        
+        .back-btn:hover {
+            background: linear-gradient(to right, #5a6268, #495057);
+            transform: translateY(-3px);
+        }
+        
+        .show-btn {
+            background: linear-gradient(to right, #20c997, #17a2b8);
+            color: white;
+        }
+        
+        .show-btn:hover {
+            background: linear-gradient(to right, #17a2b8, #138496);
+            transform: translateY(-3px);
+        }
+        
+        /* Results Section */
+        .results-section {
+            padding: 20px;
+        }
+        
+        .summary-box {
+            background: linear-gradient(to right, #4e54c8, #8f94fb);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            margin: 30px auto;
+            max-width: 600px;
+        }
+        
+        .summary-box h2 {
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .summary-box h2::after {
+            background: white;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid #4e54c8;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .result-word {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            color: #343a40;
+            padding-bottom: 10px;
+            border-bottom: 2px dashed #ced4da;
+        }
+        
+        .result-answer {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .result-type {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            padding: 8px 15px;
+            border-radius: 8px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .unit-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+            
+            .quiz-options {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .quiz-type-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .question-word {
+                font-size: 2.5rem;
+            }
+            
+            .words-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .nav-btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>近义词反义词学习系统</h1>
+            <div class="subtitle">学习与测试工具 - 掌握词语的近义词和反义词</div>
+        </header>
+        
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="study">
+                <i class="fas fa-book"></i> 学习模式
+            </button>
+            <button class="mode-btn" data-mode="quiz">
+                <i class="fas fa-pencil-alt"></i> 测验模式
+            </button>
+        </div>
+        
+        <div class="content-area">
+            <!-- Unit Selection -->
+            <div id="unit-selection-section">
+                <h2><i class="fas fa-layer-group"></i> 选择单元</h2>
+                
+                <div class="unit-grid" id="unit-buttons">
+                    <!-- Unit buttons will be generated here -->
+                </div>
+            </div>
+            
+            <!-- Study Mode Content -->
+            <div id="study-mode-section" class="hidden">
+                <h2><i class="fas fa-book-open"></i> 学习内容</h2>
+                
+                <div class="study-content" id="study-content">
+                    <!-- Vocabulary content will be loaded here -->
+                </div>
+                <div class="btn-container">
+                    <button class="nav-btn back-btn" id="back-to-units">
+                        <i class="fas fa-arrow-left"></i> 返回单元选择
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quiz Mode Content -->
+            <div id="quiz-mode-section" class="hidden">
+                <h2><i class="fas fa-tasks"></i> 选择测验类型</h2>
+                
+                <div class="quiz-options">
+                    <button class="quiz-type-btn" data-type="synonym">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>近义词测验</span>
+                        <small>根据词语说出近义词</small>
+                    </button>
+                    <button class="quiz-type-btn" data-type="antonym">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>反义词测验</span>
+                        <small>根据词语说出反义词</small>
+                    </button>
+                </div>
+                
+                <div class="btn-container">
+                    <button class="nav-btn back-btn" id="back-to-units-quiz">
+                        <i class="fas fa-arrow-left"></i> 返回单元选择
+                    </button>
+                </div>
+                
+                <div id="quiz-area" class="hidden">
+                    <div class="progress-container">
+                        <div class="progress-bar" id="quiz-progress"></div>
+                        <div class="progress-text">进度: <span id="current-progress">0</span>/<span id="total-questions">0</span></div>
+                    </div>
+                    
+                    <div class="quiz-area">
+                        <div class="question-area">
+                            <div class="question-type" id="question-type"></div>
+                            <div class="question-word" id="question-word"></div>
+                            
+                            <div class="answer-area hidden-answer" id="answer-area">
+                                点击"查看答案"按钮显示答案
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-container">
+                        <button class="nav-btn show-btn" id="show-answer">
+                            <i class="fas fa-eye"></i> 查看答案
+                        </button>
+                        <button class="nav-btn next-btn" id="next-question">
+                            <i class="fas fa-arrow-right"></i> 下一题
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="results-section" class="hidden">
+                    <div class="summary-box">
+                        <h2><i class="fas fa-check-circle"></i> 测验完成!</h2>
+                        <p>以下是本单元所有测试题目的正确答案</p>
+                    </div>
+                    
+                    <div class="results-grid" id="results-container">
+                        <!-- Results will be displayed here -->
+                    </div>
+                    
+                    <div class="btn-container">
+                        <button class="nav-btn back-btn" id="back-to-quiz">
+                            <i class="fas fa-arrow-left"></i> 返回测验
+                        </button>
+                        <button class="nav-btn next-btn" id="restart-quiz">
+                            <i class="fas fa-redo"></i> 重新测验
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Vocabulary Data
+        const vocabularyData = {
+            "1": {
+                name: "自然奇观",
+                synonyms: [
+                    { word: "奇观", synonym: "奇景" },
+                    { word: "霎时", synonym: "刹那" },
+                    { word: "屹立", synonym: "耸立" },
+                    { word: "据说", synonym: "听说" },
+                    { word: "宽阔", synonym: "开阔" },
+                    { word: "顿时", synonym: "立刻" }
+                ],
+                antonyms: [
+                    { word: "宽阔", antonym: "狭窄" },
+                    { word: "平静", antonym: "动荡" },
+                    { word: "人声鼎沸", antonym: "鸦雀无声" },
+                    { word: "人山人海", antonym: "冷冷清清" },
+                    { word: "水天相接", antonym: "天壤之别" }
+                ]
+            },
+            "2": {
+                name: "乡村生活",
+                synonyms: [
+                    { word: "柔和", synonym: "柔软" },
+                    { word: "传说", synonym: "传闻" },
+                    { word: "浇灌", synonym: "灌溉" },
+                    { word: "新鲜", synonym: "鲜嫩" },
+                    { word: "修补", synonym: "修复" },
+                    { word: "满意", synonym: "满足" }
+                ],
+                antonyms: [
+                    { word: "新鲜", antonym: "腐烂" },
+                    { word: "明亮", antonym: "昏暗" },
+                    { word: "满意", antonym: "不满" },
+                    { word: "古老", antonym: "年轻" },
+                    { word: "成熟", antonym: "稚嫩" }
+                ]
+            },
+            "3": {
+                name: "时间概念",
+                synonyms: [
+                    { word: "一瞬", synonym: "刹那" },
+                    { word: "纳凉", synonym: "乘凉" },
+                    { word: "静寂", synonym: "寂静" },
+                    { word: "仰望", synonym: "仰视" },
+                    { word: "黑暗", synonymym: "昏暗" }
+                ],
+                antonyms: [
+                    { word: "一瞬", antonym: "永恒" },
+                    { word: "纳凉", antonym: "取暖" },
+                    { word: "密密麻麻", antonym: "稀稀拉拉" },
+                    { word: "静寂", antonym: "喧闹" },
+                    { word: "仰望", antonym: "俯瞰" }
+                ]
+            },
+            "4": {
+                name: "动作状态",
+                synonyms: [
+                    { word: "按照", synonym: "依照" },
+                    { word: "等待", synonym: "等候" },
+                    { word: "依旧", synonym: "依然" },
+                    { word: "霸占", synonym: "侵占" },
+                    { word: "模糊", synonym: "朦胧" }
+                ],
+                antonyms: [
+                    { word: "模糊", antonym: "清晰" },
+                    { word: "僵硬", antonym: "灵活" },
+                    { word: "愉快", antonym: "难过" },
+                    { word: "丰满", antonym: "干瘪" },
+                    { word: "虚弱", antonym: "强壮" }
+                ]
+            },
+            "5": {
+                name: "科技发展",
+                synonyms: [
+                    { word: "灵巧", synonym: "灵活" },
+                    { word: "证明", synonym: "证实" },
+                    { word: "研究", synonym: "钻研" },
+                    { word: "显示", synonym: "展示" },
+                    { word: "技术", synonym: "技能" }
+                ],
+                antonyms: [
+                    { word: "灵巧", antonym: "笨拙" },
+                    { word: "漆黑", antonym: "雪白" },
+                    { word: "幻想", antonym: "现实" },
+                    { word: "创造", antonym: "仿造" },
+                    { word: "紧密", antonym: "松散" }
+                ]
+            },
+            "6": {
+                name: "人物情感",
+                synonyms: [
+                    { word: "躲避", synonym: "躲藏" },
+                    { word: "震撼", synonym: "震动" },
+                    { word: "密集", synonym: "密布" },
+                    { word: "着急", synonym: "焦急" },
+                    { word: "坚定", synonym: "坚决" }
+                ],
+                antonyms: [
+                    { word: "躲避", antonym: "面对" },
+                    { word: "密集", antonym: "疏落" },
+                    { word: "轻盈", antonym: "笨重" },
+                    { word: "鲜艳", antonym: "素雅" },
+                    { word: "屈服", antonym: "抗争" }
+                ]
+            }
+        };
+
+        // DOM Elements
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        const unitSelectionSection = document.getElementById('unit-selection-section');
+        const studyModeSection = document.getElementById('study-mode-section');
+        const quizModeSection = document.getElementById('quiz-mode-section');
+        const unitButtonsContainer = document.getElementById('unit-buttons');
+        const studyContent = document.getElementById('study-content');
+        const backToUnitsBtn = document.getElementById('back-to-units');
+        const backToUnitsQuizBtn = document.getElementById('back-to-units-quiz');
+        const quizTypeButtons = document.querySelectorAll('.quiz-type-btn');
+        const quizArea = document.getElementById('quiz-area');
+        const questionType = document.getElementById('question-type');
+        const questionWord = document.getElementById('question-word');
+        const answerArea = document.getElementById('answer-area');
+        const quizProgress = document.getElementById('quiz-progress');
+        const currentProgress = document.getElementById('current-progress');
+        const totalQuestions = document.getElementById('total-questions');
+        const showAnswerBtn = document.getElementById('show-answer');
+        const nextQuestionBtn = document.getElementById('next-question');
+        const resultsSection = document.getElementById('results-section');
+        const resultsContainer = document.getElementById('results-container');
+        const backToQuizBtn = document.getElementById('back-to-quiz');
+        const restartQuizBtn = document.getElementById('restart-quiz');
+
+        // State variables
+        let currentMode = 'study';
+        let currentUnit = null;
+        let quizType = null;
+        let quizQuestions = [];
+        let currentQuestionIndex = 0;
+
+        // Initialize the page
+        function initPage() {
+            generateUnitButtons();
+            addEventListeners();
+        }
+
+        // Generate unit selection buttons
+        function generateUnitButtons() {
+            unitButtonsContainer.innerHTML = '';
+            
+            for (const unitId in vocabularyData) {
+                const unitData = vocabularyData[unitId];
+                const wordCount = unitData.synonyms.length + unitData.antonyms.length;
+                
+                const card = document.createElement('div');
+                card.className = 'unit-card';
+                card.innerHTML = `
+                    <i class="fas fa-book-open"></i>
+                    <h3>单元 ${unitId}</h3>
+                    <p>${unitData.name}</p>
+                    <small>${wordCount} 个词语</small>
+                `;
+                card.dataset.unit = unitId;
+                unitButtonsContainer.appendChild(card);
+            }
+        }
+
+        // Add event listeners
+        function addEventListeners() {
+            // Mode selection
+            modeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    setMode(button.dataset.mode);
+                });
+            });
+            
+            // Unit selection
+            unitButtonsContainer.addEventListener('click', (e) => {
+                const card = e.target.closest('.unit-card');
+                if (card) {
+                    selectUnit(card.dataset.unit);
+                }
+            });
+            
+            // Back to unit selection (study mode)
+            backToUnitsBtn.addEventListener('click', () => {
+                studyModeSection.classList.add('hidden');
+                unitSelectionSection.classList.remove('hidden');
+                currentUnit = null;
+            });
+            
+            // Back to unit selection (quiz mode)
+            backToUnitsQuizBtn.addEventListener('click', () => {
+                quizModeSection.classList.add('hidden');
+                quizArea.classList.add('hidden');
+                resultsSection.classList.add('hidden');
+                unitSelectionSection.classList.remove('hidden');
+                currentUnit = null;
+                quizType = null;
+            });
+            
+            // Quiz type selection
+            quizTypeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    setQuizType(button.dataset.type);
+                });
+            });
+            
+            // Quiz navigation
+            showAnswerBtn.addEventListener('click', showAnswer);
+            nextQuestionBtn.addEventListener('click', showNextQuestion);
+            
+            // Results navigation
+            backToQuizBtn.addEventListener('click', () => {
+                resultsSection.classList.add('hidden');
+                quizArea.classList.remove('hidden');
+            });
+            
+            restartQuizBtn.addEventListener('click', () => {
+                resultsSection.classList.add('hidden');
+                startQuiz();
+            });
+        }
+
+        // Set current mode
+        function setMode(mode) {
+            currentMode = mode;
+            
+            // Update UI
+            modeButtons.forEach(button => {
+                if (button.dataset.mode === mode) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+            
+            // Show appropriate sections
+            unitSelectionSection.classList.remove('hidden');
+            studyModeSection.classList.add('hidden');
+            quizModeSection.classList.add('hidden');
+            quizArea.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+            
+            if (mode === 'quiz') {
+                quizModeSection.classList.remove('hidden');
+            }
+        }
+
+        // Select a unit
+        function selectUnit(unitId) {
+            currentUnit = unitId;
+            
+            // Highlight selected unit card
+            document.querySelectorAll('.unit-card').forEach(card => {
+                if (card.dataset.unit === unitId) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+            
+            if (currentMode === 'study') {
+                showStudyContent(unitId);
+            } else if (currentMode === 'quiz' && quizType) {
+                startQuiz();
+            }
+        }
+
+        // Show study content for a unit
+        function showStudyContent(unitId) {
+            const unitData = vocabularyData[unitId];
+            
+            // Hide unit selection, show study content
+            unitSelectionSection.classList.add('hidden');
+            studyModeSection.classList.remove('hidden');
+            
+            // Clear previous content
+            studyContent.innerHTML = '';
+            
+            // Add synonyms
+            if (unitData.synonyms.length > 0) {
+                const synonymsSection = document.createElement('div');
+                synonymsSection.className = 'word-section';
+                synonymsSection.innerHTML = '<h3><i class="fas fa-sync-alt"></i> 近义词</h3>';
+                
+                const wordsGrid = document.createElement('div');
+                wordsGrid.className = 'words-container';
+                
+                unitData.synonyms.forEach(item => {
+                    const wordPair = document.createElement('div');
+                    wordPair.className = 'word-pair';
+                    wordPair.innerHTML = `
+                        <div class="original-word">${item.word}</div>
+                        <div class="synonym">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>${item.synonym}</span>
+                        </div>
+                    `;
+                    wordsGrid.appendChild(wordPair);
+                });
+                
+                synonymsSection.appendChild(wordsGrid);
+                studyContent.appendChild(synonymsSection);
+            }
+            
+            // Add antonyms
+            if (unitData.antonyms.length > 0) {
+                const antonymsSection = document.createElement('div');
+                antonymsSection.className = 'word-section';
+                antonymsSection.innerHTML = '<h3><i class="fas fa-exchange-alt"></i> 反义词</h3>';
+                
+                const wordsGrid = document.createElement('div');
+                wordsGrid.className = 'words-container';
+                
+                unitData.antonyms.forEach(item => {
+                    const wordPair = document.createElement('div');
+                    wordPair.className = 'word-pair';
+                    wordPair.innerHTML = `
+                        <div class="original-word">${item.word}</div>
+                        <div class="antonym">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>${item.antonym}</span>
+                        </div>
+                    `;
+                    wordsGrid.appendChild(wordPair);
+                });
+                
+                antonymsSection.appendChild(wordsGrid);
+                studyContent.appendChild(antonymsSection);
+            }
+        }
+
+        // Set quiz type
+        function setQuizType(type) {
+            quizType = type;
+            
+            // Update UI
+            quizTypeButtons.forEach(button => {
+                if (button.dataset.type === type) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+            
+            // Start quiz if unit is already selected
+            if (currentUnit) {
+                startQuiz();
+            }
+        }
+
+        // Start a quiz
+        function startQuiz() {
+            // Reset quiz state
+            currentQuestionIndex = 0;
+            
+            // Generate quiz questions
+            quizQuestions = generateQuizQuestions();
+            
+            if (quizQuestions.length === 0) {
+                alert('该单元没有可测试的内容！');
+                return;
+            }
+            
+            // Hide results, show quiz area
+            resultsSection.classList.add('hidden');
+            quizArea.classList.remove('hidden');
+            
+            // Reset answer area
+            answerArea.classList.add('hidden-answer');
+            answerArea.textContent = "点击'查看答案'按钮显示答案";
+            
+            // Update total questions display
+            totalQuestions.textContent = quizQuestions.length;
+            
+            // Show first question
+            showQuestion();
+        }
+
+        // Generate quiz questions based on unit and quiz type
+        function generateQuizQuestions() {
+            const questions = [];
+            const unitData = vocabularyData[currentUnit];
+            
+            if (quizType === 'synonym') {
+                // Synonym quiz: show word, ask for synonym
+                unitData.synonyms.forEach(item => {
+                    questions.push({
+                        type: 'synonym',
+                        word: item.word,
+                        answer: item.synonym,
+                        questionText: `"${item.word}" 的近义词是什么？`
+                    });
+                });
+            } else if (quizType === 'antonym') {
+                // Antonym quiz: show word, ask for antonym
+                unitData.antonyms.forEach(item => {
+                    questions.push({
+                        type: 'antonym',
+                        word: item.word,
+                        answer: item.antonym,
+                        questionText: `"${item.word}" 的反义词是什么？`
+                    });
+                });
+            }
+            
+            // Shuffle questions
+            return shuffleArray(questions);
+        }
+
+        // Show current question
+        function showQuestion() {
+            const question = quizQuestions[currentQuestionIndex];
+            
+            // Update progress bar and text
+            const progressPercent = ((currentQuestionIndex) / quizQuestions.length) * 100;
+            quizProgress.style.width = `${progressPercent}%`;
+            currentProgress.textContent = currentQuestionIndex;
+            
+            // Set question text based on type
+            questionType.textContent = question.questionText;
+            questionWord.textContent = question.word;
+        }
+
+        // Show answer
+        function showAnswer() {
+            const question = quizQuestions[currentQuestionIndex];
+            answerArea.textContent = question.answer;
+            answerArea.classList.remove('hidden-answer');
+        }
+
+        // Show next question or results
+        function showNextQuestion() {
+            // Reset answer area
+            answerArea.classList.add('hidden-answer');
+            answerArea.textContent = "点击'查看答案'按钮显示答案";
+            
+            currentQuestionIndex++;
+            
+            if (currentQuestionIndex < quizQuestions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        // Show quiz results
+        function showResults() {
+            // Hide quiz area, show results
+            quizArea.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+            
+            // Clear previous results
+            resultsContainer.innerHTML = '';
+            
+            // Add each result
+            quizQuestions.forEach((question, index) => {
+                const resultCard = document.createElement('div');
+                resultCard.className = 'result-card';
+                
+                resultCard.innerHTML = `
+                    <div class="result-word">${question.word}</div>
+                    <div class="result-answer">
+                        <div class="result-type" style="${question.type === 'synonym' ? 'background: rgba(40, 167, 69, 0.1); color: #28a745;' : 'background: rgba(220, 53, 69, 0.1); color: #dc3545;'}">
+                            <i class="fas ${question.type === 'synonym' ? 'fa-sync-alt' : 'fa-exchange-alt'}"></i>
+                            <span>${question.type === 'synonym' ? '近义词' : '反义词'}: ${question.answer}</span>
+                        </div>
+                    </div>
+                `;
+                
+                resultsContainer.appendChild(resultCard);
+            });
+        }
+
+        // Utility function to shuffle array
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // Initialize the application
+        window.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

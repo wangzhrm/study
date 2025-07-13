@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三国杀三人局积分系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            color: #fff;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        header {
+            margin-bottom: 40px;
+            animation: fadeInDown 1s ease;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            letter-spacing: 3px;
+            background: linear-gradient(to right, #FFD700, #FFA500, #FF6347);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #2c3e50, #1a2a6c);
+            border-radius: 20px;
+            padding: 40px;
+            width: 90%;
+            max-width: 600px;
+            border: 3px solid #FFD700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+        
+        .modal-title {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: #FFD700;
+        }
+        
+        .player-input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .player-input {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .player-input label {
+            font-size: 1.5rem;
+            width: 100px;
+            text-align: right;
+        }
+        
+        .player-input input {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.3rem;
+            border-radius: 10px;
+            border: 2px solid #FFD700;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+        }
+        
+        .btn {
+            background: linear-gradient(to bottom, #FFD700, #FF8C00);
+            color: #8B0000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            margin: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .players-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .player {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.4rem;
+            border: 2px solid #FFD700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .player.active {
+            background: rgba(255, 215, 0, 0.6);
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #FFD700;
+        }
+        
+        .player i {
+            font-size: 1.8rem;
+        }
+        
+        .cards-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 50px;
+            flex-wrap: wrap;
+        }
+        
+        .card-wrapper {
+            perspective: 1500px;
+            width: 300px;
+            height: 420px;
+        }
+        
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        
+        .card-back {
+            background: linear-gradient(135deg, #00a74a, #007a36);
+            border: 5px solid #FFD700;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card-back.selected {
+            background: linear-gradient(135deg, #005c99, #003366);
+        }
+        
+        .card-back.selected .player-name {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .card-front {
+            transform: rotateY(180deg);
+            border: 5px solid #FFD700;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .card-icon {
+            font-size: 100px;
+            margin-bottom: 30px;
+        }
+        
+        .card-title {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        
+        .player-name {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease 0.3s;
+        }
+        
+        .status {
+            font-size: 1.5rem;
+            margin: 25px 0;
+            min-height: 50px;
+            color: #FFD700;
+            font-weight: bold;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            display: inline-block;
+        }
+        
+        .result-container {
+            display: none;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 800px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 30px;
+            border: 3px solid #FFD700;
+        }
+        
+        .result-title {
+            font-size: 2rem;
+            color: #FFD700;
+            margin-bottom: 30px;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .player-tag {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .role-tag {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .zhugong {
+            background: linear-gradient(to right, #d4af37, #c9a227);
+            color: #8b0000;
+        }
+        
+        .neijian {
+            background: linear-gradient(to right, #8b0000, #6b0000);
+            color: #fff;
+        }
+        
+        .fanzei {
+            background: linear-gradient(to right, #1a2a6c, #0d1b4c);
+            color: #fff;
+        }
+        
+        .zhongchen {
+            background: linear-gradient(to right, #0d6b1a, #0a5615);
+            color: #fff;
+        }
+        
+        /* 卡片正面颜色 */
+        .card-front.zhugong {
+            background: linear-gradient(135deg, #d4af37, #c9a227);
+        }
+        
+        .card-front.neijian {
+            background: linear-gradient(135deg, #8b0000, #6b0000);
+        }
+        
+        .card-front.fanzei {
+            background: linear-gradient(135deg, #1a2a6c, #0d1b4c);
+        }
+        
+        .card-front.zhongchen {
+            background: linear-gradient(135deg, #0d6b1a, #0a5615);
+        }
+        
+        .score-container {
+            display: none;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 800px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 30px;
+            border: 3px solid #FFD700;
+        }
+        
+        .score-title {
+            font-size: 2rem;
+            color: #FFD700;
+            margin-bottom: 30px;
+        }
+        
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 1.5rem;
+        }
+        
+        .score-value {
+            font-weight: bold;
+            font-size: 2rem;
+            color: #FFD700;
+        }
+        
+        .winner-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+        }
+        
+        .winner-title {
+            font-size: 1.8rem;
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+        
+        .winner-options {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .winner-btn {
+            background: linear-gradient(to bottom, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            min-width: 180px;
+        }
+        
+        .winner-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .winner-btn:active {
+            transform: translateY(1px);
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1000px) {
+            .cards-container {
+                gap: 30px;
+            }
+            
+            .card-wrapper {
+                width: 250px;
+                height: 380px;
+            }
+            
+            h1 {
+                font-size: 2.8rem;
+            }
+            
+            .card-title {
+                font-size: 2.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .cards-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .card-wrapper {
+                width: 300px;
+                height: 420px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .player {
+                font-size: 1.2rem;
+                padding: 12px 25px;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+            
+            .player-input label {
+                font-size: 1.2rem;
+                width: 80px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .card-wrapper {
+                width: 280px;
+                height: 390px;
+            }
+            
+            .card-title {
+                font-size: 2rem;
+            }
+            
+            .player {
+                font-size: 1.1rem;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-dragon"></i> 三国杀三人局积分系统 <i class="fas fa-dragon"></i></h1>
+            <p class="subtitle">神秘身份，惊喜揭晓</p>
+        </header>
+        
+        <div class="players-container" id="playersContainer">
+            <!-- 玩家标签会动态生成 -->
+        </div>
+        
+        <div class="status" id="status">请等待游戏开始...</div>
+        
+        <div class="cards-container" id="cardsContainer">
+            <!-- 卡片会动态生成 -->
+        </div>
+        
+        <div class="controls">
+            <button class="btn" id="endGameBtn" style="display:none;">结束游戏</button>
+            <button class="btn" id="nextGameBtn" style="display:none;">开始下一局</button>
+        </div>
+        
+        <div class="winner-section" id="winnerSection" style="display:none;">
+            <div class="winner-title">请选择获胜方</div>
+            <div class="winner-options" id="winnerOptions">
+                <!-- 获胜选项会动态生成 -->
+            </div>
+        </div>
+        
+        <div class="result-container" id="resultContainer" style="display:none;">
+            <div class="result-title">本局身份揭晓</div>
+            <div class="result-list" id="resultList">
+                <!-- 结果会动态添加到这里 -->
+            </div>
+        </div>
+        
+        <div class="score-container" id="scoreContainer" style="display:none;">
+            <div class="score-title">玩家积分排行榜</div>
+            <div class="score-list" id="scoreList">
+                <!-- 积分列表会动态添加 -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="playerModal">
+        <div class="modal-content">
+            <h2 class="modal-title">请输入玩家姓名</h2>
+            <div class="player-input-container">
+                <div class="player-input">
+                    <label for="player1">玩家1:</label>
+                    <input type="text" id="player1" placeholder="请输入姓名" value="瑞瑞">
+                </div>
+                <div class="player-input">
+                    <label for="player2">玩家2:</label>
+                    <input type="text" id="player2" placeholder="请输入姓名" value="妈妈">
+                </div>
+                <div class="player-input">
+                    <label for="player3">玩家3:</label>
+                    <input type="text" id="player3" placeholder="请输入姓名" value="爸爸">
+                </div>
+            </div>
+            <button class="btn" id="startGameBtn">开始游戏</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 获取DOM元素
+            const playerModal = document.getElementById('playerModal');
+            const startGameBtn = document.getElementById('startGameBtn');
+            const playersContainer = document.getElementById('playersContainer');
+            const cardsContainer = document.getElementById('cardsContainer');
+            const endGameBtn = document.getElementById('endGameBtn');
+            const nextGameBtn = document.getElementById('nextGameBtn');
+            const status = document.getElementById('status');
+            const resultContainer = document.getElementById('resultContainer');
+            const resultList = document.getElementById('resultList');
+            const scoreContainer = document.getElementById('scoreContainer');
+            const scoreList = document.getElementById('scoreList');
+            const winnerSection = document.getElementById('winnerSection');
+            const winnerOptions = document.getElementById('winnerOptions');
+            
+            // 游戏状态
+            let gameState = {
+                players: [],
+                scores: {},
+                currentGame: {
+                    config: null,
+                    roles: [],
+                    assignments: {},
+                    currentPlayerIndex: 0,
+                    selectedCount: 0,
+                    gameEnded: false,
+                    currentRound: 1
+                }
+            };
+            
+            // 配置选项
+            const configs = [
+                {
+                    id: 1,
+                    name: "1主公 + 1反贼 + 1内奸",
+                    roles: ['主公', '反贼', '内奸'],
+                    description: "神秘配置1"
+                },
+                {
+                    id: 2,
+                    name: "1主公 + 2反贼",
+                    roles: ['主公', '反贼', '反贼'],
+                    description: "神秘配置2"
+                },
+                {
+                    id: 3,
+                    name: "1主公 + 1忠臣 + 1反贼",
+                    roles: ['主公', '忠臣', '反贼'],
+                    description: "神秘配置3"
+                }
+            ];
+            
+            // 图标映射
+            const roleIcons = {
+                '主公': '👑',
+                '反贼': '⚔️',
+                '内奸': '🎭',
+                '忠臣': '🛡️'
+            };
+            
+            // 初始化游戏
+            function initGame() {
+                // 显示玩家输入模态框
+                playerModal.style.display = 'flex';
+                
+                // 开始游戏按钮事件
+                startGameBtn.addEventListener('click', () => {
+                    const player1 = document.getElementById('player1').value || "玩家1";
+                    const player2 = document.getElementById('player2').value || "玩家2";
+                    const player3 = document.getElementById('player3').value || "玩家3";
+                    
+                    gameState.players = [player1, player2, player3];
+                    
+                    // 初始化分数
+                    gameState.scores = {
+                        [player1]: 0,
+                        [player2]: 0,
+                        [player3]: 0
+                    };
+                    
+                    // 隐藏模态框
+                    playerModal.style.display = 'none';
+                    
+                    // 开始第一局游戏
+                    startNewRound();
+                });
+                
+                // 结束游戏按钮事件
+                endGameBtn.addEventListener('click', endGame);
+                
+                // 下一局按钮事件
+                nextGameBtn.addEventListener('click', startNewRound);
+                
+                // 防止意外关闭页面
+                window.addEventListener('beforeunload', (e) => {
+                    e.preventDefault();
+                    e.returnValue = '';
+                });
+            }
+            
+            // 开始新一局游戏
+            function startNewRound() {
+                // 重置状态
+                gameState.currentGame = {
+                    config: null,
+                    roles: [],
+                    assignments: {},
+                    currentPlayerIndex: 0,
+                    selectedCount: 0,
+                    gameEnded: false,
+                    currentRound: gameState.currentGame.currentRound
+                };
+                
+                // 随机选择一个配置
+                const randomConfigIndex = Math.floor(Math.random() * configs.length);
+                gameState.currentGame.config = configs[randomConfigIndex];
+                
+                // 创建玩家标签
+                createPlayerTags();
+                
+                // 随机分配身份
+                shuffleRoles();
+                
+                // 创建卡片
+                createCards();
+                
+                // 更新状态
+                status.textContent = `请${gameState.players[0]}选择一张身份牌`;
+                
+                // 显示/隐藏按钮
+                endGameBtn.style.display = 'inline-block';
+                nextGameBtn.style.display = 'none';
+                resultContainer.style.display = 'none';
+                scoreContainer.style.display = 'none';
+                winnerSection.style.display = 'none';
+                
+                // 高亮当前玩家
+                highlightCurrentPlayer();
+            }
+            
+            // 创建玩家标签
+            function createPlayerTags() {
+                playersContainer.innerHTML = '';
+                
+                gameState.players.forEach((player, index) => {
+                    const playerTag = document.createElement('div');
+                    playerTag.className = 'player';
+                    playerTag.id = `player-tag-${index}`;
+                    playerTag.innerHTML = `
+                        <i class="fas fa-user"></i> ${player}
+                        <span class="score-badge">${gameState.scores[player]}分</span>
+                    `;
+                    playersContainer.appendChild(playerTag);
+                });
+            }
+            
+            // 创建卡片
+            function createCards() {
+                cardsContainer.innerHTML = '';
+                
+                for (let i = 0; i < 3; i++) {
+                    const role = gameState.currentGame.roles[i];
+                    const roleClass = getRoleClass(role);
+                    
+                    const cardWrapper = document.createElement('div');
+                    cardWrapper.className = 'card-wrapper';
+                    cardWrapper.innerHTML = `
+                        <div class="card" data-index="${i}">
+                            <div class="card-face card-back">
+                                <div class="player-name" id="player-name-${i}"></div>
+                            </div>
+                            <div class="card-face card-front ${roleClass}" id="card-front-${i}">
+                                <div class="card-icon">${roleIcons[role]}</div>
+                                <div class="card-title">${role}</div>
+                            </div>
+                        </div>
+                    `;
+                    cardsContainer.appendChild(cardWrapper);
+                }
+                
+                // 添加卡片点击事件
+                document.querySelectorAll('.card').forEach(card => {
+                    card.addEventListener('click', handleCardClick);
+                });
+            }
+            
+            // 处理卡片点击
+            function handleCardClick(event) {
+                if (gameState.currentGame.gameEnded) return;
+                
+                const card = event.currentTarget;
+                const cardIndex = parseInt(card.getAttribute('data-index'));
+                const backFace = card.querySelector('.card-back');
+                const playerNameElement = card.querySelector('.player-name');
+                
+                // 如果卡片已选择（蓝色背面），则忽略点击
+                if (backFace.classList.contains('selected')) return;
+                
+                const currentPlayer = gameState.players[gameState.currentGame.currentPlayerIndex];
+                
+                // 如果卡片是第一次点击（绿色背面）
+                if (!card.classList.contains('flipped')) {
+                    // 翻转卡片显示身份
+                    card.classList.add('flipped');
+                    status.textContent = `${currentPlayer} 查看了身份`;
+                } 
+                // 如果卡片已翻开（显示身份）
+                else {
+                    // 记录玩家选择的身份
+                    const role = gameState.currentGame.roles[cardIndex];
+                    gameState.currentGame.assignments[currentPlayer] = role;
+                    
+                    // 设置玩家名字
+                    playerNameElement.textContent = currentPlayer;
+                    
+                    // 翻回背面并标记为已选择
+                    card.classList.remove('flipped');
+                    backFace.classList.add('selected');
+                    
+                    // 移动到下一位玩家
+                    gameState.currentGame.currentPlayerIndex++;
+                    gameState.currentGame.selectedCount++;
+                    
+                    // 更新状态信息
+                    if (gameState.currentGame.selectedCount < 3) {
+                        const nextPlayer = gameState.players[gameState.currentGame.currentPlayerIndex];
+                        status.textContent = `请${nextPlayer}选择一张身份牌`;
+                        highlightCurrentPlayer();
+                    } else {
+                        status.textContent = "所有玩家已确认身份！";
+                        endGameBtn.classList.add('pulse');
+                    }
+                }
+            }
+            
+            // 结束游戏
+            function endGame() {
+                gameState.currentGame.gameEnded = true;
+                
+                // 翻转所有卡片显示身份
+                document.querySelectorAll('.card').forEach(card => {
+                    const backFace = card.querySelector('.card-back');
+                    backFace.classList.add('selected');
+                    card.classList.add('flipped');
+                });
+                
+                // 显示结果
+                showResults();
+                
+                // 隐藏结束游戏按钮
+                endGameBtn.style.display = 'none';
+                
+                // 显示获胜选项
+                showWinnerOptions();
+            }
+            
+            // 显示结果
+            function showResults() {
+                resultList.innerHTML = '';
+                resultContainer.style.display = 'block';
+                
+                // 为每个玩家创建结果条目
+                gameState.players.forEach(player => {
+                    const role = gameState.currentGame.assignments[player];
+                    const roleClass = getRoleClass(role);
+                    
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'result-item';
+                    resultItem.innerHTML = `
+                        <div class="player-tag">
+                            <i class="fas fa-user"></i>
+                            <span>${player}</span>
+                        </div>
+                        <div class="role-tag ${roleClass}">
+                            ${roleIcons[role]} ${role}
+                        </div>
+                    `;
+                    resultList.appendChild(resultItem);
+                });
+            }
+            
+            // 显示获胜选项
+            function showWinnerOptions() {
+                winnerOptions.innerHTML = '';
+                winnerSection.style.display = 'block';
+                
+                const config = gameState.currentGame.config;
+                
+                if (config.id === 1) {
+                    // 配置1: 1主公 + 1反贼 + 1内奸
+                    gameState.players.forEach(player => {
+                        const role = gameState.currentGame.assignments[player];
+                        const btn = document.createElement('button');
+                        btn.className = 'winner-btn';
+                        btn.textContent = `${player} (${role})`;
+                        btn.dataset.player = player;
+                        btn.dataset.role = role;
+                        btn.addEventListener('click', () => handleWinnerSelection(player, role));
+                        winnerOptions.appendChild(btn);
+                    });
+                } else if (config.id === 2) {
+                    // 配置2: 1主公 + 2反贼
+                    const roles = {};
+                    gameState.players.forEach(player => {
+                        roles[player] = gameState.currentGame.assignments[player];
+                    });
+                    
+                    // 主公选项
+                    const zhugongPlayer = Object.keys(roles).find(p => roles[p] === '主公');
+                    const btn1 = document.createElement('button');
+                    btn1.className = 'winner-btn';
+                    btn1.textContent = `${zhugongPlayer} (主公)`;
+                    btn1.dataset.player = zhugongPlayer;
+                    btn1.dataset.role = '主公';
+                    btn1.addEventListener('click', () => handleWinnerSelection(zhugongPlayer, '主公'));
+                    winnerOptions.appendChild(btn1);
+                    
+                    // 反贼选项（任意一个反贼代表所有反贼）
+                    const fanzeiPlayers = Object.keys(roles).filter(p => roles[p] === '反贼');
+                    const btn2 = document.createElement('button');
+                    btn2.className = 'winner-btn';
+                    btn2.textContent = `${fanzeiPlayers[0]} (反贼)`;
+                    btn2.dataset.players = fanzeiPlayers.join(',');
+                    btn2.dataset.role = '反贼';
+                    btn2.addEventListener('click', () => handleWinnerSelection(fanzeiPlayers, '反贼'));
+                    winnerOptions.appendChild(btn2);
+                } else if (config.id === 3) {
+                    // 配置3: 1主公 + 1忠臣 + 1反贼
+                    const roles = {};
+                    gameState.players.forEach(player => {
+                        roles[player] = gameState.currentGame.assignments[player];
+                    });
+                    
+                    // 主公和忠臣选项
+                    const zhugongPlayer = Object.keys(roles).find(p => roles[p] === '主公');
+                    const zhongchenPlayer = Object.keys(roles).find(p => roles[p] === '忠臣');
+                    const btn1 = document.createElement('button');
+                    btn1.className = 'winner-btn';
+                    btn1.textContent = `${zhugongPlayer} (主公)`;
+                    btn1.dataset.players = [zhugongPlayer, zhongchenPlayer].join(',');
+                    btn1.dataset.role = '主公忠臣';
+                    btn1.addEventListener('click', () => handleWinnerSelection([zhugongPlayer, zhongchenPlayer], '主公忠臣'));
+                    winnerOptions.appendChild(btn1);
+                    
+                    // 反贼选项
+                    const fanzeiPlayer = Object.keys(roles).find(p => roles[p] === '反贼');
+                    const btn2 = document.createElement('button');
+                    btn2.className = 'winner-btn';
+                    btn2.textContent = `${fanzeiPlayer} (反贼)`;
+                    btn2.dataset.player = fanzeiPlayer;
+                    btn2.dataset.role = '反贼';
+                    btn2.addEventListener('click', () => handleWinnerSelection(fanzeiPlayer, '反贼'));
+                    winnerOptions.appendChild(btn2);
+                }
+            }
+            
+            // 处理获胜选择
+            function handleWinnerSelection(winner, roleType) {
+                // 计算得分
+                let points = 0;
+                let winners = [];
+                
+                if (Array.isArray(winner)) {
+                    winners = winner;
+                } else {
+                    winners = [winner];
+                }
+                
+                const config = gameState.currentGame.config;
+                
+                if (config.id === 1) {
+                    // 配置1: 获胜者获得8分
+                    points = 8;
+                } else if (config.id === 2) {
+                    // 配置2: 
+                    if (roleType === '主公') {
+                        // 主公获胜获得8分
+                        points = 8;
+                    } else {
+                        // 反贼获胜各得6分
+                        points = 6;
+                    }
+                } else if (config.id === 3) {
+                    // 配置3: 
+                    if (roleType === '反贼') {
+                        // 反贼获胜获得8分
+                        points = 8;
+                    } else {
+                        // 主公和忠臣各得6分
+                        points = 6;
+                    }
+                }
+                
+                // 更新分数
+                winners.forEach(winner => {
+                    gameState.scores[winner] += points;
+                });
+                
+                // 显示积分榜
+                showScoreboard();
+                
+                // 隐藏获胜选项
+                winnerSection.style.display = 'none';
+                
+                // 显示下一局按钮
+                nextGameBtn.style.display = 'inline-block';
+                gameState.currentGame.currentRound++;
+            }
+            
+            // 显示积分榜
+            function showScoreboard() {
+                scoreList.innerHTML = '';
+                scoreContainer.style.display = 'block';
+                
+                // 按分数排序
+                const sortedPlayers = [...gameState.players].sort((a, b) => {
+                    return gameState.scores[b] - gameState.scores[a];
+                });
+                
+                // 创建积分项
+                sortedPlayers.forEach((player, index) => {
+                    const scoreItem = document.createElement('div');
+                    scoreItem.className = 'score-item';
+                    
+                    // 添加表情
+                    let emoji = '';
+                    if (index === 0) emoji = '😄';
+                    else if (index === 1) emoji = '😐';
+                    else emoji = '😢';
+                    
+                    scoreItem.innerHTML = `
+                        <div class="player-tag">
+                            ${emoji} ${player}
+                        </div>
+                        <div class="score-value">${gameState.scores[player]}分</div>
+                    `;
+                    scoreList.appendChild(scoreItem);
+                });
+            }
+            
+            // 随机分配角色
+            function shuffleRoles() {
+                // 复制当前配置的角色数组
+                gameState.currentGame.roles = [...gameState.currentGame.config.roles];
+                
+                // Fisher-Yates 洗牌算法
+                for (let i = gameState.currentGame.roles.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [gameState.currentGame.roles[i], gameState.currentGame.roles[j]] = 
+                    [gameState.currentGame.roles[j], gameState.currentGame.roles[i]];
+                }
+            }
+            
+            // 高亮当前玩家
+            function highlightCurrentPlayer() {
+                // 移除所有高亮
+                document.querySelectorAll('.player').forEach(player => {
+                    player.classList.remove('active');
+                });
+                
+                // 高亮当前玩家
+                const currentPlayerIndex = gameState.currentGame.currentPlayerIndex;
+                if (currentPlayerIndex < gameState.players.length) {
+                    const playerTag = document.getElementById(`player-tag-${currentPlayerIndex}`);
+                    if (playerTag) playerTag.classList.add('active');
+                }
+            }
+            
+            // 获取角色类名
+            function getRoleClass(role) {
+                switch(role) {
+                    case '主公': return 'zhugong';
+                    case '反贼': return 'fanzei';
+                    case '内奸': return 'neijian';
+                    case '忠臣': return 'zhongchen';
+                    default: return '';
+                }
+            }
+            
+            // 初始化游戏
+            initGame();
+        });
+    </script>
+</body>
+</html>

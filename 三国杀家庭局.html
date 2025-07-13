@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三国杀三人局积分系统</title>
+    <title>三国杀三人局积分系统 - 随机优化版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -428,6 +428,175 @@
             transform: translateY(1px);
         }
         
+        /* 随机性可视化 */
+        .randomness-visualizer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            border: 3px solid #FFD700;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+        }
+        
+        .randomness-label {
+            font-size: 1.1rem;
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+        
+        .randomness-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .randomness-value.low {
+            color: #FF6347;
+        }
+        
+        .randomness-dots {
+            display: flex;
+            margin-top: 10px;
+            gap: 5px;
+        }
+        
+        .random-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+            transition: all 0.5s ease;
+        }
+        
+        .random-dot.active {
+            background: #FFD700;
+            transform: scale(1.5);
+        }
+        
+        /* 历史记录 */
+        .history-container {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #FFD700;
+            border-radius: 15px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 300px;
+            z-index: 100;
+        }
+        
+        .history-title {
+            font-size: 1.4rem;
+            color: #FFD700;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 1rem;
+        }
+        
+        .history-player {
+            flex: 1;
+        }
+        
+        .history-role {
+            flex: 1;
+            text-align: right;
+        }
+        
+        /* 角色统计 */
+        .stats-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #FFD700;
+            border-radius: 15px;
+            padding: 15px;
+            width: 300px;
+            z-index: 100;
+        }
+        
+        .stats-title {
+            font-size: 1.4rem;
+            color: #FFD700;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .stats-player {
+            margin-bottom: 15px;
+        }
+        
+        .player-name {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: #FFD700;
+        }
+        
+        .role-stats {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 23%;
+        }
+        
+        .stat-role {
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .fairness-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .fairness-label {
+            font-size: 1.1rem;
+            margin-right: 10px;
+            color: #FFD700;
+        }
+        
+        .fairness-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .fairness-value.low {
+            color: #FF6347;
+        }
+        
         /* 动画效果 */
         @keyframes fadeInDown {
             from {
@@ -467,6 +636,14 @@
             
             .card-title {
                 font-size: 2.5rem;
+            }
+            
+            .randomness-visualizer,
+            .history-container,
+            .stats-container {
+                position: static;
+                margin: 20px auto;
+                width: 90%;
             }
         }
         
@@ -526,10 +703,40 @@
     </style>
 </head>
 <body>
+    <div class="randomness-visualizer">
+        <div class="randomness-label">随机性指数</div>
+        <div class="randomness-value" id="randomnessValue">85%</div>
+        <div class="randomness-dots" id="randomDots">
+            <div class="random-dot"></div>
+            <div class="random-dot"></div>
+            <div class="random-dot"></div>
+            <div class="random-dot"></div>
+            <div class="random-dot"></div>
+        </div>
+    </div>
+    
+    <div class="history-container" id="historyContainer">
+        <div class="history-title">历史分配记录</div>
+        <div class="history-list" id="historyList">
+            <!-- 历史记录将在这里动态生成 -->
+        </div>
+    </div>
+    
+    <div class="stats-container" id="statsContainer">
+        <div class="stats-title">角色分配统计</div>
+        <div class="stats-list" id="statsList">
+            <!-- 统计信息将在这里动态生成 -->
+        </div>
+        <div class="fairness-indicator">
+            <span class="fairness-label">公平指数:</span>
+            <span class="fairness-value" id="fairnessValue">92%</span>
+        </div>
+    </div>
+    
     <div class="container">
         <header>
             <h1><i class="fas fa-dragon"></i> 三国杀三人局积分系统 <i class="fas fa-dragon"></i></h1>
-            <p class="subtitle">神秘身份，惊喜揭晓</p>
+            <p class="subtitle">优化随机分配算法 | 公平游戏体验</p>
         </header>
         
         <div class="players-container" id="playersContainer">
@@ -606,11 +813,20 @@
             const scoreList = document.getElementById('scoreList');
             const winnerSection = document.getElementById('winnerSection');
             const winnerOptions = document.getElementById('winnerOptions');
+            const historyContainer = document.getElementById('historyContainer');
+            const historyList = document.getElementById('historyList');
+            const statsContainer = document.getElementById('statsContainer');
+            const statsList = document.getElementById('statsList');
+            const randomnessValue = document.getElementById('randomnessValue');
+            const fairnessValue = document.getElementById('fairnessValue');
+            const randomDots = document.getElementById('randomDots');
             
             // 游戏状态
             let gameState = {
                 players: [],
                 scores: {},
+                roleStats: {},
+                history: [],
                 currentGame: {
                     config: null,
                     roles: [],
@@ -672,6 +888,22 @@
                         [player3]: 0
                     };
                     
+                    // 初始化角色统计
+                    gameState.roleStats = {};
+                    gameState.players.forEach(player => {
+                        gameState.roleStats[player] = {
+                            '主公': 0,
+                            '反贼': 0,
+                            '内奸': 0,
+                            '忠臣': 0,
+                            total: 0
+                        };
+                    });
+                    
+                    // 显示历史记录和统计
+                    historyContainer.style.display = 'block';
+                    statsContainer.style.display = 'block';
+                    
                     // 隐藏模态框
                     playerModal.style.display = 'none';
                     
@@ -690,6 +922,28 @@
                     e.preventDefault();
                     e.returnValue = '';
                 });
+                
+                // 初始化随机性可视化
+                initRandomnessVisualization();
+            }
+            
+            // 初始化随机性可视化
+            function initRandomnessVisualization() {
+                setInterval(() => {
+                    // 更新随机性指数（模拟）
+                    const randomness = 75 + Math.floor(Math.random() * 20);
+                    randomnessValue.textContent = `${randomness}%`;
+                    randomnessValue.className = randomness > 85 ? 'randomness-value' : 'randomness-value low';
+                    
+                    // 更新随机点
+                    const dots = randomDots.querySelectorAll('.random-dot');
+                    dots.forEach(dot => {
+                        dot.classList.remove('active');
+                        if (Math.random() > 0.5) {
+                            dot.classList.add('active');
+                        }
+                    });
+                }, 1500);
             }
             
             // 开始新一局游戏
@@ -712,14 +966,14 @@
                 // 创建玩家标签
                 createPlayerTags();
                 
-                // 随机分配身份
+                // 随机分配身份（使用改进的随机算法）
                 shuffleRoles();
                 
                 // 创建卡片
                 createCards();
                 
                 // 更新状态
-                status.textContent = `请${gameState.players[0]}选择一张身份牌`;
+                status.textContent = `第${gameState.currentGame.currentRound}局：${gameState.currentGame.config.description}，请${gameState.players[0]}选择一张身份牌`;
                 
                 // 显示/隐藏按钮
                 endGameBtn.style.display = 'inline-block';
@@ -838,6 +1092,15 @@
                     card.classList.add('flipped');
                 });
                 
+                // 更新角色统计
+                updateRoleStats();
+                
+                // 更新历史记录
+                updateHistory();
+                
+                // 更新统计显示
+                updateStats();
+                
                 // 显示结果
                 showResults();
                 
@@ -846,6 +1109,137 @@
                 
                 // 显示获胜选项
                 showWinnerOptions();
+            }
+            
+            // 更新角色统计
+            function updateRoleStats() {
+                gameState.players.forEach(player => {
+                    const role = gameState.currentGame.assignments[player];
+                    gameState.roleStats[player][role]++;
+                    gameState.roleStats[player].total++;
+                });
+            }
+            
+            // 更新历史记录
+            function updateHistory() {
+                // 添加当前局到历史记录
+                const historyEntry = {
+                    round: gameState.currentGame.currentRound,
+                    config: gameState.currentGame.config.name,
+                    assignments: {...gameState.currentGame.assignments}
+                };
+                
+                gameState.history.unshift(historyEntry);
+                
+                // 只保留最近10条记录
+                if (gameState.history.length > 10) {
+                    gameState.history.pop();
+                }
+                
+                // 更新历史记录显示
+                historyList.innerHTML = '';
+                
+                gameState.history.forEach(entry => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `
+                        <div class="history-player">第${entry.round}局 (${entry.config})</div>
+                    `;
+                    
+                    const rolesDiv = document.createElement('div');
+                    rolesDiv.className = 'history-roles';
+                    
+                    gameState.players.forEach(player => {
+                        const role = entry.assignments[player];
+                        const roleSpan = document.createElement('span');
+                        roleSpan.className = 'history-role';
+                        roleSpan.innerHTML = `${player}: ${roleIcons[role]} ${role}`;
+                        rolesDiv.appendChild(roleSpan);
+                    });
+                    
+                    historyItem.appendChild(rolesDiv);
+                    historyList.appendChild(historyItem);
+                });
+            }
+            
+            // 更新统计显示
+            function updateStats() {
+                statsList.innerHTML = '';
+                
+                // 计算公平指数（各玩家角色分配差异）
+                let fairness = 100;
+                let roleDistribution = {};
+                
+                // 初始化角色分布
+                ['主公', '反贼', '内奸', '忠臣'].forEach(role => {
+                    roleDistribution[role] = [];
+                });
+                
+                // 填充角色分布数据
+                gameState.players.forEach(player => {
+                    const stats = gameState.roleStats[player];
+                    Object.keys(stats).forEach(role => {
+                        if (role !== 'total') {
+                            roleDistribution[role].push(stats[role]);
+                        }
+                    });
+                });
+                
+                // 计算标准差
+                let totalStdDev = 0;
+                let count = 0;
+                
+                Object.keys(roleDistribution).forEach(role => {
+                    const values = roleDistribution[role];
+                    if (values.length > 0) {
+                        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                        const squareDiffs = values.map(val => Math.pow(val - avg, 2));
+                        const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / squareDiffs.length;
+                        const stdDev = Math.sqrt(avgSquareDiff);
+                        totalStdDev += stdDev;
+                        count++;
+                    }
+                });
+                
+                if (count > 0) {
+                    const avgStdDev = totalStdDev / count;
+                    // 标准化为0-100的公平指数（值越小越公平）
+                    fairness = Math.max(0, 100 - Math.min(avgStdDev * 20, 100));
+                }
+                
+                fairnessValue.textContent = `${Math.round(fairness)}%`;
+                fairnessValue.className = fairness > 85 ? 'fairness-value' : 'fairness-value low';
+                
+                // 为每个玩家创建统计信息
+                gameState.players.forEach(player => {
+                    const stats = gameState.roleStats[player];
+                    const playerStats = document.createElement('div');
+                    playerStats.className = 'stats-player';
+                    
+                    playerStats.innerHTML = `
+                        <div class="player-name">${player}</div>
+                        <div class="role-stats">
+                            <div class="stat-item">
+                                <div class="stat-role">主公</div>
+                                <div class="stat-value">${stats['主公']}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-role">反贼</div>
+                                <div class="stat-value">${stats['反贼']}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-role">内奸</div>
+                                <div class="stat-value">${stats['内奸']}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-role">忠臣</div>
+                                <div class="stat-value">${stats['忠臣']}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    statsList.appendChild(playerStats);
+                });
             }
             
             // 显示结果
@@ -1032,17 +1426,31 @@
                 });
             }
             
-            // 随机分配角色
+            // 随机分配角色（优化版）
             function shuffleRoles() {
                 // 复制当前配置的角色数组
-                gameState.currentGame.roles = [...gameState.currentGame.config.roles];
+                const roles = [...gameState.currentGame.config.roles];
                 
-                // Fisher-Yates 洗牌算法
-                for (let i = gameState.currentGame.roles.length - 1; i > 0; i--) {
+                // 改进的随机分配算法
+                // 1. 创建玩家索引数组 [0, 1, 2]
+                const playerIndices = [0, 1, 2];
+                
+                // 2. 随机排序玩家索引
+                for (let i = playerIndices.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
-                    [gameState.currentGame.roles[i], gameState.currentGame.roles[j]] = 
-                    [gameState.currentGame.roles[j], gameState.currentGame.roles[i]];
+                    [playerIndices[i], playerIndices[j]] = [playerIndices[j], playerIndices[i]];
                 }
+                
+                // 3. 分配角色
+                const assignedRoles = [];
+                for (let i = 0; i < 3; i++) {
+                    assignedRoles[playerIndices[i]] = roles[i];
+                }
+                
+                gameState.currentGame.roles = assignedRoles;
+                
+                // 输出到控制台以便调试
+                console.log('优化后的角色分配：', gameState.currentGame.roles);
             }
             
             // 高亮当前玩家

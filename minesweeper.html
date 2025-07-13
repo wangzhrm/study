@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minesweeper Classic - Tablet Optimized</title>
+    <title>Minesweeper Classic - Fully Responsive</title>
     <style>
         * {
             margin: 0;
@@ -21,6 +21,7 @@
             justify-content: center;
             padding: 20px;
             color: #fff;
+            overflow-x: hidden;
         }
         
         .container {
@@ -31,6 +32,7 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             padding: 25px;
             overflow: hidden;
+            position: relative;
         }
         
         header {
@@ -63,6 +65,7 @@
             margin-bottom: 25px;
             box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
             transition: border-color 0.3s ease;
+            position: relative;
         }
         
         .game-container.clear-mode {
@@ -175,11 +178,12 @@
         
         .game-board {
             display: grid;
-            grid-template-columns: repeat(9, 1fr);
             gap: 2px;
             background: #3a3a52;
             border: 4px solid #3a3a52;
             border-radius: 4px;
+            max-width: 100%;
+            overflow: auto;
         }
         
         .cell {
@@ -194,6 +198,7 @@
             user-select: none;
             transition: all 0.2s ease;
             box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+            min-width: 30px;
         }
         
         .cell:hover {
@@ -338,9 +343,73 @@
             display: none;
         }
         
-        @media (max-width: 600px) {
+        /* Floating controls for small screens */
+        .floating-controls {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 30, 45, 0.95);
+            border-radius: 50px;
+            padding: 12px 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            border: 1px solid #4cc9f0;
+            gap: 15px;
+        }
+        
+        .floating-mines-count {
+            background: #0d0d15;
+            color: #f72585;
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            padding: 5px 15px;
+            min-width: 70px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
+        }
+        
+        .floating-mode-btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            min-width: 100px;
+        }
+        
+        .floating-clear-btn {
+            background: #52b788;
+            color: #0d0d15;
+        }
+        
+        .floating-flag-btn {
+            background: #f72585;
+            color: white;
+        }
+        
+        .floating-mode-btn.active {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 800px) {
             .container {
                 padding: 15px;
+                max-width: 95%;
             }
             
             h1 {
@@ -354,7 +423,7 @@
             
             .difficulty-btn {
                 width: 100%;
-                max-width: 250px;
+                max-width: 300px;
             }
             
             .control-panel {
@@ -371,6 +440,129 @@
             
             .mobile-note {
                 display: block;
+            }
+            
+            .instructions {
+                font-size: 0.9rem;
+            }
+            
+            .cell {
+                font-size: 1.2rem;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .control-panel {
+                padding: 10px;
+            }
+            
+            .mines-count, .timer {
+                width: 55px;
+                height: 45px;
+                font-size: 1.7rem;
+            }
+            
+            .reset-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 2rem;
+            }
+            
+            .mode-btn {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .cell {
+                font-size: 1rem;
+                min-width: 25px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.6rem;
+            }
+            
+            .mine-icon {
+                font-size: 1.8rem;
+            }
+            
+            .game-container {
+                padding: 15px;
+            }
+            
+            .mines-count, .timer {
+                width: 45px;
+                height: 35px;
+                font-size: 1.5rem;
+            }
+            
+            .reset-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1.6rem;
+            }
+            
+            .mode-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+            
+            .difficulty-btn {
+                padding: 10px 15px;
+                min-width: auto;
+                font-size: 0.9rem;
+            }
+            
+            .instructions {
+                padding: 15px;
+            }
+            
+            /* Show floating controls on small screens */
+            .floating-controls {
+                display: flex;
+                align-items: center;
+            }
+            
+            /* Hide mode controls in control panel on small screens */
+            .mode-controls {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 380px) {
+            h1 {
+                font-size: 1.4rem;
+            }
+            
+            .mine-icon {
+                font-size: 1.5rem;
+            }
+            
+            .floating-controls {
+                padding: 10px 15px;
+                gap: 10px;
+            }
+            
+            .floating-mines-count {
+                font-size: 1.3rem;
+                padding: 5px 10px;
+                min-width: 60px;
+            }
+            
+            .floating-mode-btn {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+                min-width: 80px;
             }
         }
         
@@ -402,7 +594,7 @@
                 <h1>Classic Minesweeper</h1>
                 <div class="mine-icon">🚩</div>
             </div>
-            <div class="subtitle">Tablet Optimized Edition</div>
+            <div class="subtitle">Fully Responsive Edition</div>
         </header>
         
         <div class="mode-indicator">
@@ -450,8 +642,19 @@
                 <li>Numbers indicate how many mines are in the 8 surrounding cells</li>
                 <li>Reveal all non-mine cells to win the game</li>
             </ul>
-            <p class="mobile-note">Tip: Use "Clear" and "Flag" buttons to switch modes on tablets!</p>
+            <p class="mobile-note">Tip: Use floating controls at the bottom to switch modes and see mine count!</p>
         </div>
+    </div>
+
+    <!-- Floating controls for small screens -->
+    <div class="floating-controls">
+        <div class="floating-mines-count" id="floating-mines-count">010</div>
+        <button class="floating-mode-btn floating-clear-btn active" id="floating-clear-btn">
+            <span>Clear</span>
+        </button>
+        <button class="floating-mode-btn floating-flag-btn" id="floating-flag-btn">
+            <span>🚩 Flag</span>
+        </button>
     </div>
 
     <script>
@@ -481,11 +684,14 @@
         const gameBoard = document.getElementById('game-board');
         const resetBtn = document.getElementById('reset-btn');
         const minesCountDisplay = document.getElementById('mines-count');
+        const floatingMinesCount = document.getElementById('floating-mines-count');
         const timerDisplay = document.getElementById('timer');
         const gameStatus = document.getElementById('game-status');
         const difficultyBtns = document.querySelectorAll('.difficulty-btn');
         const clearBtn = document.getElementById('clear-btn');
         const flagBtn = document.getElementById('flag-btn');
+        const floatingClearBtn = document.getElementById('floating-clear-btn');
+        const floatingFlagBtn = document.getElementById('floating-flag-btn');
         const gameContainer = document.getElementById('game-container');
         
         // Initialize game
@@ -513,6 +719,7 @@
             
             // Update mines count display
             minesCountDisplay.textContent = gameState.minesCount.toString().padStart(3, '0');
+            floatingMinesCount.textContent = gameState.minesCount.toString().padStart(3, '0');
             
             // Generate game board
             generateBoard();
@@ -527,10 +734,14 @@
                 gameContainer.classList.add('clear-mode');
                 clearBtn.classList.add('active');
                 flagBtn.classList.remove('active');
+                floatingClearBtn.classList.add('active');
+                floatingFlagBtn.classList.remove('active');
             } else {
                 gameContainer.classList.add('flag-mode');
                 flagBtn.classList.add('active');
                 clearBtn.classList.remove('active');
+                floatingFlagBtn.classList.add('active');
+                floatingClearBtn.classList.remove('active');
             }
         }
         
@@ -658,6 +869,7 @@
             
             // Update mines count display
             minesCountDisplay.textContent = gameState.minesCount.toString().padStart(3, '0');
+            floatingMinesCount.textContent = gameState.minesCount.toString().padStart(3, '0');
         }
         
         // Handle double click
@@ -807,6 +1019,17 @@
         });
         
         flagBtn.addEventListener('click', () => {
+            gameState.currentMode = 'flag';
+            updateModeUI();
+        });
+        
+        // Floating mode toggle buttons
+        floatingClearBtn.addEventListener('click', () => {
+            gameState.currentMode = 'clear';
+            updateModeUI();
+        });
+        
+        floatingFlagBtn.addEventListener('click', () => {
             gameState.currentMode = 'flag';
             updateModeUI();
         });

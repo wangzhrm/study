@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minesweeper Classic - Fully Responsive</title>
+    <title>微软经典扫雷 - 平板优化版</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Microsoft Sans Serif', Arial, sans-serif;
         }
         
         body {
@@ -21,7 +21,6 @@
             justify-content: center;
             padding: 20px;
             color: #fff;
-            overflow-x: hidden;
         }
         
         .container {
@@ -30,9 +29,8 @@
             background: rgba(25, 25, 35, 0.9);
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            padding: 25px;
+            padding: 20px;
             overflow: hidden;
-            position: relative;
         }
         
         header {
@@ -48,7 +46,6 @@
             text-shadow: 0 0 10px rgba(76, 201, 240, 0.7);
             letter-spacing: 2px;
             margin-bottom: 10px;
-            font-weight: 700;
         }
         
         .subtitle {
@@ -65,7 +62,6 @@
             margin-bottom: 25px;
             box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
             transition: border-color 0.3s ease;
-            position: relative;
         }
         
         .game-container.clear-mode {
@@ -178,12 +174,11 @@
         
         .game-board {
             display: grid;
+            grid-template-columns: repeat(9, 1fr);
             gap: 2px;
             background: #3a3a52;
             border: 4px solid #3a3a52;
             border-radius: 4px;
-            max-width: 100%;
-            overflow: auto;
         }
         
         .cell {
@@ -198,7 +193,6 @@
             user-select: none;
             transition: all 0.2s ease;
             box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
-            min-width: 30px;
         }
         
         .cell:hover {
@@ -276,7 +270,6 @@
         .instructions h3 {
             color: #4cc9f0;
             margin-bottom: 10px;
-            font-size: 1.3rem;
         }
         
         .instructions ul {
@@ -343,73 +336,9 @@
             display: none;
         }
         
-        /* Floating controls for small screens */
-        .floating-controls {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(30, 30, 45, 0.95);
-            border-radius: 50px;
-            padding: 12px 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            z-index: 100;
-            backdrop-filter: blur(5px);
-            border: 1px solid #4cc9f0;
-            gap: 15px;
-        }
-        
-        .floating-mines-count {
-            background: #0d0d15;
-            color: #f72585;
-            font-size: 1.5rem;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            padding: 5px 15px;
-            min-width: 70px;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
-        }
-        
-        .floating-mode-btn {
-            padding: 10px 20px;
-            border-radius: 6px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-            min-width: 100px;
-        }
-        
-        .floating-clear-btn {
-            background: #52b788;
-            color: #0d0d15;
-        }
-        
-        .floating-flag-btn {
-            background: #f72585;
-            color: white;
-        }
-        
-        .floating-mode-btn.active {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4);
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 800px) {
+        @media (max-width: 600px) {
             .container {
                 padding: 15px;
-                max-width: 95%;
             }
             
             h1 {
@@ -423,7 +352,7 @@
             
             .difficulty-btn {
                 width: 100%;
-                max-width: 300px;
+                max-width: 250px;
             }
             
             .control-panel {
@@ -441,184 +370,38 @@
             .mobile-note {
                 display: block;
             }
-            
-            .instructions {
-                font-size: 0.9rem;
-            }
-            
-            .cell {
-                font-size: 1.2rem;
-            }
-        }
-        
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 1.8rem;
-            }
-            
-            .subtitle {
-                font-size: 0.9rem;
-            }
-            
-            .control-panel {
-                padding: 10px;
-            }
-            
-            .mines-count, .timer {
-                width: 55px;
-                height: 45px;
-                font-size: 1.7rem;
-            }
-            
-            .reset-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 2rem;
-            }
-            
-            .mode-btn {
-                padding: 8px 15px;
-                font-size: 0.9rem;
-            }
-            
-            .cell {
-                font-size: 1rem;
-                min-width: 25px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 1.6rem;
-            }
-            
-            .mine-icon {
-                font-size: 1.8rem;
-            }
-            
-            .game-container {
-                padding: 15px;
-            }
-            
-            .mines-count, .timer {
-                width: 45px;
-                height: 35px;
-                font-size: 1.5rem;
-            }
-            
-            .reset-btn {
-                width: 40px;
-                height: 40px;
-                font-size: 1.6rem;
-            }
-            
-            .mode-btn {
-                padding: 6px 12px;
-                font-size: 0.8rem;
-            }
-            
-            .difficulty-btn {
-                padding: 10px 15px;
-                min-width: auto;
-                font-size: 0.9rem;
-            }
-            
-            .instructions {
-                padding: 15px;
-            }
-            
-            /* Show floating controls on small screens */
-            .floating-controls {
-                display: flex;
-                align-items: center;
-            }
-            
-            /* Hide mode controls in control panel on small screens */
-            .mode-controls {
-                display: none;
-            }
-        }
-        
-        @media (max-width: 380px) {
-            h1 {
-                font-size: 1.4rem;
-            }
-            
-            .mine-icon {
-                font-size: 1.5rem;
-            }
-            
-            .floating-controls {
-                padding: 10px 15px;
-                gap: 10px;
-            }
-            
-            .floating-mines-count {
-                font-size: 1.3rem;
-                padding: 5px 10px;
-                min-width: 60px;
-            }
-            
-            .floating-mode-btn {
-                padding: 8px 12px;
-                font-size: 0.85rem;
-                min-width: 80px;
-            }
-        }
-        
-        .game-title {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 10px;
-        }
-        
-        .mine-icon {
-            font-size: 2.5rem;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <div class="game-title">
-                <div class="mine-icon">💣</div>
-                <h1>Classic Minesweeper</h1>
-                <div class="mine-icon">🚩</div>
-            </div>
-            <div class="subtitle">Fully Responsive Edition</div>
+            <h1>微软经典扫雷</h1>
+            <div class="subtitle">平板优化版 - 支持标记功能</div>
         </header>
         
         <div class="mode-indicator">
             <div class="indicator">
                 <div class="indicator-dot clear-dot"></div>
-                <span>Clear Mode</span>
+                <span>清除模式</span>
             </div>
             <div class="indicator">
                 <div class="indicator-dot flag-dot"></div>
-                <span>Flag Mode</span>
+                <span>标记模式</span>
             </div>
         </div>
         
         <div class="game-container" id="game-container">
             <div class="control-panel">
-                <div class="mines-count" id="mines-count">010</div>
+                <div class="mines-count">010</div>
                 <button class="reset-btn" id="reset-btn">😊</button>
-                <div class="timer" id="timer">000</div>
+                <div class="timer">000</div>
                 <div class="mode-controls">
                     <button class="mode-btn clear-btn active" id="clear-btn">
-                        <span>Clear</span>
+                        <span>清除</span>
                     </button>
                     <button class="mode-btn flag-btn" id="flag-btn">
-                        <span>🚩 Flag</span>
+                        <span>🚩 标记</span>
                     </button>
                 </div>
             </div>
@@ -628,44 +411,33 @@
         </div>
         
         <div class="difficulty">
-            <button class="difficulty-btn active" data-difficulty="beginner">Beginner (9×9)</button>
-            <button class="difficulty-btn" data-difficulty="intermediate">Intermediate (16×16)</button>
-            <button class="difficulty-btn" data-difficulty="expert">Expert (16×30)</button>
+            <button class="difficulty-btn active" data-difficulty="beginner">初级 (9×9)</button>
+            <button class="difficulty-btn" data-difficulty="intermediate">中级 (16×16)</button>
+            <button class="difficulty-btn" data-difficulty="expert">高级 (16×30)</button>
         </div>
         
         <div class="instructions">
-            <h3>Game Instructions</h3>
+            <h3>游戏说明</h3>
             <ul>
-                <li><span class="highlight">Clear Mode (Green border)</span>: Click to reveal a cell</li>
-                <li><span class="highlight">Flag Mode (Red border)</span>: Click to place/remove a flag</li>
-                <li><span class="highlight">Double-click on a revealed cell</span>: If correct flags are placed around, reveal surrounding cells</li>
-                <li>Numbers indicate how many mines are in the 8 surrounding cells</li>
-                <li>Reveal all non-mine cells to win the game</li>
+                <li><span class="highlight">清除模式（绿色边框）</span>：点击翻开格子</li>
+                <li><span class="highlight">标记模式（红色边框）</span>：点击放置/移除旗帜标记</li>
+                <li><span class="highlight">双击已翻开的格子</span>：如果周围旗帜数正确，自动翻开周围格子</li>
+                <li>数字表示周围8格中的地雷数量</li>
+                <li>将所有非地雷格子翻开即可获胜</li>
             </ul>
-            <p class="mobile-note">Tip: Use floating controls at the bottom to switch modes and see mine count!</p>
+            <p class="mobile-note">提示：在平板设备上使用"清除"和"标记"按钮切换操作模式！</p>
         </div>
     </div>
 
-    <!-- Floating controls for small screens -->
-    <div class="floating-controls">
-        <div class="floating-mines-count" id="floating-mines-count">010</div>
-        <button class="floating-mode-btn floating-clear-btn active" id="floating-clear-btn">
-            <span>Clear</span>
-        </button>
-        <button class="floating-mode-btn floating-flag-btn" id="floating-flag-btn">
-            <span>🚩 Flag</span>
-        </button>
-    </div>
-
     <script>
-        // Game configuration
+        // 游戏配置
         const difficulties = {
             beginner: { rows: 9, cols: 9, mines: 10 },
             intermediate: { rows: 16, cols: 16, mines: 40 },
             expert: { rows: 16, cols: 30, mines: 99 }
         };
         
-        // Game state
+        // 游戏状态
         let gameState = {
             difficulty: 'beginner',
             board: [],
@@ -677,24 +449,21 @@
             minesCount: 0,
             startTime: null,
             timer: null,
-            currentMode: 'clear' // 'clear' or 'flag'
+            currentMode: 'clear' // 'clear' 或 'flag'
         };
         
-        // DOM elements
+        // DOM 元素
         const gameBoard = document.getElementById('game-board');
         const resetBtn = document.getElementById('reset-btn');
-        const minesCountDisplay = document.getElementById('mines-count');
-        const floatingMinesCount = document.getElementById('floating-mines-count');
-        const timerDisplay = document.getElementById('timer');
+        const minesCountDisplay = document.querySelector('.mines-count');
+        const timerDisplay = document.querySelector('.timer');
         const gameStatus = document.getElementById('game-status');
         const difficultyBtns = document.querySelectorAll('.difficulty-btn');
         const clearBtn = document.getElementById('clear-btn');
         const flagBtn = document.getElementById('flag-btn');
-        const floatingClearBtn = document.getElementById('floating-clear-btn');
-        const floatingFlagBtn = document.getElementById('floating-flag-btn');
         const gameContainer = document.getElementById('game-container');
         
-        // Initialize game
+        // 初始化游戏
         function initGame(difficulty) {
             gameState.difficulty = difficulty;
             gameState.minesCount = difficulties[difficulty].mines;
@@ -707,26 +476,25 @@
             gameState.currentMode = 'clear';
             gameStatus.textContent = '';
             
-            // Update UI state
+            // 更新UI状态
             updateModeUI();
             
-            // Reset timer
+            // 重置计时器
             if (gameState.timer) {
                 clearInterval(gameState.timer);
                 gameState.timer = null;
             }
             timerDisplay.textContent = '000';
             
-            // Update mines count display
+            // 更新剩余雷数显示
             minesCountDisplay.textContent = gameState.minesCount.toString().padStart(3, '0');
-            floatingMinesCount.textContent = gameState.minesCount.toString().padStart(3, '0');
             
-            // Generate game board
+            // 生成游戏板
             generateBoard();
             resetBtn.textContent = '😊';
         }
         
-        // Update mode UI
+        // 更新模式UI
         function updateModeUI() {
             gameContainer.classList.remove('clear-mode', 'flag-mode');
             
@@ -734,33 +502,29 @@
                 gameContainer.classList.add('clear-mode');
                 clearBtn.classList.add('active');
                 flagBtn.classList.remove('active');
-                floatingClearBtn.classList.add('active');
-                floatingFlagBtn.classList.remove('active');
             } else {
                 gameContainer.classList.add('flag-mode');
                 flagBtn.classList.add('active');
                 clearBtn.classList.remove('active');
-                floatingFlagBtn.classList.add('active');
-                floatingClearBtn.classList.remove('active');
             }
         }
         
-        // Generate game board
+        // 生成游戏板
         function generateBoard() {
             const { rows, cols } = difficulties[gameState.difficulty];
             
-            // Clear game board
+            // 清空游戏板
             gameBoard.innerHTML = '';
             gameBoard.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
             
-            // Initialize state arrays
+            // 初始化状态数组
             for (let i = 0; i < rows; i++) {
                 gameState.board[i] = Array(cols).fill(0);
                 gameState.revealed[i] = Array(cols).fill(false);
                 gameState.flags[i] = Array(cols).fill(false);
             }
             
-            // Create cells
+            // 创建格子
             for (let i = 0; i < rows; i++) {
                 for (let j = 0; j < cols; j++) {
                     const cell = document.createElement('div');
@@ -768,7 +532,7 @@
                     cell.dataset.row = i;
                     cell.dataset.col = j;
                     
-                    // Add event listeners
+                    // 添加事件监听器
                     cell.addEventListener('click', () => handleCellClick(i, j));
                     cell.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
@@ -781,7 +545,7 @@
             }
         }
         
-        // Handle cell click (tablet mode)
+        // 处理格子点击（平板模式）
         function handleCellClick(row, col) {
             if (gameState.currentMode === 'clear') {
                 handleLeftClick(row, col);
@@ -790,7 +554,7 @@
             }
         }
         
-        // Place mines (after first click)
+        // 放置地雷（在第一次点击后）
         function placeMines(firstRow, firstCol) {
             const { rows, cols, mines } = difficulties[gameState.difficulty];
             let minesPlaced = 0;
@@ -799,7 +563,7 @@
                 const row = Math.floor(Math.random() * rows);
                 const col = Math.floor(Math.random() * cols);
                 
-                // Ensure first click cell is not a mine and no mines in surrounding cells
+                // 确保第一个点击的格子不是地雷，并且周围也没有地雷
                 if ((row === firstRow && col === firstCol) || 
                     Math.abs(row - firstRow) <= 1 && Math.abs(col - firstCol) <= 1) {
                     continue;
@@ -809,7 +573,7 @@
                     gameState.mines.push(`${row},${col}`);
                     minesPlaced++;
                     
-                    // Update numbers in surrounding cells
+                    // 更新周围格子的数字
                     for (let i = Math.max(0, row - 1); i <= Math.min(rows - 1, row + 1); i++) {
                         for (let j = Math.max(0, col - 1); j <= Math.min(cols - 1, col + 1); j++) {
                             gameState.board[i][j]++;
@@ -819,44 +583,44 @@
             }
         }
         
-        // Handle left click
+        // 处理左键点击
         function handleLeftClick(row, col) {
-            // If game over or cell revealed or flagged, ignore
+            // 如果游戏结束或格子已翻开或已标记，则忽略
             if (gameState.gameOver || gameState.gameWon || 
                 gameState.revealed[row][col] || gameState.flags[row][col]) {
                 return;
             }
             
-            // If first click, place mines and start timer
+            // 如果是第一次点击，放置地雷并开始计时
             if (gameState.mines.length === 0) {
                 placeMines(row, col);
                 startTimer();
             }
             
-            // Check if mine is hit
+            // 检查是否踩到地雷
             if (gameState.mines.includes(`${row},${col}`)) {
                 gameOver(false);
                 revealCell(row, col, true);
                 return;
             }
             
-            // Reveal cell
+            // 翻开格子
             revealCell(row, col);
             
-            // Check win condition
+            // 检查是否获胜
             checkWin();
         }
         
-        // Handle right click
+        // 处理右键点击
         function handleRightClick(row, col) {
-            // If game over or cell revealed, ignore
+            // 如果游戏结束或格子已翻开，则忽略
             if (gameState.gameOver || gameState.gameWon || gameState.revealed[row][col]) {
                 return;
             }
             
             const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
             
-            // Toggle flag state
+            // 切换标记状态
             gameState.flags[row][col] = !gameState.flags[row][col];
             
             if (gameState.flags[row][col]) {
@@ -867,12 +631,11 @@
                 gameState.minesCount++;
             }
             
-            // Update mines count display
+            // 更新剩余雷数显示
             minesCountDisplay.textContent = gameState.minesCount.toString().padStart(3, '0');
-            floatingMinesCount.textContent = gameState.minesCount.toString().padStart(3, '0');
         }
         
-        // Handle double click
+        // 处理双击
         function handleDoubleClick(row, col) {
             if (!gameState.revealed[row][col] || gameState.gameOver || gameState.gameWon) {
                 return;
@@ -884,14 +647,14 @@
             let flagCount = 0;
             const { rows, cols } = difficulties[gameState.difficulty];
             
-            // Count flags around
+            // 计算周围旗帜数量
             for (let i = Math.max(0, row - 1); i <= Math.min(rows - 1, row + 1); i++) {
                 for (let j = Math.max(0, col - 1); j <= Math.min(cols - 1, col + 1); j++) {
                     if (gameState.flags[i][j]) flagCount++;
                 }
             }
             
-            // If correct flags, reveal surrounding cells
+            // 如果旗帜数量等于格子数字，翻开周围格子
             if (flagCount === cellValue) {
                 for (let i = Math.max(0, row - 1); i <= Math.min(rows - 1, row + 1); i++) {
                     for (let j = Math.max(0, col - 1); j <= Math.min(cols - 1, col + 1); j++) {
@@ -903,7 +666,7 @@
             }
         }
         
-        // Reveal cell
+        // 翻开格子
         function revealCell(row, col, isMine = false) {
             if (gameState.revealed[row][col]) return;
             
@@ -921,7 +684,7 @@
                 cell.textContent = cellValue;
                 cell.classList.add(`cell-${cellValue}`);
             } else {
-                // If empty cell, recursively reveal surrounding cells
+                // 如果是空白格子，递归翻开周围格子
                 const { rows, cols } = difficulties[gameState.difficulty];
                 for (let i = Math.max(0, row - 1); i <= Math.min(rows - 1, row + 1); i++) {
                     for (let j = Math.max(0, col - 1); j <= Math.min(cols - 1, col + 1); j++) {
@@ -933,7 +696,7 @@
             }
         }
         
-        // Start timer
+        // 开始计时
         function startTimer() {
             gameState.startTime = Date.now();
             gameState.timer = setInterval(() => {
@@ -942,7 +705,7 @@
             }, 1000);
         }
         
-        // Game over
+        // 游戏结束
         function gameOver(isWin) {
             gameState.gameOver = true;
             
@@ -953,16 +716,16 @@
             if (isWin) {
                 gameState.gameWon = true;
                 resetBtn.textContent = '😎';
-                gameStatus.textContent = 'Congratulations! You won!';
+                gameStatus.textContent = '恭喜！你赢了！';
                 revealAllMines(true);
             } else {
                 resetBtn.textContent = '😵';
-                gameStatus.textContent = 'Game Over! You hit a mine!';
+                gameStatus.textContent = '很遗憾，你踩到地雷了！';
                 revealAllMines(false);
             }
         }
         
-        // Reveal all mines
+        // 显示所有地雷
         function revealAllMines(isWin) {
             const { rows, cols } = difficulties[gameState.difficulty];
             
@@ -981,7 +744,7 @@
             }
         }
         
-        // Check win condition
+        // 检查是否获胜
         function checkWin() {
             const { rows, cols, mines } = difficulties[gameState.difficulty];
             let revealedCount = 0;
@@ -999,7 +762,7 @@
             }
         }
         
-        // Event listeners
+        // 事件监听器
         resetBtn.addEventListener('click', () => {
             initGame(gameState.difficulty);
         });
@@ -1012,7 +775,7 @@
             });
         });
         
-        // Mode toggle buttons
+        // 模式切换按钮
         clearBtn.addEventListener('click', () => {
             gameState.currentMode = 'clear';
             updateModeUI();
@@ -1023,18 +786,7 @@
             updateModeUI();
         });
         
-        // Floating mode toggle buttons
-        floatingClearBtn.addEventListener('click', () => {
-            gameState.currentMode = 'clear';
-            updateModeUI();
-        });
-        
-        floatingFlagBtn.addEventListener('click', () => {
-            gameState.currentMode = 'flag';
-            updateModeUI();
-        });
-        
-        // Initialize game
+        // 初始化游戏
         initGame('beginner');
     </script>
 </body>

@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catan</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    :root {
+      --primary: #3498db;
+      --secondary: #2ecc71;
+      --danger: #e74c3c;
+      --warning: #f39c12;
+      --dark: #2c3e50;
+      --light: #ecf0f1;
+      --robber-color: #333;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 25px;
+      padding: 40px 20px;
+      background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                 url('https://tonysew.wordpress.com/wp-content/uploads/2025/07/1752591432600-2.png');
+      background-size: cover;
+      background-position: center;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .header-content {
+      z-index: 2;
+      position: relative;
+    }
+    
+    h1 {
+      font-size: 3.5rem;
+      margin: 0;
+      background: linear-gradient(to right, #ff9966, #ff5e62);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      font-size: 1.5rem;
+      opacity: 0.9;
+      margin-top: 12px;
+      color: #fff;
+      font-weight: 300;
+    }
+    
+    .game-layout {
+      display: flex;
+      flex-direction: row;
+      gap: 25px;
+      margin-bottom: 30px;
+      position: relative;
+    }
+    
+    .map-container {
+      flex: 3;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      min-height: 800px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    
+    .control-panel {
+      flex: 1;
+      min-width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+    
+    .player-box {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      z-index: 10;
+    }
+    
+    .player-title {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: var(--dark);
+      font-size: 1.5rem;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--primary);
+    }
+    
+    .player-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    
+    .player-button {
+      padding: 12px 18px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      color: white;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      font-size: 1rem;
+      position: relative;
+      overflow: hidden;
+      min-width: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .player-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+    
+    .player-button.active {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(52, 152, 219, 0.7);
+    }
+    
+    .player-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      transition: 0.5s;
+    }
+    
+    .player-button:hover::before {
+      left: 100%;
+    }
+    
+    .remove-button {
+      background: #95a5a6;
+      padding: 12px 18px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      color: white;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      font-size: 1rem;
+      min-width: 100%;
+      margin-top: 15px;
+    }
+    
+    .remove-button:hover {
+      background: #7f8c8d;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+    
+    .remove-button.active {
+      background: var(--danger);
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(231, 76, 60, 0.7);
+    }
+    
+    svg {
+      display: block;
+      margin: 0 auto;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      width: 100%;
+      height: 800px;
+      user-select: none;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .label {
+      font-size: 22px;
+      font-weight: bold;
+      fill: var(--dark);
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+      user-select: none;
+    }
+    
+    .tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 8px 15px;
+      border-radius: 6px;
+      font-size: 14px;
+      pointer-events: none;
+      z-index: 100;
+      transform: translate(-50%, -130%);
+      white-space: nowrap;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .resource-icon {
+      pointer-events: none;
+      user-select: none;
+    }
+    
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 20px;
+      color: rgba(255,255,255,0.8);
+      font-size: 1rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+    }
+    
+    /* 骰子容器 */
+    .dice-container {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .dice-row {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 10px;
+    }
+    
+    .dice {
+      width: 60px;
+      height: 60px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--dark);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .dice::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+    }
+    
+    .dice-btn {
+      padding: 12px 30px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .dice-btn:hover {
+      background: #2980b9;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 15px rgba(52, 152, 219, 0.5);
+    }
+    
+    .dice-btn:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    /* 模态框 */
+    .modal {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .modal-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+    }
+    
+    .modal-title {
+      font-size: 2rem;
+      margin-bottom: 25px;
+      color: var(--dark);
+    }
+    
+    .player-count {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .count-btn {
+      width: 70px;
+      height: 70px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.8rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 6px 12px rgba(52, 152, 219, 0.3);
+    }
+    
+    .count-btn:hover {
+      background: #2980b9;
+      transform: scale(1.1);
+      box-shadow: 0 8px 15px rgba(52, 152, 219, 0.5);
+    }
+    
+    .player-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      margin-bottom: 30px;
+    }
+    
+    .player-input {
+      padding: 14px 18px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      transition: all 0.3s;
+    }
+    
+    .player-input:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+    
+    .modal-btn {
+      padding: 14px 35px;
+      background: var(--secondary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 8px rgba(46, 204, 113, 0.3);
+    }
+    
+    .modal-btn:hover {
+      background: #27ae60;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(46, 204, 113, 0.4);
+    }
+    
+    .modal-btn.cancel {
+      background: var(--danger);
+    }
+    
+    .modal-btn.cancel:hover {
+      background: #c0392b;
+      box-shadow: 0 6px 12px rgba(231, 76, 60, 0.4);
+    }
+    
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    
+    /* 新增标注样式 */
+    .annotation {
+      font-size: 12px;
+      font-weight: bold;
+      fill: #ff6b6b;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+      user-select: none;
+    }
+    
+    .annotation-line {
+      stroke: #ff6b6b;
+      stroke-width: 2;
+      stroke-dasharray: 4, 3;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+    
+    /* 道路、村庄、城市增强样式 */
+    .road {
+      stroke-width: 6;
+      stroke-linecap: round;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+    
+    .village {
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+      animation: glow 2s infinite alternate;
+    }
+    
+    .city {
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+      animation: glow 1.5s infinite alternate;
+    }
+    
+    /* 强盗图标样式 */
+    .robber {
+      opacity: 0.5;
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 20;
+    }
+    
+    .robber.active {
+      opacity: 0.8;
+      filter: drop-shadow(0 0 8px rgba(255, 0, 0, 0.7));
+    }
+    
+    /* 沙漠图标样式 */
+    .desert {
+      opacity: 0.9;
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 10;
+    }
+    
+    .desert:hover {
+      opacity: 1;
+    }
+    
+    /* 闪光动画 */
+    @keyframes glow {
+      0% {
+        filter: drop-shadow(0 0 2px gold);
+      }
+      100% {
+        filter: drop-shadow(0 0 10px gold) drop-shadow(0 0 15px rgba(255, 215, 0, 0.7));
+      }
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 1200px) {
+      .game-layout {
+        flex-direction: column;
+      }
+      
+      .control-panel {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      
+      .dice-container, .player-box {
+        flex: 1;
+        min-width: 300px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      
+      header {
+        padding: 25px 15px;
+      }
+      
+      h1 {
+        font-size: 2.5rem;
+      }
+      
+      .subtitle {
+        font-size: 1.2rem;
+      }
+      
+      .dice {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+      }
+      
+      .player-button {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+      }
+      
+      .map-container {
+        min-height: 600px;
+      }
+      
+      svg {
+        height: 600px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .subtitle {
+        font-size: 1rem;
+      }
+      
+      .player-count {
+        gap: 10px;
+      }
+      
+      .count-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 1.5rem;
+      }
+      
+      .player-input {
+        padding: 10px 15px;
+        font-size: 1rem;
+      }
+      
+      .modal-btn {
+        padding: 12px 25px;
+        font-size: 1rem;
+      }
+      
+      .dice-container, .player-box {
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-content">
+      <h1>Catan</h1>
+      <p class="subtitle">建造村庄、铺设道路、收集资源</p>
+    </div>
+  </header>
+  
+  <div class="game-layout">
+    <div class="map-container">
+      <svg id="hexmap"></svg>
+    </div>
+    
+    <div class="control-panel">
+      <div class="dice-container">
+        <h3 class="player-title">骰子</h3>
+        <div class="dice-row">
+          <div class="dice" id="dice1">?</div>
+          <div class="dice" id="dice2">?</div>
+        </div>
+        <button class="dice-btn" id="rollDice">掷骰子</button>
+      </div>
+      
+      <div class="player-box" id="playerBox">
+        <h3 class="player-title">玩家选择</h3>
+        <div class="player-buttons">
+          <!-- 玩家按钮将动态生成 -->
+        </div>
+        <button class="remove-button" id="removeBtn">移除模式</button>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    <p>Catan © 2025 | 卡坦岛策略棋盘游戏</p>
+  </footer>
+</div>
+
+<!-- 玩家选择模态框 -->
+<div class="modal" id="playerModal">
+  <div class="modal-content">
+    <h2 class="modal-title">设置玩家</h2>
+    
+    <div id="countSelection">
+      <p>请选择玩家数量：</p>
+      <div class="player-count">
+        <button class="count-btn" data-count="2">2</button>
+        <button class="count-btn" data-count="3">3</button>
+        <button class="count-btn" data-count="4">4</button>
+      </div>
+    </div>
+    
+    <div class="player-inputs" id="playerInputs">
+      <!-- 玩家输入框将动态生成 -->
+    </div>
+    
+    <div class="btn-group">
+      <button class="modal-btn" id="startGame">开始游戏</button>
+      <button class="modal-btn cancel" id="cancelBtn">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 全局变量
+const svg = document.getElementById("hexmap");
+const playerBox = document.querySelector(".player-buttons");
+const tooltip = document.createElement('div');
+tooltip.className = 'tooltip';
+tooltip.style.display = 'none';
+document.body.appendChild(tooltip);
+
+const hexRadius = 65; // 增加六边形半径
+const hexWidth = Math.sqrt(3) * hexRadius;
+const vertDist = 1.5 * hexRadius;
+
+const hexes = [
+  // 第一行
+  { id: 4,  q: 0,  r: 0, resource: 'wheat' }, 
+  { id: 6,  q: 1,  r: 0, resource: 'forest' }, 
+  { id: 9,  q: 2,  r: 0, resource: 'wheat' },
+  
+  // 第二行
+  { id: 2,  q: -1, r: 1, resource: 'brick' }, 
+  { id: 5,  q: 0,  r: 1, resource: 'forest' }, 
+  { id: 12, q: 1,  r: 1, resource: 'sheep' }, 
+  { id: 4,  q: 2,  r: 1, resource: 'sheep' },
+  
+  // 第三行
+  { id: 9,  q: -2, r: 2, resource: 'sheep' }, 
+  { id: 8,  q: -1, r: 2, resource: 'brick' }, 
+  { id: 8,  q: 1,  r: 2, resource: 'mineral' }, 
+  { id: 10, q: 2,  r: 2, resource: 'sheep' },
+  
+  // 第四行
+  { id: 3,  q: -2, r: 3, resource: 'forest' }, 
+  { id: 5,  q: -1, r: 3, resource: 'mineral' }, 
+  { id: 10, q: 0,  r: 3, resource: 'brick' }, 
+  { id: 11, q: 1,  r: 3, resource: 'forest' },
+  
+  // 第五行
+  { id: 3,  q: -2, r: 4, resource: 'wheat' }, 
+  { id: 6,  q: -1, r: 4, resource: 'wheat' }, 
+  { id: 11, q: 0,  r: 4, resource: 'mineral' }
+];
+
+// 默认玩家设置
+let players = [
+  { name: '玩家1', color: '#e6194b' },
+  { name: '玩家2', color: '#3cb44b' },
+  { name: '玩家3', color: '#4363d8' }
+];
+
+// 资源图标映射
+const resourceIcons = {
+  wheat: `<g transform="scale(0.85)">
+      <circle cx="0" cy="0" r="18" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
+      <path d="M-12,0 C-12,-6 -6,-10 0,-10 C6,-10 12,-6 12,0 C12,6 6,10 0,10 C-6,10 -12,6 -12,0 Z" fill="#DAA520"/>
+      <path d="M-10,-4 L-10,4 M-5,-7 L-5,7 M0,-8 L0,8 M5,-7 L5,7 M10,-4 L10,4" stroke="#8B4513" stroke-width="2"/>
+    </g>`,
+  forest: `<g transform="scale(0.85)">
+      <circle cx="0" cy="-6" r="15" fill="#228B22"/>
+      <circle cx="10" cy="0" r="13" fill="#228B22"/>
+      <circle cx="-10" cy="0" r="13" fill="#228B22"/>
+      <circle cx="0" cy="6" r="12" fill="#228B22"/>
+      <rect x="-4" y="12" width="8" height="15" fill="#8B4513"/>
+    </g>`,
+  brick: `<g transform="scale(0.85)">
+      <rect x="-18" y="-12" width="36" height="24" fill="#CD5C5C" stroke="#8B0000" stroke-width="2"/>
+      <line x1="-18" y1="-6" x2="18" y2="-6" stroke="#8B0000" stroke-width="2"/>
+      <line x1="-18" y1="0" x2="18" y2="0" stroke="#8B0000" stroke-width="2"/>
+      <line x1="-18" y1="6" x2="18" y2="6" stroke="#8B0000" stroke-width="2"/>
+      <line x1="-6" y1="-12" x2="-6" y2="12" stroke="#8B0000" stroke-width="2"/>
+      <line x1="6" y1="-12" x2="6" y2="12" stroke="#8B0000" stroke-width="2"/>
+    </g>`,
+  sheep: `<g transform="scale(0.85)">
+      <circle cx="0" cy="0" r="18" fill="#F5F5F5" stroke="#D3D3D3" stroke-width="2"/>
+      <circle cx="0" cy="-6" r="10" fill="#F5F5F5" stroke="#D3D3D3" stroke-width="2"/>
+      <circle cx="-5" cy="-10" r="2" fill="#000"/>
+      <circle cx="5" cy="-10" r="2" fill="#000"/>
+      <path d="M-3,-5 C-1,0 1,0 3,-5" stroke="#000" stroke-width="1.5" fill="none"/>
+      <ellipse cx="0" cy="10" rx="5" ry="3" fill="#FFC0CB"/>
+    </g>`,
+  mineral: `<g transform="scale(0.85)">
+      <circle cx="0" cy="0" r="18" fill="#708090" stroke="#2F4F4F" stroke-width="2"/>
+      <path d="M-12,-10 L-10,-12 L10,-12 L12,-10 L12,10 L10,12 L-10,12 L-12,10 Z" fill="#2F4F4F" transform="rotate(45)"/>
+      <path d="M-6,-6 L6,6 M6,-6 L-6,6" stroke="#C0C0C0" stroke-width="2"/>
+    </g>`,
+  desert: `<g transform="scale(0.85)">
+      <circle cx="0" cy="0" r="25" fill="#F4A460" stroke="#8B4513" stroke-width="2"/>
+      <path d="M-20,-5 C-15,-15 15,-15 20,-5 C15,5 -15,5 -20,-5 Z" fill="#D2B48C"/>
+      <circle cx="-10" cy="-5" r="3" fill="#8B4513"/>
+      <circle cx="5" cy="0" r="4" fill="#8B4513"/>
+      <circle cx="0" cy="-8" r="2" fill="#8B4513"/>
+    </g>`
+};
+
+// 游戏状态
+let activePlayer = null;
+let isRemoveMode = false;
+const vertexMap = new Map();
+const edgeMap = new Map();
+const vertexLabelMap = new Map();
+let vertexCounter = 0;
+
+// DOM元素
+const playerModal = document.getElementById('playerModal');
+const countSelection = document.getElementById('countSelection');
+const playerInputs = document.getElementById('playerInputs');
+const startGameBtn = document.getElementById('startGame');
+const cancelBtn = document.getElementById('cancelBtn');
+const countBtns = document.querySelectorAll('.count-btn');
+const removeBtn = document.getElementById('removeBtn');
+const dice1 = document.getElementById('dice1');
+const dice2 = document.getElementById('dice2');
+const rollDiceBtn = document.getElementById('rollDice');
+
+// 强盗相关变量
+let robber = null;
+let robberActive = false;
+let robberPositions = []; // 存储所有六边形的中心位置
+let desertPosition = null; // 沙漠位置
+
+// 初始化玩家设置
+function initPlayerSetup() {
+  // 添加玩家数量选择事件
+  countBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const count = parseInt(btn.dataset.count);
+      generatePlayerInputs(count);
+    });
+  });
+  
+  // 开始游戏按钮
+  startGameBtn.addEventListener('click', () => {
+    const inputs = playerInputs.querySelectorAll('.player-input');
+    const newPlayers = [];
+    
+    inputs.forEach((input, index) => {
+      const name = input.value.trim() || `玩家${index + 1}`;
+      const color = getPlayerColor(index);
+      newPlayers.push({ name, color });
+    });
+    
+    players = newPlayers;
+    playerModal.style.display = 'none';
+    setupPlayers();
+    drawMap();
+  });
+  
+  // 取消按钮
+  cancelBtn.addEventListener('click', () => {
+    playerModal.style.display = 'none';
+    setupPlayers();
+    drawMap();
+  });
+}
+
+// 生成玩家输入框
+function generatePlayerInputs(count) {
+  playerInputs.innerHTML = '';
+  
+  for (let i = 0; i < count; i++) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'player-input';
+    input.placeholder = `玩家${i + 1}名称`;
+    playerInputs.appendChild(input);
+  }
+}
+
+// 获取玩家颜色
+function getPlayerColor(index) {
+  const colors = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#46f0f0'];
+  return colors[index % colors.length];
+}
+
+// 顶点标签生成
+function getVertexLabel(counter) {
+  const letter = String.fromCharCode(65 + Math.floor(counter / 10));
+  const number = counter % 10;
+  return `${letter}${number}`;
+}
+
+// 坐标转换
+function hexToPixel(q, r) {
+  const x = hexWidth * (q + r / 2);
+  const y = vertDist * r;
+  return { x, y };
+}
+
+// 获取六边形顶点
+function getHexVertices(cx, cy, r) {
+  const points = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = Math.PI / 3 * i - Math.PI / 6;
+    points.push({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) });
+  }
+  return points;
+}
+
+// 缩短线段
+function shortenLine(p1, p2, offset) {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const len = Math.hypot(dx, dy);
+  const ratio = offset / len;
+  return {
+    x1: p1.x + dx * ratio,
+    y1: p1.y + dy * ratio,
+    x2: p2.x - dx * ratio,
+    y2: p2.y - dy * ratio
+  };
+}
+
+// 绘制三角形（村庄）
+function drawTriangle(x, y) {
+  const size = 15;
+  return `M ${x} ${y - size} L ${x - size} ${y + size} L ${x + size} ${y + size} Z`;
+}
+
+// 绘制星形（城市）
+function drawStar(x, y) {
+  const spikes = 5;
+  const outerRadius = 20;
+  const innerRadius = outerRadius / 2.5;
+  let rot = Math.PI / 2 * 3;
+  let path = "";
+  let cx = x;
+  let cy = y;
+  let step = Math.PI / spikes;
+  let firstX, firstY;
+
+  for(let i=0; i<spikes; i++){
+    let sx = cx + Math.cos(rot) * outerRadius;
+    let sy = cy + Math.sin(rot) * outerRadius;
+    if(i===0){
+      path += `M${sx} ${sy} `;
+      firstX = sx;
+      firstY = sy;
+    } else {
+      path += `L${sx} ${sy} `;
+    }
+    rot += step;
+
+    sx = cx + Math.cos(rot) * innerRadius;
+    sy = cy + Math.sin(rot) * innerRadius;
+    path += `L${sx} ${sy} `;
+    rot += step;
+  }
+  path += `L${firstX} ${firstY} Z`;
+  return path;
+}
+
+// 创建强盗图标
+function createRobber(x, y) {
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("class", "robber");
+  g.setAttribute("transform", `translate(${x}, ${y})`);
+  
+  // 绘制骷髅头 - 更大更显眼
+  const skull = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  skull.setAttribute("d", "M -25,-15 C -25,-30 0,-40 0,-40 C 0,-40 25,-30 25,-15 C 25,0 0,10 0,10 C 0,10 -25,0 -25,-15 Z M -15,0 A 10,10 0 1,0 0,0 A 10,10 0 1,0 15,0");
+  skull.setAttribute("fill", "#333");
+  skull.setAttribute("opacity", "0.5");
+  
+  // 添加交叉骨
+  const bone1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  bone1.setAttribute("x1", "-20");
+  bone1.setAttribute("y1", "5");
+  bone1.setAttribute("x2", "20");
+  bone1.setAttribute("y2", "-5");
+  bone1.setAttribute("stroke", "#333");
+  bone1.setAttribute("stroke-width", "8");
+  bone1.setAttribute("stroke-linecap", "round");
+  
+  const bone2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  bone2.setAttribute("x1", "-20");
+  bone2.setAttribute("y1", "-5");
+  bone2.setAttribute("x2", "20");
+  bone2.setAttribute("y2", "5");
+  bone2.setAttribute("stroke", "#333");
+  bone2.setAttribute("stroke-width", "8");
+  bone2.setAttribute("stroke-linecap", "round");
+  
+  g.appendChild(skull);
+  g.appendChild(bone1);
+  g.appendChild(bone2);
+  return g;
+}
+
+// 创建沙漠图标
+function createDesert(x, y) {
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("class", "desert");
+  g.setAttribute("transform", `translate(${x}, ${y})`);
+  g.innerHTML = resourceIcons.desert;
+  return g;
+}
+
+// 处理强盗点击事件
+function handleRobberClick(e) {
+  e.stopPropagation();
+  robberActive = !robberActive;
+  
+  if (robberActive) {
+    robber.classList.add('active');
+  } else {
+    robber.classList.remove('active');
+  }
+}
+
+// 移动强盗到新位置
+function moveRobber(x, y) {
+  robber.setAttribute("transform", `translate(${x}, ${y})`);
+  robberActive = false;
+  robber.classList.remove('active');
+}
+
+// 绘制六边形
+function drawHexagon(cx, cy, hex) {
+  const vertices = getHexVertices(cx, cy, hexRadius);
+  
+  // 1. 缩小背景色范围 - 只绘制内部小六边形
+  const innerVertices = getHexVertices(cx, cy, hexRadius * 0.5);
+  const innerHexPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  let innerPathData = `M ${innerVertices[0].x} ${innerVertices[0].y} `;
+  for (let i = 1; i < 6; i++) {
+    innerPathData += `L ${innerVertices[i].x} ${innerVertices[i].y} `;
+  }
+  innerPathData += "Z";
+  innerHexPath.setAttribute("d", innerPathData);
+  
+  // 根据资源类型设置颜色
+  let fillColor = "#e9ecef";
+  switch(hex.resource) {
+    case 'wheat': fillColor = "#FFD700"; break;
+    case 'forest': fillColor = "#27AE60"; break;
+    case 'brick': fillColor = "#E74C3C"; break;
+    case 'sheep': fillColor = "#ECF0F1"; break;
+    case 'mineral': fillColor = "#95a5a6"; break;
+  }
+  
+  innerHexPath.setAttribute("fill", fillColor);
+  innerHexPath.setAttribute("opacity", "0.85");
+  innerHexPath.setAttribute("stroke", "#ced4da");
+  innerHexPath.setAttribute("stroke-width", "1.5");
+  svg.appendChild(innerHexPath);
+  
+  // 2. 绘制边框
+  for (let i = 0; i < 6; i++) {
+    const start = vertices[i];
+    const end = vertices[(i + 1) % 6];
+
+    const edgeKey = `${start.x.toFixed(2)},${start.y.toFixed(2)}-${end.x.toFixed(2)},${end.y.toFixed(2)}`;
+    if (!edgeMap.has(edgeKey)) {
+      // 增加缩短偏移量，使道路更短
+      const { x1, y1, x2, y2 } = shortenLine(start, end, 20); 
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x1);
+      line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2);
+      line.setAttribute("y2", y2);
+      line.setAttribute("stroke", "#adb5bd");
+      line.setAttribute("stroke-width", 4);
+      line.setAttribute("class", "road");
+      line.style.cursor = "pointer";
+      
+      // 存储道路信息
+      const roadInfo = {
+        element: line,
+        owner: null
+      };
+      
+      line.addEventListener("click", () => {
+        if (isRemoveMode && roadInfo.owner) {
+          line.setAttribute("stroke", "#adb5bd");
+          roadInfo.owner = null;
+        } else if (activePlayer && !isRemoveMode) {
+          line.setAttribute("stroke", activePlayer.color);
+          roadInfo.owner = activePlayer;
+        }
+      });
+      
+      svg.appendChild(line);
+      edgeMap.set(edgeKey, roadInfo);
+    }
+  }
+
+  // 3. 绘制资源图标
+  const resourceMarker = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  resourceMarker.setAttribute("transform", `translate(${cx + 25}, ${cy})`);
+  resourceMarker.setAttribute("class", "resource-icon");
+  resourceMarker.innerHTML = resourceIcons[hex.resource];
+  svg.appendChild(resourceMarker);
+
+  // 4. 绘制六边形标识
+  const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  text.setAttribute("x", cx);
+  text.setAttribute("y", cy + 4);
+  text.setAttribute("class", "label");
+  text.textContent = hex.id;
+  svg.appendChild(text);
+  
+  // 存储六边形中心位置（用于移动强盗）
+  robberPositions.push({ id: hex.id, x: cx, y: cy });
+  
+  // 添加六边形点击事件（用于移动强盗）
+  const hexArea = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  hexArea.setAttribute("cx", cx);
+  hexArea.setAttribute("cy", cy);
+  hexArea.setAttribute("r", hexRadius * 0.4);
+  hexArea.setAttribute("fill", "transparent");
+  hexArea.setAttribute("class", "hex-area");
+  hexArea.style.cursor = "pointer";
+  
+  hexArea.addEventListener("click", (e) => {
+    if (robberActive) {
+      moveRobber(cx, cy);
+      e.stopPropagation();
+    }
+  });
+  
+  svg.appendChild(hexArea);
+}
+
+// 绘制顶点
+function drawVertex(x, y) {
+  const key = `${x.toFixed(2)},${y.toFixed(2)}`;
+  if (!vertexMap.has(key)) {
+    const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", x);
+    circle.setAttribute("cy", y);
+    circle.setAttribute("r", 12); 
+    circle.setAttribute("fill", "#f8f9fa");
+    circle.setAttribute("stroke", "#3498db");
+    circle.setAttribute("stroke-width", "2.5");
+    circle.style.cursor = "pointer";
+
+    // 生成顶点标签
+    const labelText = getVertexLabel(vertexCounter);
+    vertexLabelMap.set(labelText, {x, y, group, building: null});
+
+    let building = null;
+    let buildingType = null;
+    let owner = null;
+
+    // 添加悬停事件显示位置信息
+    circle.addEventListener("mouseenter", (e) => {
+      const rect = svg.getBoundingClientRect();
+      tooltip.textContent = `顶点 ${labelText}`;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX - rect.left) + 'px';
+      tooltip.style.top = (e.clientY - rect.top - 20) + 'px';
+    });
+
+    circle.addEventListener("mousemove", (e) => {
+      const rect = svg.getBoundingClientRect();
+      tooltip.style.left = (e.clientX - rect.left) + 'px';
+      tooltip.style.top = (e.clientY - rect.top - 20) + 'px';
+    });
+
+    circle.addEventListener("mouseleave", () => {
+      tooltip.style.display = 'none';
+    });
+
+    circle.addEventListener("click", (evt) => {
+      if (isRemoveMode && building) {
+        // 移除建筑物
+        group.removeChild(building);
+        building = null;
+        buildingType = null;
+        owner = null;
+        return;
+      }
+      
+      if (!activePlayer || building) return;
+      
+      // 创建村庄
+      building = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      building.setAttribute("d", drawTriangle(x,y));
+      building.setAttribute("fill", activePlayer.color);
+      building.setAttribute("class", "village");
+      building.style.cursor = "pointer";
+      group.appendChild(building);
+      buildingType = "village";
+      owner = activePlayer;
+
+      // 存储建筑物信息
+      vertexLabelMap.get(labelText).building = building;
+      vertexLabelMap.get(labelText).buildingType = buildingType;
+      vertexLabelMap.get(labelText).owner = owner;
+
+      building.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (isRemoveMode) {
+          group.removeChild(building);
+          building = null;
+          buildingType = null;
+          owner = null;
+          return;
+        }
+        
+        if(buildingType === "village" && activePlayer === owner){
+          if(confirm("确定要将村庄升级为城市吗？")){
+            building.setAttribute("d", drawStar(x,y));
+            building.setAttribute("class", "city");
+            buildingType = "city";
+            vertexLabelMap.get(labelText).buildingType = buildingType;
+          }
+        }
+      });
+    });
+
+    group.appendChild(circle);
+    svg.appendChild(group);
+    vertexMap.set(key, group);
+    vertexCounter++;
+  }
+}
+
+// 绘制标注
+function drawAnnotations() {
+  // 定义所有标注
+  const annotations = [
+    { vertexLabels: ["A4", "A5"], text: "all 3:1", offset: -35 },
+    { vertexLabels: ["B6", "B7"], text: "mineral 2:1", offset: -35 },
+    { vertexLabels: ["D9", "C6"], text: "wheat 2:1", offset: -35 },
+    { vertexLabels: ["E8", "E9"], text: "all 3:1", offset: -35 },
+    { vertexLabels: ["F0", "F1"], text: "wood 2:1", offset: -35 },
+    { vertexLabels: ["E5", "E6"], text: "brick 2:1", offset: -35 },
+    { vertexLabels: ["D4", "D5"], text: "all 3:1", offset: -35 },
+    { vertexLabels: ["B1", "C2"], text: "all 3:1", offset: -35 },
+    { vertexLabels: ["A6", "A9"], text: "sheep 2:1", offset: 35 }
+  ];
+
+  annotations.forEach(ann => {
+    const [label1, label2] = ann.vertexLabels;
+    const pos1 = vertexLabelMap.get(label1);
+    const pos2 = vertexLabelMap.get(label2);
+
+    if (!pos1 || !pos2) {
+      console.error(`找不到顶点: ${label1} 和 ${label2}`);
+      return;
+    }
+
+    // 计算中点
+    const midX = (pos1.x + pos2.x) / 2;
+    const midY = (pos1.y + pos2.y) / 2;
+
+    // 计算方向向量
+    const dx = pos2.x - pos1.x;
+    const dy = pos2.y - pos1.y;
+    
+    // 计算法向量（垂直方向）
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len === 0) return;
+
+    // 计算单位法向量（旋转90度）
+    const nx = -dy / len;
+    const ny = dx / len;
+
+    // 使用提供的偏移值（正负控制方向）
+    const textX = midX + nx * ann.offset;
+    const textY = midY + ny * ann.offset;
+
+    // 绘制引线
+    const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line1.setAttribute("x1", pos1.x);
+    line1.setAttribute("y1", pos1.y);
+    line1.setAttribute("x2", textX - nx * 10);
+    line1.setAttribute("y2", textY - ny * 10);
+    line1.setAttribute("class", "annotation-line");
+    svg.appendChild(line1);
+
+    const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line2.setAttribute("x1", pos2.x);
+    line2.setAttribute("y1", pos2.y);
+    line2.setAttribute("x2", textX - nx * 10);
+    line2.setAttribute("y2", textY - ny * 10);
+    line2.setAttribute("class", "annotation-line");
+    svg.appendChild(line2);
+
+    // 绘制标注文本
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.setAttribute("x", textX);
+    text.setAttribute("y", textY);
+    text.setAttribute("class", "annotation");
+    text.textContent = ann.text;
+    svg.appendChild(text);
+  });
+}
+
+// 计算C1和C9顶点的中点
+function getDesertPosition() {
+  // 查找C1和C9顶点
+  const c1 = vertexLabelMap.get("C1");
+  const c9 = vertexLabelMap.get("C9");
+  
+  if (c1 && c9) {
+    return {
+      x: (c1.x + c9.x) / 2,
+      y: (c1.y + c9.y) / 2
+    };
+  }
+  
+  // 如果找不到顶点，返回地图中心
+  const svgRect = svg.getBoundingClientRect();
+  return {
+    x: svgRect.width / 2,
+    y: svgRect.height / 2
+  };
+}
+
+// 绘制地图
+function drawMap() {
+  // 重置位置存储
+  robberPositions = [];
+  
+  const allX = [], allY = [];
+  hexes.forEach(({ q, r }) => {
+    const { x, y } = hexToPixel(q, r);
+    allX.push(x);
+    allY.push(y);
+  });
+
+  // 计算居中偏移量
+  const minX = Math.min(...allX);
+  const maxX = Math.max(...allX);
+  const minY = Math.min(...allY);
+  const maxY = Math.max(...allY);
+  
+  const offsetX = (svg.clientWidth - (maxX - minX)) / 2 - minX;
+  const offsetY = (svg.clientHeight - (maxY - minY)) / 2 - minY;
+
+  // 绘制所有六边形和顶点
+  hexes.forEach(hex => {
+    const { q, r } = hex;
+    const { x, y } = hexToPixel(q, r);
+    drawHexagon(x + offsetX, y + offsetY, hex);
+    const vertices = getHexVertices(x + offsetX, y + offsetY, hexRadius);
+    vertices.forEach((v) => drawVertex(v.x, v.y));
+  });
+  
+  // 绘制所有标注
+  drawAnnotations();
+  
+  // 获取沙漠位置（C1和C9的中点）
+  desertPosition = getDesertPosition();
+  
+  // 绘制沙漠图标
+  const desert = createDesert(desertPosition.x, desertPosition.y);
+  desert.addEventListener('click', () => {
+    if (robberActive) {
+      moveRobber(desertPosition.x, desertPosition.y);
+    }
+  });
+  svg.appendChild(desert);
+
+  // 创建强盗（初始位置在沙漠位置）
+  if (!robber) {
+    robber = createRobber(desertPosition.x, desertPosition.y);
+    robber.addEventListener('click', handleRobberClick);
+    svg.appendChild(robber);
+  } else {
+    // 如果强盗已存在，重置位置到沙漠
+    robber.setAttribute("transform", `translate(${desertPosition.x}, ${desertPosition.y})`);
+  }
+  
+  // 添加ESC键取消强盗移动
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && robberActive) {
+      robberActive = false;
+      robber.classList.remove('active');
+    }
+  });
+}
+
+// 设置玩家
+function setupPlayers() {
+  const buttonsContainer = document.querySelector('.player-buttons');
+  buttonsContainer.innerHTML = '';
+  
+  players.forEach((player, index) => {
+    const btn = document.createElement("button");
+    btn.className = "player-button";
+    btn.style.backgroundColor = player.color;
+    btn.textContent = player.name;
+    
+    if (index === 0) {
+      btn.classList.add("active");
+      activePlayer = player;
+    }
+    
+    btn.addEventListener("click", () => {
+      document.querySelectorAll('.player-button').forEach(b => {
+        b.classList.remove('active');
+      });
+      btn.classList.add('active');
+      activePlayer = player;
+      isRemoveMode = false;
+      removeBtn.classList.remove('active');
+    });
+    
+    buttonsContainer.appendChild(btn);
+  });
+  
+  // 设置移除按钮事件
+  removeBtn.addEventListener('click', () => {
+    isRemoveMode = !isRemoveMode;
+    removeBtn.classList.toggle('active', isRemoveMode);
+    
+    // 取消所有玩家按钮的选中状态
+    document.querySelectorAll('.player-button').forEach(b => {
+      b.classList.remove('active');
+    });
+    
+    activePlayer = null;
+  });
+  
+  // 设置骰子按钮事件
+  rollDiceBtn.addEventListener('click', rollDice);
+}
+
+// 掷骰子
+function rollDice() {
+  // 禁用按钮
+  rollDiceBtn.disabled = true;
+  rollDiceBtn.textContent = "请稍候...";
+  
+  // 动画效果
+  let rolls = 0;
+  const maxRolls = 10;
+  const rollInterval = setInterval(() => {
+    dice1.textContent = Math.floor(Math.random() * 6) + 1;
+    dice2.textContent = Math.floor(Math.random() * 6) + 1;
+    rolls++;
+    
+    if (rolls >= maxRolls) {
+      clearInterval(rollInterval);
+      
+      // 最终结果
+      const result1 = Math.floor(Math.random() * 6) + 1;
+      const result2 = Math.floor(Math.random() * 6) + 1;
+      dice1.textContent = result1;
+      dice2.textContent = result2;
+      
+      // 10秒后启用按钮
+      setTimeout(() => {
+        rollDiceBtn.disabled = false;
+        rollDiceBtn.textContent = "掷骰子";
+      }, 10000);
+    }
+  }, 100);
+}
+
+// 初始化
+window.addEventListener('DOMContentLoaded', () => {
+  // 初始化玩家设置
+  initPlayerSetup();
+  
+  // 设置初始玩家数量为3
+  generatePlayerInputs(3);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习卡片</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin: 20px 0 30px;
+            width: 100%;
+            max-width: 1100px;
+            margin: 20px auto 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            color: #4a6491;
+            max-width: 800px;
+            margin: 0 auto 30px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .chapter-header {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            padding: 18px;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .chapter-title {
+            font-size: 1.9rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        
+        .sub-chapter {
+            font-size: 1.4rem;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 18px 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.25);
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.35);
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 18px;
+            background: #f8f9fa;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            margin-bottom: 30px;
+        }
+        
+        .card-container {
+            height: 220px;
+            perspective: 1200px;
+        }
+        
+        .card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(50, 50, 93, 0.08);
+            cursor: pointer;
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .card-front {
+            background: linear-gradient(45deg, #3498db, #1a5276);
+            color: white;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .card-number {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.2);
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card-hint {
+            position: absolute;
+            bottom: 12px;
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+        
+        .card-back {
+            background: white;
+            transform: rotateY(180deg);
+            overflow-y: auto;
+            color: #333;
+        }
+        
+        .card-content {
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .card-content ul {
+            padding-left: 18px;
+        }
+        
+        .card-content li {
+            margin-bottom: 8px;
+        }
+        
+        .flip-icon {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            color: #3498db;
+            font-size: 1.1rem;
+        }
+        
+        .counter {
+            text-align: center;
+            margin: 12px 0;
+            font-size: 1rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 600px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .card-container {
+                height: 200px;
+            }
+            
+            .card-title {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-graduation-cap"></i> 学习卡片</h1>
+        <p>生成的学习卡片 - 按章节组织</p>
+    </div>
+    
+    <div class="container">
+        <div class="chapter-header">
+            <div class="chapter-title">第一章 职业理念</div>
+        </div>
+        <div class="chapter-header" style="background: linear-gradient(to right, #3498db, #4a6491);">
+            <div class="sub-chapter">1.1 教育观</div>
+        </div>
+        <div class="card-grid">
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-face card-front">
+                        <div class="card-number">1</div>
+                        <div class="card-title">1. 素质教育的基本要求(内涵)</div>
+                        <div class="card-hint">点击卡片查看内容</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content"><ul><li>素质教育以提高国民素质为根本宗旨</li><li>素质教育是面向全体学生的教育</li><li>素质教育要促进学生全面地发展</li><li>素质教育要促进学生个性发展</li><li>素质教育要着力提高学生的创新精神和实践能力</li></ul></div>
+                        <div class="flip-icon"><i class="fas fa-undo"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-face card-front">
+                        <div class="card-number">2</div>
+                        <div class="card-title">2. 创新教育</div>
+                        <div class="card-hint">点击卡片查看内容</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content">创新教育需要培养学生的创造性思维品质。创造性思维是指以新颖、独特的方式来解决问题的总维方式，具有流畅性，灵活性、独创性(独立性)，反思性、判性等特质</div>
+                        <div class="flip-icon"><i class="fas fa-undo"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-face card-front">
+                        <div class="card-number">3</div>
+                        <div class="card-title">3. 素质教育的外延</div>
+                        <div class="card-hint">点击卡片查看内容</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content"><ul><li>素质教有是终身的</li><li>素质教育应当贯穿于学校教育、家庭教育、社会教育等各个方面</li><li>素质教育应当贯穿于各级、各类教育。</li></ul></div>
+                        <div class="flip-icon"><i class="fas fa-undo"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-face card-front">
+                        <div class="card-number">4</div>
+                        <div class="card-title">4.（实现素质教育的途径）新课程改革的具体目标</div>
+                        <div class="card-hint">点击卡片查看内容</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content">实现课程功能的转变(核心目标)；
+体现课程结构的均衡性、综合性和选择性；
+密切课程内容与生活和时代的联系；
+改善学生学习的方式；
+建立与素质教育理念相一致的评价与考试制度；
+实行三级课程管理制度。</div>
+                        <div class="flip-icon"><i class="fas fa-undo"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-face card-front">
+                        <div class="card-number">5</div>
+                        <div class="card-title">5. 新课改的教学观(四个转向)</div>
+                        <div class="card-hint">点击卡片查看内容</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content">教学从“以教育者为中心”转向“以学习者为中心”；
+教学从“教会学生知识”转向“教会学生学习”；
+教学从“重结论轻过程”转向“重结论的同时更重过程”；
+教学从“关注学科”转向“关注人”。</div>
+                        <div class="flip-icon"><i class="fas fa-undo"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-face card-front">
+                        <div class="card-number">6</div>
+                        <div class="card-title">6. 新课程改革倡导的学习方式</div>
+                        <div class="card-hint">点击卡片查看内容</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content"><ul><li>自主学习</li><li>合作学习</li><li>探究学习。</li></ul></div>
+                        <div class="flip-icon"><i class="fas fa-undo"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-face card-front">
+                        <div class="card-number">7</div>
+                        <div class="card-title">7.新课程改革倡导的评价观</div>
+                        <div class="card-hint">点击卡片查看内容</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content"><ul><li>评价功能的转化:发挥激励作用，重视学生发展，淡化甄别与选拔</li><li>评价主体多元化</li><li>评价指标多元化、标准差异化、方法多样化</li><li>评价过程动态化:终结性评价与形成性评价相结合。</li></ul></div>
+                        <div class="flip-icon"><i class="fas fa-undo"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-header" style="background: linear-gradient(to right, #3498db, #4a6491);">
+            <div class="sub-chapter">第二节 学生观</div>
+        </div>
+        <div class="card-grid">
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-face card-front">
+                        <div class="card-number">1</div>
+                        <div class="card-title">8. “以人为本”的学生观</div>
+                        <div class="card-hint">点击卡片查看内容</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content"><ul><li>“以人为本”的学生观认为学生是发展的人；（学生的身心发展是有规律的；学生具有巨大的发展潜能</li><li>学生是处于发展过程中的人）
+“以人为本”的学生观认为学生是独特的人；
+“以人为本”的学生观认为学生是具有独立意义的人。</li></ul></div>
+                        <div class="flip-icon"><i class="fas fa-undo"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-header" style="background: linear-gradient(to right, #3498db, #4a6491);">
+            <div class="sub-chapter">1.3 教师观</div>
+        </div>
+        <div class="card-grid">
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-face card-front">
+                        <div class="card-number">1</div>
+                        <div class="card-title">9. 教师角色的转变</div>
+                        <div class="card-hint">点击卡片查看内容</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content">①教师是学生学习的引导者和学生发展的促进者。
+②教师是课程的建设者和开发者。
+③教师是教育教学的研究者和教学反思的实践者。
+④教师是社区型的开放教师。</div>
+                        <div class="flip-icon"><i class="fas fa-undo"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-face card-front">
+                        <div class="card-number">2</div>
+                        <div class="card-title">10. .教师教学行为的转变</div>
+                        <div class="card-hint">点击卡片查看内容</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="card-content">①在对待师生关系上:尊重和赞赏。
+②在对待教学上:帮助和引导。
+③在对待自我上:反思和终身学习发展。
+④在对待与其他教育者的关系上:合探究。</div>
+                        <div class="flip-icon"><i class="fas fa-undo"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button class="btn" id="flipAll">
+            <i class="fas fa-sync-alt"></i> 翻转所有卡片
+        </button>
+        <button class="btn" id="resetAll">
+            <i class="fas fa-redo"></i> 重置所有卡片
+        </button>
+    </div>
+    
+    <script>
+        // 添加卡片事件监听器
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function() {
+                this.classList.toggle('flipped');
+            });
+        });
+        
+        // 翻转所有卡片
+        document.getElementById('flipAll').addEventListener('click', function() {
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.add('flipped');
+            });
+        });
+        
+        // 重置所有卡片
+        document.getElementById('resetAll').addEventListener('click', function() {
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.remove('flipped');
+            });
+        });
+    </script>
+</body>
+</html>

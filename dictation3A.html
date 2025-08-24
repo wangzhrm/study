@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulary Dictation Test - US Pronunciation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a5276, #2874a6, #3498db);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            color: #333;
+            touch-action: manipulation;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        header {
+            background: linear-gradient(to right, #154360, #1a5276, #2874a6);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+        
+        .dictation-content {
+            padding: 20px 15px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        
+        .dictation-container {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 25px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .dictation-counter {
+            font-size: 1.2rem;
+            color: #9b59b6;
+            margin: 15px 0;
+            font-weight: 600;
+            background: #f8f9fa;
+            padding: 8px 16px;
+            border-radius: 30px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .dictation-btn {
+            background: #9b59b6;
+            border: none;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            touch-action: manipulation;
+            margin: 20px auto;
+        }
+        
+        .dictation-btn:hover {
+            background: #8e44ad;
+            transform: scale(1.05);
+        }
+        
+        .dictation-btn i {
+            font-size: 2.5rem;
+            color: white;
+        }
+        
+        .word-display {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #2c3e50;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 250px;
+            border-radius: 15px;
+            background-color: #f8f9fa;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin: 20px auto;
+            padding: 10px 20px;
+        }
+        
+        .btn-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            max-width: 600px;
+            margin: 15px auto 0;
+        }
+        
+        .btn {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 14px 25px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 180px;
+            touch-action: manipulation;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .dictation-next-btn {
+            background: #2ecc71;
+            min-width: 220px;
+        }
+        
+        .dictation-next-btn:hover {
+            background: #27ae60;
+        }
+        
+        .results-content {
+            padding: 20px 15px;
+            display: none;
+        }
+        
+        .password-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .password-input {
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            font-size: 1rem;
+            width: 100%;
+            max-width: 300px;
+            margin: 10px 0;
+        }
+        
+        .submit-btn {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        .wrong-words-container {
+            background: #f8f9fa;
+            border-radius: 18px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            width: 100%;
+            display: none;
+        }
+        
+        .wrong-words-title {
+            color: #9b59b6;
+            margin-bottom: 12px;
+            font-size: 1.3rem;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .wrong-word {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+        
+        .wrong-word:hover {
+            background: #e9ecef;
+        }
+        
+        .wrong-word:last-child {
+            border-bottom: none;
+        }
+        
+        .word-def {
+            font-weight: 700;
+            color: #212529;
+            font-size: 1.1rem;
+        }
+        
+        .meaning-text {
+            color: #495057;
+            text-align: right;
+            font-size: 1rem;
+            flex: 1;
+            max-width: 60%;
+            padding-left: 12px;
+        }
+        
+        .floating {
+            position: absolute;
+            opacity: 0.1;
+            z-index: 1;
+        }
+        
+        .floating-1 {
+            top: 20px;
+            left: 20px;
+            font-size: 5rem;
+            transform: rotate(-15deg);
+        }
+        
+        .floating-2 {
+            bottom: 20px;
+            right: 20px;
+            font-size: 4rem;
+            transform: rotate(15deg);
+        }
+        
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 15px;
+            }
+            
+            header {
+                padding: 15px 10px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .subtitle {
+                font-size: 0.85rem;
+            }
+            
+            .dictation-content {
+                padding: 15px 10px;
+                min-height: 350px;
+            }
+            
+            .dictation-counter {
+                font-size: 1.1rem;
+                margin: 12px 0;
+            }
+            
+            .word-display {
+                font-size: 1.8rem;
+                min-width: 200px;
+                min-height: 60px;
+            }
+            
+            .dictation-btn {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .dictation-btn i {
+                font-size: 2rem;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 1rem;
+                min-width: 160px;
+            }
+            
+            .dictation-next-btn {
+                min-width: 180px;
+            }
+            
+            .wrong-words-container {
+                padding: 15px;
+                max-height: 250px;
+            }
+            
+            .wrong-word {
+                padding: 10px 12px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            
+            .meaning-text {
+                text-align: left;
+                padding-left: 0;
+                max-width: 100%;
+                font-size: 0.95rem;
+            }
+            
+            .word-def {
+                font-size: 1rem;
+            }
+            
+            .floating {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="floating floating-1"><i class="fas fa-pencil-alt"></i></div>
+        <div class="floating floating-2"><i class="fas fa-book"></i></div>
+        
+        <header>
+            <div class="header-content">
+                <h1><i class="fas fa-language"></i> 词汇听写测试</h1>
+                <div class="subtitle">Vocabulary Dictation Test - US Pronunciation</div>
+            </div>
+        </header>
+        
+        <!-- Dictation Mode Content -->
+        <div class="dictation-content" id="dictationContent">
+            <div class="dictation-container" id="dictationContainer">
+                <div class="dictation-counter" id="dictationCounter">Dictation 1 of 64</div>
+                
+                <button class="dictation-btn" id="dictationBtn">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+                
+                <div class="word-display" id="wordDisplay">r _____</div>
+            </div>
+            
+            <div class="btn-container">
+                <button class="btn dictation-next-btn" id="dictationNextBtn">
+                    Next Word <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Results Content -->
+        <div class="results-content" id="resultsContent">
+            <h2>Dictation Completed!</h2>
+            
+            <div class="password-container">
+                <p>Enter password to view results:</p>
+                <input type="password" class="password-input" id="passwordInput" placeholder="Enter password">
+                <br>
+                <button class="submit-btn" id="submitPassword">Submit</button>
+            </div>
+            
+            <div class="wrong-words-container" id="wrongWordsContainer">
+                <div class="wrong-words-title">Dictated Words</div>
+                <div class="wrong-words" id="wrongWordsList">
+                    <!-- Words will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Vocabulary data
+        const vocabulary = [
+            { word: "ruler", meaning: "尺子" },
+            { word: "pencil", meaning: "铅笔" },
+            { word: "eraser", meaning: "橡皮" },
+            { word: "crayon", meaning: "蜡笔" },
+            { word: "bag", meaning: "包" },
+            { word: "pen", meaning: "钢笔" },
+            { word: "pencil box", meaning: "铅笔盒" },
+            { word: "book", meaning: "书" },
+            { word: "no", meaning: "不" },
+            { word: "your", meaning: "你（们）的" },
+            { word: "school", meaning: "学校" },
+            { word: "face", meaning: "脸" },
+            { word: "ear", meaning: "耳朵" },
+            { word: "eye", meaning: "眼睛" },
+            { word: "nose", meaning: "鼻子" },
+            { word: "mouth", meaning: "嘴" },
+            { word: "arm", meaning: "胳膊" },
+            { word: "hand", meaning: "手" },
+            { word: "head", meaning: "头" },
+            { word: "body", meaning: "身体" },
+            { word: "leg", meaning: "腿" },
+            { word: "foot", meaning: "脚" },
+            { word: "red", meaning: "红色；红色的" },
+            { word: "green", meaning: "绿色；绿色的" },
+            { word: "yellow", meaning: "黄色；黄色的" },
+            { word: "blue", meaning: "蓝色；蓝色的" },
+            { word: "black", meaning: "黑色；黑色的" },
+            { word: "brown", meaning: "棕色；棕色的" },
+            { word: "white", meaning: "白色；白色的" },
+            { word: "orange", meaning: "橙色；橙色的" },
+            { word: "OK", meaning: "好；行" },
+            { word: "mum", meaning: "妈妈" },
+            { word: "duck", meaning: "鸭子" },
+            { word: "pig", meaning: "猪" },
+            { word: "cat", meaning: "猫" },
+            { word: "bear", meaning: "熊" },
+            { word: "dog", meaning: "狗" },
+            { word: "elephant", meaning: "大象" },
+            { word: "monkey", meaning: "猴子" },
+            { word: "bird", meaning: "鸟" },
+            { word: "tiger", meaning: "老虎" },
+            { word: "panda", meaning: "大熊猫" },
+            { word: "zoo", meaning: "动物园" },
+            { word: "funny", meaning: "滑稽的；好笑的" },
+            { word: "bread", meaning: "面包" },
+            { word: "juice", meaning: "果汁" },
+            { word: "egg", meaning: "蛋" },
+            { word: "milk", meaning: "牛奶" },
+            { word: "water", meaning: "水" },
+            { word: "cake", meaning: "蛋糕" },
+            { word: "fish", meaning: "鱼肉；鱼" },
+            { word: "rice", meaning: "米饭" },
+            { word: "one", meaning: "一" },
+            { word: "two", meaning: "二" },
+            { word: "three", meaning: "三" },
+            { word: "four", meaning: "四" },
+            { word: "five", meaning: "五" },
+            { word: "six", meaning: "六" },
+            { word: "seven", meaning: "七" },
+            { word: "eight", meaning: "八" },
+            { word: "nine", meaning: "九" },
+            { word: "ten", meaning: "十" },
+            { word: "brother", meaning: "兄；弟" },
+            { word: "plate", meaning: "盘子" }
+        ];
+
+        // DOM Elements
+        const dictationContent = document.getElementById('dictationContent');
+        const resultsContent = document.getElementById('resultsContent');
+        const dictationBtn = document.getElementById('dictationBtn');
+        const wordDisplay = document.getElementById('wordDisplay');
+        const dictationCounter = document.getElementById('dictationCounter');
+        const dictationNextBtn = document.getElementById('dictationNextBtn');
+        const passwordInput = document.getElementById('passwordInput');
+        const submitPassword = document.getElementById('submitPassword');
+        const wrongWordsContainer = document.getElementById('wrongWordsContainer');
+        const wrongWordsList = document.getElementById('wrongWordsList');
+        
+        // Dictation state
+        let dictationWords = [];
+        let dictationIndex = 0;
+        let currentDictationWord = null;
+        
+        // Speech synthesis
+        let synth = window.speechSynthesis;
+        let isAndroid = /android/i.test(navigator.userAgent);
+        let usVoice = null;
+        
+        // Initialize dictation
+        function initDictation() {
+            // Copy and shuffle the vocabulary for dictation
+            dictationWords = [...vocabulary];
+            shuffleArray(dictationWords);
+            dictationIndex = 0;
+            
+            // Show first word
+            showDictationWord();
+            
+            // Load voices
+            loadVoices();
+        }
+        
+        // Load available voices and select a US English voice
+        function loadVoices() {
+            // This might be needed for some browsers
+            synth.getVoices();
+            
+            setTimeout(() => {
+                const voices = synth.getVoices();
+                
+                // Try to find a US English voice
+                usVoice = voices.find(voice => 
+                    voice.lang.includes('en-US') || 
+                    voice.name.includes('US English') ||
+                    voice.name.includes('Samantha') // Common US voice on Apple devices
+                );
+                
+                // Fallback to any English voice if US not found
+                if (!usVoice) {
+                    usVoice = voices.find(voice => voice.lang.includes('en'));
+                }
+                
+                console.log("Selected voice:", usVoice ? usVoice.name : "Default system voice");
+            }, 100);
+        }
+        
+        // Show current dictation word
+        function showDictationWord() {
+            currentDictationWord = dictationWords[dictationIndex];
+            
+            // Display first letter and blanks for the rest
+            const firstLetter = currentDictationWord.word.charAt(0);
+            const blanks = '_'.repeat(currentDictationWord.word.length - 1);
+            wordDisplay.textContent = `${firstLetter} ${blanks}`;
+            
+            // Update counter
+            dictationCounter.textContent = `Dictation ${dictationIndex + 1} of ${dictationWords.length}`;
+        }
+        
+        // Speak the current word with US pronunciation
+        function speakWord() {
+            if (synth.speaking) {
+                synth.cancel();
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(currentDictationWord.word);
+            
+            // Use US voice if available
+            if (usVoice) {
+                utterance.voice = usVoice;
+            }
+            
+            utterance.rate = 0.9; // Slightly slower for dictation
+            utterance.pitch = 1.0; // Normal pitch
+            
+            // Animate the speaker button while speaking
+            dictationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            dictationBtn.style.pointerEvents = 'none';
+            
+            utterance.onend = function() {
+                dictationBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                dictationBtn.style.pointerEvents = 'auto';
+            };
+            
+            utterance.onerror = function(event) {
+                console.error('Speech synthesis error:', event);
+                dictationBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                dictationBtn.style.pointerEvents = 'auto';
+                
+                // Fallback: try without specifying a voice
+                if (usVoice) {
+                    const fallbackUtterance = new SpeechSynthesisUtterance(currentDictationWord.word);
+                    fallbackUtterance.rate = 0.9;
+                    synth.speak(fallbackUtterance);
+                }
+            };
+            
+            try {
+                synth.speak(utterance);
+            } catch (e) {
+                console.error('Speech synthesis failed:', e);
+                // Reset button state
+                dictationBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                dictationBtn.style.pointerEvents = 'auto';
+            }
+        }
+        
+        // Move to next word or finish dictation
+        function nextWord() {
+            if (dictationIndex < dictationWords.length - 1) {
+                dictationIndex++;
+                showDictationWord();
+            } else {
+                // End of dictation
+                dictationContent.style.display = 'none';
+                resultsContent.style.display = 'block';
+            }
+        }
+        
+        // Show results after password is entered
+        function showResults() {
+            if (passwordInput.value === "1601") {
+                wrongWordsContainer.style.display = 'block';
+                
+                // Display all words in the order they were dictated
+                wrongWordsList.innerHTML = '';
+                dictationWords.forEach((wordObj, index) => {
+                    const wordElement = document.createElement('div');
+                    wordElement.classList.add('wrong-word');
+                    wordElement.innerHTML = `
+                        <div class="word-def">${index + 1}. ${wordObj.word}</div>
+                        <div class="meaning-text">${wordObj.meaning}</div>
+                    `;
+                    wrongWordsList.appendChild(wordElement);
+                });
+            } else {
+                alert("Incorrect password. Please try again.");
+                passwordInput.value = "";
+            }
+        }
+        
+        // Helper function to shuffle array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        // Event listeners
+        dictationBtn.addEventListener('click', speakWord);
+        dictationBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            speakWord();
+        });
+        
+        dictationNextBtn.addEventListener('click', nextWord);
+        dictationNextBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            nextWord();
+        });
+        
+        submitPassword.addEventListener('click', showResults);
+        
+        // Handle Enter key in password field
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                showResults();
+            }
+        });
+        
+        // Initialize dictation when the page loads
+        window.addEventListener('DOMContentLoaded', initDictation);
+        
+        // Some browsers need this to load voices properly
+        window.speechSynthesis.onvoiceschanged = function() {
+            loadVoices();
+        };
+    </script>
+</body>
+</html>

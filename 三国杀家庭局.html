@@ -2,11 +2,10 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三国杀三人局积分系统 - 极速版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>三国杀积分系统 - 手机优化版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 核心样式补全与优化 */
         :root {
             --zhugong: linear-gradient(135deg, #d4af37, #8b0000);
             --neijian: linear-gradient(135deg, #4b0082, #1a2a6c);
@@ -15,34 +14,67 @@
         }
 
         body {
-            background: radial-gradient(circle at center, #2c3e50 0%, #000 100%);
+            background: #121212;
+            background: radial-gradient(circle at center, #1a2a6c 0%, #000 100%);
             color: #fff;
             font-family: 'STKaiti', 'Microsoft YaHei', serif;
-            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
         }
 
-        .container { max-width: 1200px; width: 100%; text-align: center; }
+        .container { width: 100%; max-width: 600px; text-align: center; }
 
-        /* 卡片容器 */
-        .cards-container {
+        h1 { font-size: 1.5rem; margin: 10px 0; color: #ffd700; }
+
+        /* Mobile-First Stats Panel */
+        .stats-panel {
+            width: 95%;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #ffd700;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
             display: flex;
-            justify-content: center;
-            gap: 20px;
-            perspective: 2000px;
-            margin: 40px 0;
+            justify-content: space-around;
+            font-size: 0.9rem;
         }
 
-        .card-wrapper { width: 220px; height: 320px; cursor: pointer; }
+        .score-board-mini { text-align: left; border-right: 1px solid #333; padding-right: 10px; }
+        .role-stats-mini { text-align: left; padding-left: 10px; }
+
+        .status-bar {
+            background: rgba(255, 215, 0, 0.1);
+            padding: 12px;
+            border-radius: 25px;
+            border: 1px solid #ffd700;
+            margin: 10px 0;
+            font-size: 1rem;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* Responsive Card Grid */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        .card-wrapper {
+            aspect-ratio: 2 / 3; /* Maintains card shape automatically */
+            perspective: 1000px;
+        }
 
         .card {
             width: 100%; height: 100%;
             position: relative;
             transform-style: preserve-3d;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.5s;
         }
 
         .card.flipped { transform: rotateY(180deg); }
@@ -50,23 +82,18 @@
         .card-face {
             position: absolute; width: 100%; height: 100%;
             backface-visibility: hidden;
-            border-radius: 15px;
-            border: 3px solid #ffd700;
+            border-radius: 10px;
+            border: 2px solid #ffd700;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
 
-        .card-back {
-            background: #1a5e20 url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-        }
-
-        .card-back.selected {
-            background: #1a237e; /* 已被选走变为蓝色 */
-            border-color: #5c6bc0;
-        }
+        .card-back { background: #1a5e20; }
+        .card-back.selected { background: #1a237e; border-color: #5c6bc0; }
+        .card-back span { font-size: 0.7rem; padding: 5px; }
 
         .card-front { transform: rotateY(180deg); }
         .card-front.zhugong { background: var(--zhugong); }
@@ -74,81 +101,63 @@
         .card-front.fanzei { background: var(--fanzei); }
         .card-front.zhongchen { background: var(--zhongchen); }
 
-        /* 状态栏 */
-        .status-bar {
-            background: rgba(0,0,0,0.6);
-            padding: 15px 40px;
-            border-radius: 50px;
-            border: 1px solid #ffd700;
-            margin: 20px 0;
-            font-size: 1.2rem;
-            color: #ffd700;
-        }
-
-        /* 积分榜与统计 */
-        .stats-panel {
-            position: fixed;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0,0,0,0.8);
-            border: 1px solid #ffd700;
-            padding: 20px;
-            border-radius: 10px;
-            width: 200px;
-            text-align: left;
-        }
-
-        .score-item { display: flex; justify-content: space-between; margin: 10px 0; border-bottom: 1px solid #333; }
+        .card-front i, .card-front .icon-text { font-size: 2rem; margin-bottom: 5px; }
+        .card-front h2 { font-size: 1rem; margin: 0; }
 
         .btn {
             background: #ffd700; color: #000;
-            border: none; padding: 12px 30px;
+            border: none; padding: 12px 24px;
             border-radius: 25px; font-weight: bold;
-            cursor: pointer; margin: 10px;
-            transition: 0.3s;
+            cursor: pointer; margin: 10px 5px;
+            font-size: 1rem;
+            width: 80%; /* Easy to tap on mobile */
         }
 
-        .btn:hover { transform: scale(1.1); background: #ffea00; }
+        /* Modal styling for mobile */
+        #initModal > div {
+            width: 80%;
+            padding: 20px;
+        }
+        input {
+            padding: 12px;
+            margin: 8px 0;
+            width: 90%;
+            border-radius: 8px;
+            border: none;
+        }
     </style>
 </head>
 <body>
 
-    <div class="stats-panel" id="statsPanel">
-        <h3 style="color:#ffd700">实时积分榜</h3>
-        <div id="scoreBoard"></div>
-        <hr style="margin:15px 0; border-color:#333">
-        <h3 style="color:#ffd700">角色分配</h3>
-        <div id="roleStats" style="font-size: 0.8rem"></div>
+    <div class="stats-panel" id="statsPanel" style="display:none;">
+        <div class="score-board-mini" id="scoreBoard"></div>
+        <div class="role-stats-mini" id="roleStats"></div>
     </div>
 
     <div class="container">
-        <h1>三国杀 · 战略积分系统</h1>
-        <div class="status-bar" id="status">正在准备战场...</div>
+        <h1>三国杀 · 战略积分</h1>
+        <div class="status-bar" id="status">准备进入战场...</div>
 
-        <div class="cards-container" id="cardsContainer">
-            </div>
+        <div class="cards-container" id="cardsContainer"></div>
 
         <div id="gameControls">
             <button class="btn" onclick="revealAll()" id="endBtn" style="display:none">结算本局</button>
-            <button class="btn" onclick="startNewRound()" id="nextBtn" style="display:none">开启下一局</button>
+            <button class="btn" onclick="startNewRound()" id="nextBtn" style="display:none">下一局</button>
         </div>
 
         <div id="winnerSelect" style="display:none; margin-top: 20px;">
-            <h3 style="color:#ffd700">谁赢了？</h3>
+            <h3 style="color:#ffd700">请选择获胜方</h3>
             <div id="winnerBtns"></div>
         </div>
     </div>
 
-    <div id="initModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:flex; justify-content:center; align-items:center; z-index:100;">
-        <div style="background:#222; padding:40px; border-radius:20px; border:2px solid #ffd700; text-align:center">
-            <h2>设置参赛武将</h2>
-            <div style="margin:20px 0">
-                <input type="text" id="p1" value="瑞瑞" style="padding:10px; margin:5px"><br>
-                <input type="text" id="p2" value="妈妈" style="padding:10px; margin:5px"><br>
-                <input type="text" id="p3" value="爸爸" style="padding:10px; margin:5px">
-            </div>
-            <button class="btn" onclick="setupGame()">进入战场</button>
+    <div id="initModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); display:flex; justify-content:center; align-items:center; z-index:100;">
+        <div style="background:#222; border-radius:15px; border:1px solid #ffd700; text-align:center">
+            <h2 style="color:#ffd700">输入武将姓名</h2>
+            <input type="text" id="p1" value="瑞瑞"><br>
+            <input type="text" id="p2" value="妈妈"><br>
+            <input type="text" id="p3" value="爸爸"><br>
+            <button class="btn" onclick="setupGame()">开始对决</button>
         </div>
     </div>
 
@@ -161,39 +170,27 @@
     let currentPlayerIdx = 0;
     let selectedCount = 0;
 
-    const ROLES_POOL = [
-        ['主公', '反贼', '内奸'],
-        ['主公', '反贼', '反贼'],
-        ['主公', '忠臣', '反贼']
-    ];
+    const ROLES_POOL = [['主公', '反贼', '内奸'], ['主公', '反贼', '反贼'], ['主公', '忠臣', '反贼']];
 
     function setupGame() {
-        players = [
-            document.getElementById('p1').value,
-            document.getElementById('p2').value,
-            document.getElementById('p3').value
-        ];
+        players = [document.getElementById('p1').value, document.getElementById('p2').value, document.getElementById('p3').value];
         players.forEach(p => {
             scores[p] = 0;
             roleHistory[p] = { '主公': 0, '内奸': 0, '反贼': 0, '忠臣': 0 };
         });
         document.getElementById('initModal').style.display = 'none';
+        document.getElementById('statsPanel').style.display = 'flex';
         updateStats();
         startNewRound();
     }
 
     function startNewRound() {
-        currentPlayerIdx = 0;
-        selectedCount = 0;
-        assignments = {};
+        currentPlayerIdx = 0; selectedCount = 0; assignments = {};
         document.getElementById('nextBtn').style.display = 'none';
         document.getElementById('winnerSelect').style.display = 'none';
         document.getElementById('endBtn').style.display = 'none';
-
-        // 随机选择局势配置
         let config = ROLES_POOL[Math.floor(Math.random() * ROLES_POOL.length)];
         currentRoles = [...config].sort(() => Math.random() - 0.5);
-
         renderCards();
         updateStatus();
     }
@@ -207,46 +204,37 @@
             wrapper.innerHTML = `
                 <div class="card" id="card-${idx}" onclick="handleCardAction(${idx})">
                     <div class="card-face card-back">
-                        <span id="label-${idx}" style="font-size:0.8rem">点击查看身份</span>
+                        <span id="label-${idx}">点击查看</span>
                     </div>
                     <div class="card-face card-front ${getRoleClass(role)}">
-                        <div style="font-size:3rem">${getRoleIcon(role)}</div>
+                        <div class="icon-text">${getRoleIcon(role)}</div>
                         <h2>${role}</h2>
                     </div>
-                </div>
-            `;
+                </div>`;
             container.appendChild(wrapper);
         });
     }
 
     function handleCardAction(idx) {
         if (selectedCount >= 3) return;
-        
         const card = document.getElementById(`card-${idx}`);
         const label = document.getElementById(`label-${idx}`);
         const currentPlayer = players[currentPlayerIdx];
 
-        // 第一步：翻开查看
         if (!card.classList.contains('flipped') && !card.querySelector('.card-back').classList.contains('selected')) {
             card.classList.add('flipped');
-            document.getElementById('status').innerText = `${currentPlayer} 正在查看... (再次点击确认)`;
-        } 
-        // 第二步：确认并锁定
-        else if (card.classList.contains('flipped')) {
+            document.getElementById('status').innerText = `${currentPlayer}查看中...再点确认`;
+        } else if (card.classList.contains('flipped')) {
             card.classList.remove('flipped');
             card.querySelector('.card-back').classList.add('selected');
-            label.innerText = `玩家：${currentPlayer}`;
-            
+            label.innerText = currentPlayer;
             assignments[currentPlayer] = currentRoles[idx];
             roleHistory[currentPlayer][currentRoles[idx]]++;
-            
             selectedCount++;
             currentPlayerIdx++;
-            
-            if (selectedCount < 3) {
-                updateStatus();
-            } else {
-                document.getElementById('status').innerText = "所有武将就位，请开始厮杀！";
+            if (selectedCount < 3) updateStatus();
+            else {
+                document.getElementById('status').innerText = "身份确定，开战！";
                 document.getElementById('endBtn').style.display = 'inline-block';
             }
         }
@@ -255,71 +243,31 @@
     function revealAll() {
         document.querySelectorAll('.card').forEach(c => c.classList.add('flipped'));
         document.getElementById('endBtn').style.display = 'none';
-        showWinnerOptions();
-    }
-
-    function showWinnerOptions() {
-        const panel = document.getElementById('winnerSelect');
+        document.getElementById('winnerSelect').style.display = 'block';
         const btnArea = document.getElementById('winnerBtns');
-        panel.style.display = 'block';
         btnArea.innerHTML = '';
-
-        // 提取本局出现的唯一身份作为获胜选项
         const activeRoles = [...new Set(Object.values(assignments))];
         activeRoles.forEach(role => {
             const btn = document.createElement('button');
-            btn.className = 'btn';
-            btn.innerText = `${role} 获胜`;
-            btn.onclick = () => calculateScores(role);
+            btn.className = 'btn'; btn.innerText = `${role} 获胜`;
+            btn.onclick = () => {
+                players.forEach(p => { if (assignments[p] === role) scores[p] += (role === '内奸' ? 3 : 2); });
+                updateStats();
+                document.getElementById('winnerSelect').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            };
             btnArea.appendChild(btn);
         });
     }
 
-    function calculateScores(winnerRole) {
-        players.forEach(p => {
-            const pRole = assignments[p];
-            if (pRole === winnerRole) {
-                scores[p] += (winnerRole === '内奸' ? 3 : 2); // 内奸获胜加3分，其余2分
-            }
-        });
-        updateStats();
-        document.getElementById('winnerSelect').style.display = 'none';
-        document.getElementById('nextBtn').style.display = 'inline-block';
-    }
-
     function updateStats() {
-        const board = document.getElementById('scoreBoard');
-        board.innerHTML = players.map(p => `
-            <div class="score-item">
-                <span>${p}</span>
-                <span style="color:#ffd700">${scores[p]}</span>
-            </div>
-        `).join('');
-
-        const roles = document.getElementById('roleStats');
-        roles.innerHTML = players.map(p => `
-            <div style="margin-bottom:8px">
-                <b>${p}:</b><br>
-                主(${roleHistory[p]['主公']}) 内(${roleHistory[p]['内奸']}) 反(${roleHistory[p]['反贼']})
-            </div>
-        `).join('');
+        document.getElementById('scoreBoard').innerHTML = `<b>积分:</b><br>` + players.map(p => `${p}: ${scores[p]}`).join('<br>');
+        document.getElementById('roleStats').innerHTML = `<b>主/内/反:</b><br>` + players.map(p => `${p.charAt(0)}:${roleHistory[p]['主公']}/${roleHistory[p]['内奸']}/${roleHistory[p]['反贼']}`).join('<br>');
     }
 
-    function updateStatus() {
-        document.getElementById('status').innerText = `请 [ ${players[currentPlayerIdx]} ] 抽取身份牌`;
-    }
-
-    function getRoleClass(role) {
-        if (role === '主公') return 'zhugong';
-        if (role === '内奸') return 'neijian';
-        if (role === '反贼') return 'fanzei';
-        return 'zhongchen';
-    }
-
-    function getRoleIcon(role) {
-        const icons = { '主公': '👑', '内奸': '🎭', '反贼': '⚔️', '忠臣': '🛡️' };
-        return icons[role] || '👤';
-    }
+    function updateStatus() { document.getElementById('status').innerText = `请 [ ${players[currentPlayerIdx]} ] 抽牌`; }
+    function getRoleClass(role) { return role === '主公' ? 'zhugong' : (role === '内奸' ? 'neijian' : (role === '反贼' ? 'fanzei' : 'zhongchen')); }
+    function getRoleIcon(role) { return { '主公': '👑', '内奸': '🎭', '反贼': '⚔️', '忠臣': '🛡️' }[role] || '👤'; }
 </script>
 </body>
 </html>

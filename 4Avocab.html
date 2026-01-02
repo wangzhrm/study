@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Vocabulary Quiz</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f0f8ff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+        #quiz-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 90%;
+            width: 500px;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        #progress {
+            margin: 20px 0;
+            font-size: 1.1em;
+            color: #7f8c8d;
+        }
+        #english-word {
+            font-size: 2.5em;
+            margin: 40px 0;
+            font-weight: bold;
+            color: #34495e;
+        }
+        .options {
+            display: grid;
+            gap: 15px;
+        }
+        .option {
+            padding: 18px;
+            font-size: 1.4em;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option:hover {
+            background: #d0e6f9;
+        }
+        .option.correct {
+            background: #2ecc71 !important;
+            color: white;
+        }
+        .option.wrong {
+            background: #ffcccc; /* light red */
+        }
+        #result {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 70vh;
+        }
+        #result h2 {
+            font-size: 2.5em;
+            color: #2c3e50;
+        }
+        #score {
+            font-size: 1.8em;
+            margin: 20px 0;
+        }
+        #restart {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        @media (max-width: 600px) {
+            #english-word {
+                font-size: 2em;
+            }
+            .option {
+                font-size: 1.2em;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-container">
+        <h1>Vocabulary Quiz</h1>
+        <div id="progress"></div>
+        <div id="english-word"></div>
+        <div class="options" id="options"></div>
+    </div>
+
+    <div id="result">
+        <h2>Quiz Completed!</h2>
+        <div id="score"></div>
+        <button id="restart">Restart Quiz</button>
+    </div>
+
+    <script>
+        const vocab = [
+            { english: "PE", chinese: "体育（课）", distractors: ["物理教育", "私人教育", "体育课"] },
+            { english: "job", chinese: "工作；职业", distractors: ["作业", "职位空缺", "临时工"] },
+            { english: "doctor", chinese: "医生", distractors: ["博士", "治疗师", "教授"] },
+            { english: "farmer", chinese: "农场主；农民", distractors: ["种植者", "农业工人", "牧场主"] },
+            { english: "nurse", chinese: "护士", distractors: ["保育员", "照顾者", "保姆"] },
+            { english: "office worker", chinese: "公司职员", distractors: ["工厂工人", "文员", "行政人员"] },
+            { english: "factory worker", chinese: "工厂工人", distractors: ["办公室职员", "生产线员工", "制造业员工"] },
+            { english: "busy", chinese: "忙碌的", distractors: ["繁忙的", "热闹的", "活跃的"] },
+            { english: "tired", chinese: "疲倦的", distractors: ["累的", "无聊的", "困倦的"] },
+            { english: "chore", chinese: "家庭杂务", distractors: ["家务", "任务", "日常工作"] },
+            { english: "cook", chinese: "烹饪；煮", distractors: ["厨师", "烧饭", "烘烤"] },
+            { english: "clean", chinese: "打扫；干净的", distractors: ["清洗", "整洁的", "清除"] },
+            { english: "room", chinese: "房间", distractors: ["空间", "屋子", "教室"] },
+            { english: "look after", chinese: "照顾", distractors: ["照看", "关注", "寻找"] },
+            { english: "sweep", chinese: "扫", distractors: ["清扫", "掠过", "横扫"] },
+            { english: "floor", chinese: "地板；地面", distractors: ["楼层", "地板", "地面"] },
+            { english: "together", chinese: "在一起；共同", distractors: ["共同", "一同", "同时"] },
+            { english: "people", chinese: "人；人们", distractors: ["民众", "人群", "民族"] },
+            { english: "child", chinese: "儿童；小孩", distractors: ["小孩", "孩子", "幼儿"] },
+            { english: "children", chinese: "儿童；小孩", distractors: ["小孩们", "子女", "少年"] },
+            { english: "his", chinese: "他的", distractors: ["她的", "它的", "他们的"] },
+            { english: "strong", chinese: "强壮的", distractors: ["强大的", "坚固的", "激烈的"] },
+            { english: "hair", chinese: "头发", distractors: ["毛发", "发丝", "兽毛"] },
+            { english: "also", chinese: "也", distractors: ["同样", "此外", "而且"] },
+            { english: "kind", chinese: "友好的", distractors: ["种类", "和蔼的", "善意的"] },
+            { english: "quiet", chinese: "文静的", distractors: ["安静的", "宁静的", "寂静的"] },
+            { english: "best", chinese: "最好的", distractors: ["最棒的", "优异的", "第一的"] },
+            { english: "read", chinese: "阅读", distractors: ["朗读", "解读", "浏览"] },
+            { english: "Chinese", chinese: "中文；中国人；中国的", distractors: ["日文", "汉语", "中华的"] },
+            { english: "play", chinese: "玩耍", distractors: ["玩", "表演", "播放"] },
+            { english: "game", chinese: "游戏", distractors: ["比赛", "竞赛", "娱乐"] },
+            { english: "football", chinese: "足球运动", distractors: ["橄榄球", "美式足球", "踢球"] },
+            { english: "basketball", chinese: "篮球运动", distractors: ["排球", "网球", "投篮运动"] },
+            { english: "always", chinese: "总是", distractors: ["永远", "常常", "每次"] },
+            { english: "afternoon", chinese: "下午", distractors: ["上午", "中午", "傍晚"] },
+            { english: "there", chinese: "（表示存在或发生）；在那里", distractors: ["这里", "那边", "到处"] },
+            { english: "playground", chinese: "游乐场；操场", distractors: ["公园", "体育场", "游戏区"] },
+            { english: "park", chinese: "公园", distractors: ["停车", "停车场", "绿地"] },
+            { english: "over", chinese: "在……的远端（或对面）", distractors: ["结束", "超过", "翻转"] },
+            { english: "hospital", chinese: "医院", distractors: ["诊所", "医疗机构", "保健中心"] },
+            { english: "shop", chinese: "商店", distractors: ["购物", "车间", "商场"] },
+            { english: "toilet", chinese: "厕所；卫生间", distractors: ["浴室", "洗手间", "盥洗室"] },
+            { english: "bus stop", chinese: "公共汽车站", distractors: ["地铁站", "火车站", "巴士站"] },
+            { english: "library", chinese: "图书馆", distractors: ["书店", "阅览室", "档案馆"] },
+            { english: "sport", chinese: "体育运动", distractors: ["运动", "竞技", "娱乐活动"] },
+            { english: "walk", chinese: "散步；行走", distractors: ["跑步", "步行", "漫步"] },
+            { english: "community", chinese: "社区", distractors: ["社会", "小区", "团体"] },
+            { english: "favourite", chinese: "最喜欢的", distractors: ["喜欢的", "偏爱的", "宠爱的"] },
+            { english: "place", chinese: "地方；场所", distractors: ["位置", "地点", "空间"] },
+            { english: "photo", chinese: "照片", distractors: ["图片", "相片", "摄影"] },
+            { english: "story", chinese: "故事", distractors: ["小说", "新闻", "楼层"] },
+            { english: "buy", chinese: "购买", distractors: ["卖", "购物", "获取"] },
+            { english: "firefighter", chinese: "消防队员", distractors: ["救火员", "警察", "急救员"] },
+            { english: "why", chinese: "为什么", distractors: ["如何", "因为", "哪儿"] },
+            { english: "driver", chinese: "司机", distractors: ["驾驶员", "导游", "操作员"] },
+            { english: "cleaner", chinese: "清洁工", distractors: ["洗衣工", "保洁员", "打扫员"] },
+            { english: "cook", chinese: "厨师", distractors: ["烘焙师", "服务员", "食品工人"] },
+            { english: "delivery worker", chinese: "快递员", distractors: ["送货员", "邮递员", "运输工"] },
+            { english: "police officer", chinese: "警察；警员", distractors: ["保安", "侦探", "巡警"] },
+            { english: "a lot of", chinese: "大量；许多", distractors: ["一些", "很少", "少数"] },
+            { english: "now", chinese: "现在", distractors: ["当时", "立刻", "目前"] },
+            { english: "make the bed", chinese: "铺床", distractors: ["整理床", "睡床", "打扫床"] },
+            { english: "old", chinese: "过去的；年纪大的；老的", distractors: ["新的", "年轻的", "现代的"] },
+            { english: "tell", chinese: "讲述；告诉", distractors: ["说", "命令", "显示"] },
+            { english: "everyone", chinese: "每人", distractors: ["所有人", "没人", "有些人"] },
+            { english: "Ms", chinese: "（用于女子的姓氏或姓名前，不指明婚否）女士", distractors: ["Mrs", "Miss", "Mr"] },
+            { english: "speak", chinese: "说话；发言", distractors: ["讲", "说语言", "谈话"] },
+            { english: "weather", chinese: "天气", distractors: ["气候", "气温", "气象"] },
+            { english: "sunny", chinese: "阳光充足的", distractors: ["多云的", "阴天的", "雨天的"] },
+            { english: "hot", chinese: "热的", distractors: ["冷的", "温暖的", "凉爽的"] },
+            { english: "bad", chinese: "令人不快的；坏的", distractors: ["好的", "优秀的", "中等的"] },
+            { english: "cold", chinese: "冷的", distractors: ["热的", "凉的", "温暖的"] },
+            { english: "windy", chinese: "多风的", distractors: ["无风的", "晴朗的", "雨天的"] },
+            { english: "cloudy", chinese: "多云的", distractors: ["晴天的", "雨天的", "雪天的"] },
+            { english: "rainy", chinese: "阴雨的", distractors: ["晴朗的", "干旱的", "多雪的"] },
+            { english: "snowy", chinese: "多雪的", distractors: ["下雨的", "晴天的", "多风的"] },
+            { english: "cool", chinese: "凉爽的", distractors: ["热的", "温暖的", "冷的"] },
+            { english: "warm", chinese: "温暖的", distractors: ["冷的", "热的", "凉的"] },
+            { english: "tomorrow", chinese: "在明天", distractors: ["昨天", "今天", "下周"] },
+            { english: "rain", chinese: "下雨；雨", distractors: ["雪", "阳光", "风"] },
+            { english: "closed", chinese: "关闭的", distractors: ["开放的", "营业的", "锁定的"] },
+            { english: "film", chinese: "电影", distractors: ["胶片", "纪录片", "短片"] },
+            { english: "idea", chinese: "想法；主意", distractors: ["计划", "意见", "概念"] },
+            { english: "fly", chinese: "操纵（飞行器等）；飞", distractors: ["跑", "跳", "驾驶"] },
+            { english: "kite", chinese: "风筝", distractors: ["飞机", "鸟", "气球"] },
+            { english: "snowman", chinese: "雪人", distractors: ["冰人", "沙人", "泥人"] },
+            { english: "fun", chinese: "享乐；乐趣", distractors: ["无聊", "严肃", "工作"] },
+            { english: "their", chinese: "他们的；她们的；它们的", distractors: ["我的", "你的", "他的"] },
+            { english: "swim", chinese: "游泳", distractors: ["跑步", "骑车", "散步"] },
+            { english: "Sydney", chinese: "悉尼", distractors: ["墨尔本", "北京", "上海"] },
+            { english: "whose", chinese: "谁的", distractors: ["我的", "你的", "哪个"] },
+            { english: "sweater", chinese: "毛衣", distractors: ["外套", "T恤", "衬衫"] },
+            { english: "sock", chinese: "短袜", distractors: ["鞋子", "手套", "帽子"] },
+            { english: "mine", chinese: "我的", distractors: ["你的", "他的", "我们的"] },
+            { english: "wear", chinese: "穿；戴", distractors: ["脱", "拿", "携带"] },
+            { english: "shirt", chinese: "衬衫", distractors: ["裤子", "裙子", "外套"] },
+            { english: "coat", chinese: "大衣；外套", distractors: ["夹克", "西装", "毛衣"] },
+            { english: "dress", chinese: "连衣裙", distractors: ["裤子", "西装", "衬衫"] },
+            { english: "which", chinese: "哪一个；哪一些", distractors: ["谁", "什么", "哪里"] },
+            { english: "season", chinese: "季节", distractors: ["月份", "天气", "年份"] },
+            { english: "winter", chinese: "冬天", distractors: ["夏天", "春天", "秋天"] },
+            { english: "snow", chinese: "下雪；雪", distractors: ["雨", "阳光", "风"] },
+            { english: "get together", chinese: "聚会", distractors: ["分开", "工作", "学习"] },
+            { english: "spring", chinese: "春天", distractors: ["夏天", "秋天", "冬天"] },
+            { english: "summer", chinese: "夏天", distractors: ["冬天", "春天", "秋天"] },
+            { english: "autumn", chinese: "秋天", distractors: ["春天", "夏天", "冬天"] },
+            { english: "T-shirt", chinese: "T恤衫", distractors: ["衬衫", "毛衣", "外套"] },
+            { english: "fall", chinese: "落下", distractors: ["上升", "跳跃", "站立"] },
+            { english: "leaf", chinese: "叶", distractors: ["花", "根", "果实"] },
+            { english: "leaves", chinese: "叶", distractors: ["枝条", "树干", "花朵"] },
+            { english: "glove", chinese: "手套", distractors: ["帽子", "围巾", "鞋子"] },
+            { english: "then", chinese: "然后；那时", distractors: ["现在", "之前", "以后"] }
+        ];
+
+        let currentList = [];
+        let currentIndex = 0;
+        let attempts = 0;  // wrong attempts in total
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startQuiz() {
+            currentList = shuffle([...vocab]);
+            currentIndex = 0;
+            attempts = 0;
+            document.getElementById('quiz-container').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const item = currentList[currentIndex];
+            document.getElementById('english-word').textContent = item.english;
+            document.getElementById('progress').textContent = `Question ${currentIndex + 1} of ${currentList.length}`;
+
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+
+            const allOptions = [item.chinese, ...item.distractors];
+            shuffle(allOptions);
+
+            allOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.classList.add('option');
+                btn.textContent = opt;
+                btn.onclick = () => chooseOption(btn, opt === item.chinese);
+                optionsDiv.appendChild(btn);
+            });
+        }
+
+        function chooseOption(button, isCorrect) {
+            // disable all buttons temporarily
+            const buttons = document.querySelectorAll('.option');
+            buttons.forEach(b => b.disabled = true);
+
+            if (isCorrect) {
+                button.classList.add('correct');
+                setTimeout(nextQuestion, 800);
+            } else {
+                button.classList.add('wrong');
+                attempts++;
+                // re-enable non-selected buttons
+                buttons.forEach(b => {
+                    if (!b.classList.contains('wrong') && !b.classList.contains('correct')) {
+                        b.disabled = false;
+                    }
+                });
+            }
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            if (currentIndex >= currentList.length) {
+                showResult();
+            } else {
+                // clear previous styles
+                loadQuestion();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz-container').style.display = 'none';
+            const total = currentList.length;
+            const correct = total - attempts;
+            const ratio = ((correct / total) * 100).toFixed(1);
+
+            document.getElementById('score').innerHTML = `
+                Correct: <strong>${correct}</strong><br>
+                Wrong attempts: <strong>${attempts}</strong><br>
+                Accuracy: <strong>${ratio}%</strong>
+            `;
+            document.getElementById('result').style.display = 'flex';
+        }
+
+        document.getElementById('restart').onclick = startQuiz;
+
+        // Start the quiz on load
+        window.onload = startQuiz;
+    </script>
+</body>
+</html>

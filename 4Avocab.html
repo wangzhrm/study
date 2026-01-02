@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>English Vocabulary Quiz</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -24,6 +25,7 @@
             max-width: 90%;
             width: 500px;
             text-align: center;
+            position: relative;
         }
         h1 {
             color: #2c3e50;
@@ -39,6 +41,18 @@
             margin: 40px 0;
             font-weight: bold;
             color: #34495e;
+        }
+        .heart-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 1.8em;
+            color: #ddd;
+            transition: color 0.3s;
+        }
+        .heart-container.hearted {
+            color: #e74c3c;
         }
         .options {
             display: grid;
@@ -69,6 +83,13 @@
             justify-content: center;
             align-items: center;
             height: 70vh;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 90%;
+            width: 500px;
+            text-align: center;
         }
         #result h2 {
             font-size: 2.5em;
@@ -86,6 +107,37 @@
             border: none;
             border-radius: 10px;
             cursor: pointer;
+            margin-top: 20px;
+        }
+        .results-section {
+            margin: 20px 0;
+            text-align: left;
+            width: 100%;
+            max-width: 450px;
+        }
+        .results-section h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .vocab-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .vocab-item {
+            background: #ecf0f1;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .vocab-item i {
+            color: #e74c3c;
         }
         @media (max-width: 600px) {
             #english-word {
@@ -95,12 +147,18 @@
                 font-size: 1.2em;
                 padding: 15px;
             }
+            .heart-container {
+                font-size: 1.5em;
+            }
         }
     </style>
 </head>
 <body>
     <div id="quiz-container">
         <h1>Vocabulary Quiz</h1>
+        <div class="heart-container" id="heart">
+            <i class="far fa-heart"></i>
+        </div>
         <div id="progress"></div>
         <div id="english-word"></div>
         <div class="options" id="options"></div>
@@ -109,6 +167,17 @@
     <div id="result">
         <h2>Quiz Completed!</h2>
         <div id="score"></div>
+        
+        <div class="results-section">
+            <h3>Your Favorite Words</h3>
+            <div class="vocab-list" id="favorite-list"></div>
+        </div>
+        
+        <div class="results-section">
+            <h3>Words You Got Wrong</h3>
+            <div class="vocab-list" id="mistake-list"></div>
+        </div>
+        
         <button id="restart">Restart Quiz</button>
     </div>
 
@@ -230,7 +299,9 @@
 
         let currentList = [];
         let currentIndex = 0;
-        let attempts = 0;  // total wrong attempts
+        let attempts = 0;
+        let favorites = new Set(); // Store favorite words
+        let mistakes = []; // Store words student got wrong
 
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
@@ -244,6 +315,8 @@
             currentList = shuffle([...vocab]);
             currentIndex = 0;
             attempts = 0;
+            favorites = new Set();
+            mistakes = [];
             document.getElementById('quiz-container').style.display = 'block';
             document.getElementById('result').style.display = 'none';
             loadQuestion();
@@ -253,6 +326,16 @@
             const item = currentList[currentIndex];
             document.getElementById('english-word').textContent = item.english;
             document.getElementById('progress').textContent = `Question ${currentIndex + 1} of ${currentList.length}`;
+
+            // Update heart icon state
+            const heartContainer = document.getElementById('heart');
+            if (favorites.has(item.english)) {
+                heartContainer.classList.add('hearted');
+                heartContainer.innerHTML = '<i class="fas fa-heart"></i>';
+            } else {
+                heartContainer.classList.remove('hearted');
+                heartContainer.innerHTML = '<i class="far fa-heart"></i>';
+            }
 
             const optionsDiv = document.getElementById('options');
             optionsDiv.innerHTML = '';
@@ -264,12 +347,12 @@
                 const btn = document.createElement('button');
                 btn.classList.add('option');
                 btn.textContent = opt;
-                btn.onclick = () => chooseOption(btn, opt === item.chinese);
+                btn.onclick = () => chooseOption(btn, opt === item.chinese, item);
                 optionsDiv.appendChild(btn);
             });
         }
 
-        function chooseOption(button, isCorrect) {
+        function chooseOption(button, isCorrect, item) {
             const buttons = document.querySelectorAll('.option');
             buttons.forEach(b => b.disabled = true);
 
@@ -279,6 +362,10 @@
             } else {
                 button.classList.add('wrong');
                 attempts++;
+                // Add to mistakes list if not already there
+                if (!mistakes.some(m => m.english === item.english)) {
+                    mistakes.push(item);
+                }
                 buttons.forEach(b => {
                     if (!b.classList.contains('wrong') && !b.classList.contains('correct')) {
                         b.disabled = false;
@@ -307,8 +394,51 @@
                 Wrong attempts: <strong>${attempts}</strong><br>
                 Accuracy: <strong>${ratio}%</strong>
             `;
+            
+            // Display favorite words
+            const favoriteList = document.getElementById('favorite-list');
+            favoriteList.innerHTML = '';
+            if (favorites.size > 0) {
+                Array.from(favorites).forEach(word => {
+                    const vocabItem = document.createElement('div');
+                    vocabItem.className = 'vocab-item';
+                    vocabItem.innerHTML = `<i class="fas fa-heart"></i> ${word}`;
+                    favoriteList.appendChild(vocabItem);
+                });
+            } else {
+                favoriteList.innerHTML = '<p>No favorite words selected</p>';
+            }
+            
+            // Display mistake words
+            const mistakeList = document.getElementById('mistake-list');
+            mistakeList.innerHTML = '';
+            if (mistakes.length > 0) {
+                mistakes.forEach(item => {
+                    const vocabItem = document.createElement('div');
+                    vocabItem.className = 'vocab-item';
+                    vocabItem.innerHTML = `${item.english} - ${item.chinese}`;
+                    mistakeList.appendChild(vocabItem);
+                });
+            } else {
+                mistakeList.innerHTML = '<p>No mistakes made! Great job!</p>';
+            }
+            
             document.getElementById('result').style.display = 'flex';
         }
+
+        // Heart click functionality
+        document.getElementById('heart').addEventListener('click', function() {
+            const currentItem = currentList[currentIndex];
+            if (favorites.has(currentItem.english)) {
+                favorites.delete(currentItem.english);
+                this.classList.remove('hearted');
+                this.innerHTML = '<i class="far fa-heart"></i>';
+            } else {
+                favorites.add(currentItem.english);
+                this.classList.add('hearted');
+                this.innerHTML = '<i class="fas fa-heart"></i>';
+            }
+        });
 
         document.getElementById('restart').onclick = startQuiz;
 

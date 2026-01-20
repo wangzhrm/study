@@ -1,448 +1,190 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English Vocabulary Quiz</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>四年级语文词语真题级闯关</title>
     <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f0f8ff;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: #333;
-        }
-        #quiz-container {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            max-width: 90%;
-            width: 500px;
-            text-align: center;
-            position: relative;
-        }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        #progress {
-            margin: 20px 0;
-            font-size: 1.1em;
-            color: #7f8c8d;
-        }
-        #english-word {
-            font-size: 2.5em;
-            margin: 40px 0;
-            font-weight: bold;
-            color: #34495e;
-        }
-        .heart-container {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            cursor: pointer;
-            font-size: 1.8em;
-            color: #ddd;
-            transition: color 0.3s;
-        }
-        .heart-container.hearted {
-            color: #e74c3c;
-        }
-        .options {
-            display: grid;
-            gap: 15px;
-        }
-        .option {
-            padding: 18px;
-            font-size: 1.4em;
-            background: #ecf0f1;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .option:hover {
-            background: #d0e6f9;
-        }
-        .option.correct {
-            background: #2ecc71 !important;
-            color: white;
-        }
-        .option.wrong {
-            background: #ffcccc; /* light red */
-        }
-        #result {
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 70vh;
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            max-width: 90%;
-            width: 500px;
-            text-align: center;
-        }
-        #result h2 {
-            font-size: 2.5em;
-            color: #2c3e50;
-        }
-        #score {
-            font-size: 1.8em;
-            margin: 20px 0;
-        }
-        #restart {
-            padding: 15px 30px;
-            font-size: 1.2em;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        .results-section {
-            margin: 20px 0;
-            text-align: left;
-            width: 100%;
-            max-width: 450px;
-        }
-        .results-section h3 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
-        }
-        .vocab-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .vocab-item {
-            background: #ecf0f1;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .vocab-item i {
-            color: #e74c3c;
-        }
-        @media (max-width: 600px) {
-            #english-word {
-                font-size: 2em;
-            }
-            .option {
-                font-size: 1.2em;
-                padding: 15px;
-            }
-            .heart-container {
-                font-size: 1.5em;
-            }
-        }
+        :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --error: #e74c3c; --bg: #f8f9fa; }
+        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: white; width: 95%; max-width: 900px; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .menu { display: grid; gap: 15px; margin: 30px 0; }
+        button { padding: 18px; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.2s; }
+        .btn-main { background: var(--accent); color: white; }
+        .btn-main:hover { background: #2980b9; transform: translateY(-2px); }
+        .quiz-area { min-height: 450px; }
+        .pinyin-box { font-size: 50px; text-align: center; margin: 60px 0; color: #e67e22; letter-spacing: 5px; }
+        .options-list { display: flex; flex-direction: column; gap: 15px; }
+        .opt-btn { background: #fff; border: 2px solid #eaeeef; text-align: left; font-size: 18px; line-height: 1.8; padding: 20px; color: #34495e; }
+        .opt-btn:hover { border-color: var(--accent); background: #f0f7ff; }
+        .progress-info { text-align: right; color: #7f8c8d; margin-bottom: 10px; font-size: 14px; }
+        .result-item { padding: 15px; border-bottom: 1px solid #eee; }
+        .wrong-tag { color: var(--error); font-weight: bold; }
+        .correct-tag { color: var(--success); font-weight: bold; }
+        .hidden { display: none; }
+        .word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+        .word-card { padding: 8px; background: #f9f9f9; border: 1px solid #ddd; font-size: 14px; text-align: center; }
     </style>
 </head>
 <body>
-    <div id="quiz-container">
-        <h1>Vocabulary Quiz</h1>
-        <div class="heart-container" id="heart">
-            <i class="far fa-heart"></i>
-        </div>
-        <div id="progress"></div>
-        <div id="english-word"></div>
-        <div class="options" id="options"></div>
+
+<div class="container">
+    <h1>四年级上册词语闯关 (真题难度)</h1>
+
+    <div id="main-menu" class="menu">
+        <button class="btn-main" onclick="start(1)">1. 标注拼音练习 (纸笔默写)</button>
+        <button class="btn-main" onclick="start(2)">2. 易错读音辨析 (每组 9 词)</button>
+        <button class="btn-main" onclick="start(3)">3. 易错形近字辨析 (每组 9 词)</button>
     </div>
 
-    <div id="result">
-        <h2>Quiz Completed!</h2>
-        <div id="score"></div>
-        
-        <div class="results-section">
-            <h3>Your Favorite Words</h3>
-            <div class="vocab-list" id="favorite-list"></div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-info" id="prog-txt"></div>
+        <div id="quiz-content" class="quiz-area"></div>
+        <div id="nav" class="hidden" style="text-align:right; margin-top:20px;">
+            <button class="btn-main" onclick="goNext()">下一个</button>
         </div>
-        
-        <div class="results-section">
-            <h3>Words You Got Wrong</h3>
-            <div class="vocab-list" id="mistake-list"></div>
-        </div>
-        
-        <button id="restart">Restart Quiz</button>
     </div>
 
-    <script>
-        const vocab = [
-            { english: "PE", chinese: "体育（课）", distractors: ["物理实验", "私人英语", "体育老师"] },
-            { english: "job", chinese: "工作；职业", distractors: ["玩笑", "工作地点", "求职信"] },
-            { english: "doctor", chinese: "医生", distractors: ["医学", "指导老师", "研究员"] },
-            { english: "farmer", chinese: "农场主；农民", distractors: ["农场动物", "收获季节", "拖拉机手"] },
-            { english: "nurse", chinese: "护士", distractors: ["幼儿园老师", "保镖", "饲养员"] },
-            { english: "office worker", chinese: "公司职员", distractors: ["办公室家具", "文件柜", "打印机操作员"] },
-            { english: "factory worker", chinese: "工厂工人", distractors: ["工厂老板", "产品设计师", "机器维修员"] },
-            { english: "busy", chinese: "忙碌的", distractors: ["商业区", "通车的", "热闹的市场"] },
-            { english: "tired", chinese: "疲倦的", distractors: ["轮胎", "生气的", "退休的"] },
-            { english: "chore", chinese: "家庭杂务", distractors: ["合唱团", "核心部分", "家务机器人"] },
-            { english: "cook", chinese: "煮", distractors: ["厨具", "食谱", "厨房"] },
-            { english: "clean", chinese: "打扫；干净的", distractors: ["清洁剂", "清水", "清晰的"] },
-            { english: "room", chinese: "房间", distractors: ["空间站", "预留位置", "教室编号"] },
-            { english: "look after", chinese: "照顾", distractors: ["向后看", "外观设计", "寻找以后"] },
-            { english: "sweep", chinese: "扫", distractors: ["哭泣", "甜的", "毛衣"] },
-            { english: "floor", chinese: "地板；地面", distractors: ["楼层按钮", "地板蜡", "飞翔"] },
-            { english: "together", chinese: "在一起；共同", distractors: ["天气", "集合地点", "团结力量"] },
-            { english: "people", chinese: "人；人们", distractors: ["人口统计", "民族舞蹈", "人物介绍"] },
-            { english: "child", chinese: "儿童；小孩", distractors: ["童年", "孩子气", "儿童节"] },
-            { english: "children", chinese: "儿童；小孩", distractors: ["儿童乐园", "少儿节目", "育儿经"] },
-            { english: "his", chinese: "他的", distractors: ["历史", "吻", "先生"] },
-            { english: "strong", chinese: "强壮的", distractors: ["强烈的味道", "强迫", "优势"] },
-            { english: "hair", chinese: "头发", distractors: ["头发护理", "理发师", "一毫一厘"] },
-            { english: "also", chinese: "也", distractors: [" altar", "否则", "虽然"] },
-            { english: "kind", chinese: "友好的", distractors: ["种类", "点燃", "孩子般的"] },
-            { english: "quiet", chinese: "文静的", distractors: ["安静下来", "辞职", "相当"] },
-            { english: "best", chinese: "最好的", distractors: ["最好的朋友", "尽力", "西装"] },
-            { english: "read", chinese: "阅读", distractors: ["红色", "阅读灯", "已读"] },
-            { english: "Chinese", chinese: "中文；中国人；中国的", distractors: ["中国菜", "中文输入法", "唐人街"] },
-            { english: "play", chinese: "玩耍", distractors: ["戏剧", "播放器", "比赛场地"] },
-            { english: "game", chinese: "游戏", distractors: ["勇敢", "猎物", "比赛规则"] },
-            { english: "football", chinese: "足球运动", distractors: ["美式橄榄球", "足球场", "脚球"] },
-            { english: "basketball", chinese: "篮球运动", distractors: ["篮球架", "投篮得分", "篮子球"] },
-            { english: "always", chinese: "总是", distractors: ["所有方式", "永远在线", "总是迟到"] },
-            { english: "afternoon", chinese: "下午", distractors: ["下午茶", "好下午", "午后阳光"] },
-            { english: "there", chinese: "（表示存在或发生）；在那里", distractors: ["他们的", "那里那里", "存在感"] },
-            { english: "playground", chinese: "游乐场；操场", distractors: ["游戏规则", "游乐园门票", "地面游戏"] },
-            { english: "park", chinese: "公园", distractors: ["停车", "停车位", "水池"] },
-            { english: "over", chinese: "在……的远端（或对面）", distractors: ["结束", "超过分数", "翻转过来"] },
-            { english: "hospital", chinese: "医院", distractors: ["住院部", "好客", "医院大楼"] },
-            { english: "shop", chinese: "商店", distractors: ["购物中心", "车间", "商店街"] },
-            { english: "toilet", chinese: "厕所；卫生间", distractors: ["厕所纸", "马桶", "洗手间标志"] },
-            { english: "bus stop", chinese: "公共汽车站", distractors: ["巴士司机", "停靠站牌", "公交线路"] },
-            { english: "library", chinese: "图书馆", distractors: ["图书管理员", "书架", "借书证"] },
-            { english: "sport", chinese: "体育运动", distractors: ["运动鞋", "体育场", "支持"] },
-            { english: "walk", chinese: "散步；行走", distractors: ["人行道", "步行街", "走路姿势"] },
-            { english: "community", chinese: "社区", distractors: ["社区活动", "共同财产", "社交圈"] },
-            { english: "favourite", chinese: "最喜欢的", distractors: ["收藏夹", "宠儿", "赞成票"] },
-            { english: "place", chinese: "地方；场所", distractors: ["放置", "名次", "地方菜"] },
-            { english: "photo", chinese: "照片", distractors: ["摄影师", "相册", "拍照姿势"] },
-            { english: "story", chinese: "故事", distractors: ["楼层", "历史", "短篇小说"] },
-            { english: "buy", chinese: "购买", distractors: ["再见", "买家", "购物车"] },
-            { english: "firefighter", chinese: "消防队员", distractors: ["火警电话", "灭火器", "消防车"] },
-            { english: "why", chinese: "为什么", distractors: ["无线", "妻子", "智慧"] },
-            { english: "driver", chinese: "司机", distractors: ["驾驶证", "高尔夫球杆", "驱动力"] },
-            { english: "cleaner", chinese: "清洁工", distractors: ["吸尘器", "清洁剂", "干洗店"] },
-            { english: "cook", chinese: "厨师", distractors: ["烹饪书", "炊具", "生熟"] },
-            { english: "delivery worker", chinese: "快递员", distractors: ["司机", "教师", "快递包裹"] },
-            { english: "police officer", chinese: "警察；警员", distractors: ["警车", "警笛", "警局"] },
-            { english: "a lot of", chinese: "大量；许多", distractors: ["很多停车位", "一批货物", "人群"] },
-            { english: "now", chinese: "现在", distractors: ["立即", "当前时间", "如今社会"] },
-            { english: "make the bed", chinese: "铺床", distractors: ["制造床", "床上用品", "整理房间"] },
-            { english: "old", chinese: "过去的；年纪大的；老的", distractors: ["古老传说", "旧衣服", "年老体衰"] },
-            { english: "tell", chinese: "讲述；告诉", distractors: ["电话", "出卖", "辨别"] },
-            { english: "everyone", chinese: "每人", distractors: ["每个人都知道", "人人有份", "所有人集合"] },
-            { english: "Ms", chinese: "（用于女子的姓氏或姓名前，不指明婚否）女士", distractors: ["小姐", "夫人", "先生"] },
-            { english: "speak", chinese: "说话；发言", distractors: ["演讲稿", "扬声器", "口语"] },
-            { english: "weather", chinese: "天气", distractors: ["是否", "气象台", "天气软件"] },
-            { english: "sunny", chinese: "阳光充足的", distractors: ["儿子", "星期日", "晴天娃娃"] },
-            { english: "hot", chinese: "热的", distractors: ["热门", "辣的", "火爆"] },
-            { english: "bad", chinese: "令人不快的；坏的", distractors: ["浴缸", "不好意思", "坏习惯"] },
-            { english: "cold", chinese: "冷的", distractors: ["感冒", "冷战", "冰冷的眼神"] },
-            { english: "windy", chinese: "多风的", distractors: ["蜿蜒的路", "风景区", "天气"] },
-            { english: "cloudy", chinese: "多云的", distractors: ["云朵", "云计算", "大声的"] },
-            { english: "rainy", chinese: "阴雨的", distractors: ["跑", "下雨天", "雨伞"] },
-            { english: "snowy", chinese: "多雪的", distractors: ["雪人", "下雪", "白雪公主"] },
-            { english: "cool", chinese: "凉爽的", distractors: ["酷", "冷却", "冷漠"] },
-            { english: "warm", chinese: "温暖的", distractors: ["热身", "暖气", "热情"] },
-            { english: "tomorrow", chinese: "在明天", distractors: ["明天见", "未来", "明日黄花"] },
-            { english: "rain", chinese: "下雨；雨", distractors: ["雨衣", "彩虹", "酸雨"] },
-            { english: "closed", chinese: "关闭的", distractors: ["闭路电视", "封闭式", "关门大吉"] },
-            { english: "film", chinese: "电影", distractors: ["胶卷", "薄膜", "拍摄"] },
-            { english: "idea", chinese: "想法；主意", distractors: ["理想", "理念", "身份证"] },
-            { english: "fly", chinese: "操纵（飞行器等）；飞", distractors: ["苍蝇", "飞行员", "飞碟"] },
-            { english: "kite", chinese: "风筝", distractors: ["放风筝", "风筝线", "老鹰"] },
-            { english: "snowman", chinese: "雪人", distractors: ["雪景", "滑雪", "雪球"] },
-            { english: "fun", chinese: "享乐；乐趣", distractors: ["有趣", "好玩", "功能"] },
-            { english: "their", chinese: "他们的；她们的；它们的", distractors: ["那里", "他们的书", "继承"] },
-            { english: "swim", chinese: "游泳", distractors: ["游泳池", "泳装", "晕船"] },
-            { english: "Sydney", chinese: "悉尼", distractors: ["澳大利亚首都", "悉尼歌剧院", "雪梨"] },
-            { english: "whose", chinese: "谁的", distractors: ["世界卫生组织", "谁是", "胡说"] },
-            { english: "sweater", chinese: "毛衣", distractors: ["出汗", "毛线", "羊毛衫颜色"] },
-            { english: "sock", chinese: "短袜", distractors: ["袜子工厂", "打击", "插座"] },
-            { english: "mine", chinese: "我的", distractors: ["矿井", "地雷", "挖掘"] },
-            { english: "wear", chinese: "穿；戴", distractors: ["磨损", "佩戴饰品", "天气穿衣"] },
-            { english: "shirt", chinese: "衬衫", distractors: ["T恤", "短袖", "衬里"] },
-            { english: "coat", chinese: "大衣；外套", distractors: ["涂层", "外衣颜色", "涂抹"] },
-            { english: "dress", chinese: "连衣裙", distractors: ["打扮", "礼服", "穿衣服"] },
-            { english: "which", chinese: "哪一个；哪一些", distractors: ["女巫", "哪个好", "切换"] },
-            { english: "season", chinese: "季节", distractors: ["调味料", "赛季", "季节性"] },
-            { english: "winter", chinese: "冬天", distractors: ["获胜者", "冬季奥运", "寒假"] },
-            { english: "snow", chinese: "下雪；雪", distractors: ["雪花", "白雪", "滑雪板"] },
-            { english: "get together", chinese: "聚会", distractors: ["就餐", "一起得到", "收集"] },
-            { english: "spring", chinese: "春天", distractors: ["弹簧", "春季", "泉水"] },
-            { english: "summer", chinese: "夏天", distractors: ["夏季假期", "总结", "热浪"] },
-            { english: "autumn", chinese: "秋天", distractors: ["秋叶", "秋收", "自动"] },
-            { english: "T-shirt", chinese: "T恤衫", distractors: ["短袖上衣", "体恤", "T台"] },
-            { english: "fall", chinese: "落下", distractors: ["秋天（美式）", "跌倒", "瀑布"] },
-            { english: "leaf", chinese: "树叶（单数）", distractors: ["离开", "花瓣", "小草"] },
-            { english: "leaves", chinese: "树叶（复数）", distractors: ["花瓣", "落下", "请假"] },
-            { english: "glove", chinese: "手套", distractors: ["爱的手套", "棒球手套", "全球"] },
-            { english: "then", chinese: "然后；那时", distractors: ["那时那刻", "那么", "否认"] }
-        ];
+    <div id="result-page" class="hidden">
+        <h2>测试完成！</h2>
+        <div id="result-detail"></div>
+        <button class="btn-main" style="width:100%; margin-top:20px;" onclick="location.reload()">返回主菜单</button>
+    </div>
+</div>
 
-        let currentList = [];
-        let currentIndex = 0;
-        let attempts = 0;
-        let favorites = new Set(); // Store favorite words
-        let mistakes = []; // Store words student got wrong
+<script>
+// 高仿真“地雷”库：基于小学语文易错点编码
+const masterTraps = {
+    pinyin: {
+        "血液":"xiě yè", "角色":"jiǎo sè", "惩罚":"chěng fá", "空隙":"xī xì", "尽管":"jǐn guǎn", 
+        "既然":"jì rán", "甚至":"sèn zhì", "震撼":"zhèng hàn", "慎重":"shèn zòng", "弯曲":"wān qǔ",
+        "宁可":"níng kě", "挖掘":"wā qüé", "住宅":"zhǔ zhái", "临时":"lín sí", "旋转":"xuán zhuàn",
+        "降临":"xiáng lín", "舒适":"sū shì", "潜入":"qián rù", "模样":"mó yàng", "抛出":"pāo chū"
+    },
+    typo: {
+        "提心吊胆":"提心掉胆", "通情达理":"通情答理", "既然":"即然", "即使":"既使", "辫子":"辩子", 
+        "争辩":"辨子", "严厉":"严历", "震撼":"震憾", "灌溉":"灌概", "挖掘":"挖倔", "犹如":"尤如",
+        "毕竟":"必竟", "操场":"澡场", "舒服":"舒服", "茂盛":"茂胜", "支撑":"支称", "甚至":"甚致",
+        "清晰":"清析", "博学":"搏学", "博斗":"搏斗", "狠心":"恨心", "纪念":"纪年", "逐渐":"逐斩"
+    }
+};
 
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
+// 1-26 课全量词库
+const fullData = [
+    {w:"奇观",p:"qí guān"},{w:"据说",p:"jù shuō"},{w:"人山人海",p:"rén shān rén hǎi"},{w:"逐渐",p:"zhú jiàn"},{w:"犹如",p:"yóu rú"},{w:"山崩地裂",p:"shān bēng dì liè"},{w:"霎时",p:"shà shí"},{w:"余波",p:"yú bō"},{w:"柔和",p:"róu hé"},{w:"鹅卵石",p:"é luǎn shí"},{w:"庄稼",p:"zhuāng jia"},{w:"成熟",p:"chéng shú"},{w:"传说",p:"chuán shuō"},{w:"按照",p:"àn zhào"},{w:"舒适",p:"shū shì"},{w:"僵硬",p:"jiāng yìng"},{w:"虚弱",p:"xū ruò"},{w:"耐心",p:"nài xīn"},{w:"曾经",p:"céng jīng"},{w:"洋溢",p:"yáng yì"},{w:"灵巧",p:"líng qiǎo"},{w:"科学家",p:"kē xué jiā"},{w:"证明",p:"zhèng míng"},{w:"研究",p:"yán jiū"},{w:"驾驶员",p:"jià shǐ yuán"},{w:"呼风唤雨",p:"hū fēng huàn yǔ"},{w:"奥秘",p:"ào mì"},{w:"改善",p:"gǎi shàn"},{w:"操场",p:"cāo chǎng"},{w:"嫩红",p:"nèn hóng"},{w:"均匀",p:"jūn yún"},{w:"空隙",p:"kòng xì"},{w:"触角",p:"chù jiǎo"},{w:"弯曲",p:"wān qū"},{w:"痕迹",p:"hén jì"},{w:"牢固",p:"láo gù"},{w:"住宅",p:"zhù zhái"},{w:"临时",p:"lín shí"},{w:"随遇而安",p:"suí yù ér ān"},{w:"慎重",p:"shèn zhòng"},{w:"即便",p:"jí biàn"},{w:"精疲力竭",p:"jīng pí lì jié"},{w:"血液",p:"xuè yè"},{w:"奔流不息",p:"bēn liú bù xī"},{w:"茂盛",p:"mào shèng"},{w:"滋润",p:"zī rùn"},{w:"劈开",p:"pī kāi"},{w:"支撑",p:"zhī chēng"},{w:"悲惨",p:"bēi cǎn"},{w:"严厉",p:"yán lì"},{w:"敬佩",p:"jìng pèi"},{w:"既然",p:"jì rán"},{w:"著名",p:"zhù míng"},{w:"获得",p:"huò dé"},{w:"无可奈何",p:"wú kě nài hé"},{w:"身躯",p:"shēn qū"},{w:"庞大",p:"páng dà"},{w:"发颤",p:"fā chàn"},{w:"辫子",p:"biàn zi"},{w:"居然",p:"jū rán"},{w:"甚至",p:"shèn zhì"},{w:"大概",p:"dà gài"},{w:"把握",p:"bǎ wò"},{w:"角色",p:"jué sè"},{w:"通情达理",p:"tōng qíng dá lǐ"},{w:"提示",p:"tí shì"},{w:"哄堂大笑",p:"hōng táng dà xiào"},{w:"挖掘",p:"wā jué"},{w:"垂头丧气",p:"chuí tóu sàng qì"},{w:"冰天雪地",p:"bīng tiān xuě dì"},{w:"重整旗鼓",p:"chóng zhěng qí gǔ"},{w:"不动声色",p:"bù dòng shēng sè"},{w:"清晰",p:"qīng xī"},{w:"灌溉",p:"guàn gài"},{w:"提心吊胆",p:"tí xīn diào dǎn"},{w:"聚精会神",p:"jù jīng huì shén"}
+];
+
+let mode = 0, idx = 0, score = 0, list = [], history = [];
+
+function start(m) {
+    mode = m; idx = 0; score = 0; history = [];
+    list = [...fullData].sort(() => Math.random() - 0.5);
+    document.getElementById('main-menu').classList.add('hidden');
+    document.getElementById('quiz-page').classList.remove('hidden');
+    render();
+}
+
+function render() {
+    const content = document.getElementById('quiz-content');
+    const prog = document.getElementById('prog-txt');
+    const nav = document.getElementById('nav');
+
+    if (mode === 1) {
+        prog.innerText = `进度：${idx + 1} / ${list.length}`;
+        nav.classList.remove('hidden');
+        content.innerHTML = `<div class="pinyin-box">${list[idx].p}</div><p style="text-align:center; color:#999">请在纸上默写汉字词语</p>`;
+    } else {
+        if (idx >= list.length) { showFinal(); return; }
+        prog.innerText = `题目：${Math.floor(idx/9)+1} / ${Math.ceil(list.length/9)}`;
+        nav.classList.add('hidden');
+        generateChallenge();
+    }
+}
+
+function generateChallenge() {
+    const content = document.getElementById('quiz-content');
+    // 取 9 个词作为本题素材
+    let slice = list.slice(idx, idx + 9);
+    // 补齐 9 个
+    while(slice.length < 9) slice.push(fullData[Math.floor(Math.random()*fullData.length)]);
+
+    let groups = [
+        [slice[0], slice[1], slice[2]], // 组 A
+        [slice[3], slice[4], slice[5]], // 组 B
+        [slice[6], slice[7], slice[8]]  // 组 C
+    ];
+
+    // 随机设定哪一组是正确的（0, 1, or 2）
+    let correctIdx = Math.floor(Math.random() * 3);
+    let options = [];
+
+    for (let i = 0; i < 3; i++) {
+        let currentGroup = [...groups[i]];
+        let isThisCorrect = (i === correctIdx);
+        
+        if (!isThisCorrect) {
+            // 制造一个非常像的陷阱词
+            let trapWordIdx = Math.floor(Math.random() * 3);
+            currentGroup[trapWordIdx] = getTrap(currentGroup[trapWordIdx]);
         }
-
-        function startQuiz() {
-            currentList = shuffle([...vocab]);
-            currentIndex = 0;
-            attempts = 0;
-            favorites = new Set();
-            mistakes = [];
-            document.getElementById('quiz-container').style.display = 'block';
-            document.getElementById('result').style.display = 'none';
-            loadQuestion();
-        }
-
-        function loadQuestion() {
-            const item = currentList[currentIndex];
-            document.getElementById('english-word').textContent = item.english;
-            document.getElementById('progress').textContent = `Question ${currentIndex + 1} of ${currentList.length}`;
-
-            // Update heart icon state
-            const heartContainer = document.getElementById('heart');
-            if (favorites.has(item.english)) {
-                heartContainer.classList.add('hearted');
-                heartContainer.innerHTML = '<i class="fas fa-heart"></i>';
-            } else {
-                heartContainer.classList.remove('hearted');
-                heartContainer.innerHTML = '<i class="far fa-heart"></i>';
-            }
-
-            const optionsDiv = document.getElementById('options');
-            optionsDiv.innerHTML = '';
-
-            const allOptions = [item.chinese, ...item.distractors];
-            shuffle(allOptions);
-
-            allOptions.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.classList.add('option');
-                btn.textContent = opt;
-                btn.onclick = () => chooseOption(btn, opt === item.chinese, item);
-                optionsDiv.appendChild(btn);
-            });
-        }
-
-        function chooseOption(button, isCorrect, item) {
-            const buttons = document.querySelectorAll('.option');
-            buttons.forEach(b => b.disabled = true);
-
-            if (isCorrect) {
-                button.classList.add('correct');
-                setTimeout(nextQuestion, 800);
-            } else {
-                button.classList.add('wrong');
-                attempts++;
-                // Add to mistakes list if not already there
-                if (!mistakes.some(m => m.english === item.english)) {
-                    mistakes.push(item);
-                }
-                buttons.forEach(b => {
-                    if (!b.classList.contains('wrong') && !b.classList.contains('correct')) {
-                        b.disabled = false;
-                    }
-                });
-            }
-        }
-
-        function nextQuestion() {
-            currentIndex++;
-            if (currentIndex >= currentList.length) {
-                showResult();
-            } else {
-                loadQuestion();
-            }
-        }
-
-        function showResult() {
-            document.getElementById('quiz-container').style.display = 'none';
-            const total = currentList.length;
-            const correct = total - attempts;
-            const ratio = ((correct / total) * 100).toFixed(1);
-
-            document.getElementById('score').innerHTML = `
-                Correct: <strong>${correct}</strong><br>
-                Wrong attempts: <strong>${attempts}</strong><br>
-                Accuracy: <strong>${ratio}%</strong>
-            `;
-            
-            // Display favorite words
-            const favoriteList = document.getElementById('favorite-list');
-            favoriteList.innerHTML = '';
-            if (favorites.size > 0) {
-                Array.from(favorites).forEach(word => {
-                    const vocabItem = document.createElement('div');
-                    vocabItem.className = 'vocab-item';
-                    vocabItem.innerHTML = `<i class="fas fa-heart"></i> ${word}`;
-                    favoriteList.appendChild(vocabItem);
-                });
-            } else {
-                favoriteList.innerHTML = '<p>No favorite words selected</p>';
-            }
-            
-            // Display mistake words
-            const mistakeList = document.getElementById('mistake-list');
-            mistakeList.innerHTML = '';
-            if (mistakes.length > 0) {
-                mistakes.forEach(item => {
-                    const vocabItem = document.createElement('div');
-                    vocabItem.className = 'vocab-item';
-                    vocabItem.innerHTML = `${item.english} - ${item.chinese}`;
-                    mistakeList.appendChild(vocabItem);
-                });
-            } else {
-                mistakeList.innerHTML = '<p>No mistakes made! Great job!</p>';
-            }
-            
-            document.getElementById('result').style.display = 'flex';
-        }
-
-        // Heart click functionality
-        document.getElementById('heart').addEventListener('click', function() {
-            const currentItem = currentList[currentIndex];
-            if (favorites.has(currentItem.english)) {
-                favorites.delete(currentItem.english);
-                this.classList.remove('hearted');
-                this.innerHTML = '<i class="far fa-heart"></i>';
-            } else {
-                favorites.add(currentItem.english);
-                this.classList.add('hearted');
-                this.innerHTML = '<i class="fas fa-heart"></i>';
-            }
+        
+        options.push({
+            text: currentGroup.map(item => (mode === 2 ? `${item.w}(${item.p})` : item.w)).join("、"),
+            isCorrect: isThisCorrect
         });
+    }
 
-        document.getElementById('restart').onclick = startQuiz;
+    content.innerHTML = `<h3>找出一组 <span style="color:var(--accent)">完全正确</span> 的词语：</h3><div class="options-list">` + 
+        options.map(o => `<button class="opt-btn" onclick="submitAns(${o.isCorrect}, '${o.text}')">${o.text}</button>`).join('') + 
+        `</div>`;
+}
 
-        window.onload = startQuiz;
-    </script>
+function getTrap(item) {
+    let newItem = { ...item };
+    if (mode === 2) {
+        // 拼音陷阱
+        newItem.p = masterTraps.pinyin[item.w] || item.p.replace('sh', 's').replace('zh', 'z').replace('uè', 'uě').replace('ǐ', 'ì');
+    } else {
+        // 字形陷阱
+        newItem.w = masterTraps.typo[item.w] || (item.w.length > 1 ? item.w.replace(item.w[0], "㐅") : item.w);
+        // 如果没有预设陷阱且是自动替换，尝试更真实的形近字
+        if(newItem.w.includes("㐅")) {
+            const char = item.w[0];
+            const sim = {"级":"极", "份":"分", "末":"未", "拔":"拨", "采":"彩", "竞":"竟"};
+            newItem.w = item.w.replace(char, sim[char] || "拟");
+        }
+    }
+    return newItem;
+}
+
+function submitAns(isCorrect, text) {
+    if (isCorrect) score++;
+    else history.push(text);
+    idx += 9;
+    render();
+}
+
+function goNext() {
+    idx++;
+    if (idx < list.length) render(); else showFinal();
+}
+
+function showFinal() {
+    document.getElementById('quiz-page').classList.add('hidden');
+    const resPage = document.getElementById('result-page');
+    const detail = document.getElementById('result-detail');
+    resPage.classList.remove('hidden');
+
+    if (mode === 1) {
+        detail.innerHTML = `<p>请核对您的默写：</p><div class="word-grid">` + 
+            list.map(i => `<div class="word-card">${i.p}<br><b>${i.w}</b></div>`).join('') + `</div>`;
+    } else {
+        let total = Math.ceil(list.length/9);
+        detail.innerHTML = `<h3>正确率：${Math.round(score/total*100)}%</h3>` +
+            (history.length > 0 ? `<p class="wrong-tag">你选错的组（含陷阱词）：</p>` + 
+            history.map(h => `<div class="result-item">${h}</div>`).join('') : `<p class="correct-tag">真厉害！全对了！</p>`);
+    }
+}
+</script>
 </body>
 </html>

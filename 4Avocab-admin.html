@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>词库管理后台 (支持批量上传)</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root { --primary: #2c3e50; --accent: #3ecf8e; --bg: #f4f7f6; }
+        body { font-family: 'PingFang SC', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; }
+        .admin-card { background: white; width: 100%; max-width: 600px; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 20px; }
+        .section { border: 1px solid #eee; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        .section-title { font-weight: bold; margin-bottom: 10px; color: var(--primary); display: flex; align-items: center; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; font-size: 13px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-add { background: var(--accent); color: white; margin-top: 5px; }
+        .btn-upload { background: #3498db; color: white; margin-top: 10px; }
+        #msg { margin-top: 15px; padding: 12px; border-radius: 6px; display: none; text-align: center; font-size: 14px; }
+        .success { background: #e6f9f0; color: #27ae60; display: block !important; }
+        .error { background: #fceaea; color: #e74c3c; display: block !important; }
+        .file-input-wrapper { border: 2px dashed #ccc; padding: 20px; text-align: center; cursor: pointer; }
+        .file-input-wrapper:hover { border-color: #3498db; }
+    </style>
+</head>
+<body>
+
+<div class="admin-card">
+    <h2>词库管理后台</h2>
+
+    <div class="section" style="background: #f0f7ff;">
+        <div class="section-title">📊 批量上传 Excel</div>
+        <div class="file-input-wrapper" onclick="document.getElementById('excelFile').click()">
+            <p id="fileName">点击选择或拖拽 Excel 文件</p>
+            <input type="file" id="excelFile" accept=".xlsx, .xls" style="display:none" onchange="handleFile(this)">
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 8px;">
+            格式：列1词语 | 列2拼音 | 列3错音(选填) | 列4错字(选填)
+        </p>
+        <button class="btn btn-upload" id="uploadBtn" onclick="uploadExcel()" disabled>开始批量同步到云端</button>
+    </div>
+
+    <div class="section">
+        <div class="section-title">➕ 单个录入</div>
+        <div class="form-group"><label>词语</label><input type="text" id="w"></div>
+        <div class="form-group"><label>拼音</label><input type="text" id="p"></div>
+        <div class="form-group"><label>陷阱拼音</label><input type="text" id="trap_p"></div>
+        <div class="form-group"><label>陷阱字</label><input type="text" id="trap_w"></div>
+        <button class="btn btn-add" onclick="submitSingle()">保存单个词语</button>
+    </div>
+
+    <div id="msg"></div>
+</div>
+
+<script>
+const PROJECT_ID = "wqvegiyfqpbqgzpmrrds";
+const ANON_KEY = "sb_publishable_iLS1hJ8VgcxVFraIxtFPTA_71Ssmn3m";
+const API_URL = `https://${PROJECT_ID}.supabase.co/rest/v1/words_library`;
+
+let pendingData = [];
+
+// 处理文件选择
+function handleFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById('fileName').innerText = `已选择: ${file.name}`;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+
+        // 转换数据格式 (跳过表头，如果有的话可以从 i=1 开始)
+        pendingData = json.filter(row => row[0] && row[1]).map(row => ({
+            w: String(row[0]).trim(),
+            p: String(row[1]).trim(),
+            trap_p: row[2] ? String(row[2]).trim() : null,
+            trap_w: row[3] ? String(row[3]).trim() : null
+        }));
+
+        if (pendingData.length > 0) {
+            document.getElementById('uploadBtn').disabled = false;
+            document.getElementById('uploadBtn').innerText = `识别到 ${pendingData.length} 条数据，点击上传`;
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// 批量上传到 Supabase
+async function uploadExcel() {
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true;
+    btn.innerText = "正在同步...";
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'apikey': ANON_KEY,
+                'Authorization': `Bearer ${ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify(pendingData)
+        });
+
+        if (response.ok) {
+            showMsg(`✔ 成功批量导入 ${pendingData.length} 个词语！`, "success");
+            btn.innerText = "上传完成";
+            pendingData = [];
+        } else {
+            throw new Error("上传失败");
+        }
+    } catch (err) {
+        showMsg("❌ 批量上传出错，请检查网络或数据格式", "error");
+        btn.disabled = false;
+    }
+}
+
+// 单个提交逻辑
+async function submitSingle() {
+    const data = {
+        w: document.getElementById('w').value.trim(),
+        p: document.getElementById('p').value.trim(),
+        trap_p: document.getElementById('trap_p').value.trim() || null,
+        trap_w: document.getElementById('trap_w').value.trim() || null
+    };
+
+    if (!data.w || !data.p) return showMsg("请填写必填项", "error");
+
+    try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            showMsg("✔ 单个词语添加成功", "success");
+            ["w", "p", "trap_p", "trap_w"].forEach(id => document.getElementById(id).value = "");
+        }
+    } catch (e) { showMsg("添加失败", "error"); }
+}
+
+function showMsg(t, c) {
+    const m = document.getElementById('msg');
+    m.innerText = t; m.className = c;
+}
+</script>
+</body>
+</html>

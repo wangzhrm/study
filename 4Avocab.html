@@ -3,53 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>四年级语文词语闯关 (真题级云端版)</title>
+    <title>四年级语文词语闯关 (真题精准版)</title>
     <style>
         :root { --primary: #2c3e50; --accent: #3ecf8e; --success: #27ae60; --error: #e74c3c; --bg: #f8f9fa; }
         body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .container { background: white; width: 95%; max-width: 800px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); min-height: 550px; position: relative; }
+        .container { background: white; width: 95%; max-width: 800px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); min-height: 550px; }
         h1 { font-size: 22px; color: var(--primary); text-align: center; margin-bottom: 20px; border-bottom: 2px solid #f1f1f1; padding-bottom: 15px; }
         .btn { padding: 18px; border: none; border-radius: 12px; cursor: pointer; font-size: 17px; font-weight: bold; width: 100%; margin-bottom: 12px; transition: 0.2s; }
         .btn-main { background: var(--accent); color: white; }
-        .btn-main:active { transform: scale(0.98); }
         .opt-btn { background: #fff; border: 2px solid #eaeeef; text-align: left; font-weight: normal; padding: 18px; color: #34495e; font-size: 17px; line-height: 1.6; }
         .opt-btn:hover { border-color: var(--accent); background: #f0f7ff; }
         .hidden { display: none; }
-        .pinyin-box { font-size: 55px; text-align: center; margin: 60px 0; color: #e67e22; letter-spacing: 5px; font-weight: bold; }
+        .pinyin-box { font-size: 55px; text-align: center; margin: 60px 0; color: #e67e22; font-weight: bold; }
         .progress-bar { text-align: right; font-size: 13px; color: #95a5a6; margin-bottom: 10px; }
-        #loading { text-align: center; padding: 100px 20px; color: #95a5a6; font-size: 18px; }
         .result-card { background: #fdfefe; border-radius: 12px; padding: 15px; margin-top: 15px; border: 1px solid #eee; max-height: 400px; overflow-y: auto; }
-        .review-item { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
-        .wrong-text { color: var(--error); font-size: 15px; text-decoration: line-through; }
-        .right-text { color: var(--success); font-size: 15px; font-weight: bold; margin-top: 5px; }
+        .review-item { margin-bottom: 20px; padding: 12px; border-radius: 8px; border: 1px solid #f1f1f1; background: #fff; }
+        .wrong-tag { color: var(--error); font-weight: bold; font-size: 12px; }
+        .right-tag { color: var(--success); font-weight: bold; font-size: 12px; }
+        .wrong-text { color: var(--error); text-decoration: line-through; margin-bottom: 8px; font-size: 16px; }
+        .right-text { color: var(--success); font-weight: bold; font-size: 16px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1 id="title">四年级词语闯关 (真题级)</h1>
-    <div id="loading">正在从云端获取真题库...</div>
+    <h1 id="title">四年级语文词语闯关</h1>
+    <div id="loading" style="text-align:center; padding:50px;">正在从云端加载词库...</div>
 
     <div id="main-menu" class="hidden">
-        <p style="text-align:center; color:#7f8c8d; margin-bottom:20px;">请选择闯关模式</p>
-        <button class="btn btn-main" onclick="start(1)">1. 标注拼音练习 (纸笔默写)</button>
-        <button class="btn btn-main" onclick="start(2)">2. 易错读音辨析 (每题3组词)</button>
-        <button class="btn btn-main" onclick="start(3)">3. 易错形近字辨析 (每题3组词)</button>
+        <p style="text-align:center; color:#7f8c8d; margin-bottom:20px;">请选择挑战模式</p>
+        <button class="btn btn-main" onclick="start(1)">1. 标注拼音练习</button>
+        <button class="btn btn-main" onclick="start(2)">2. 易错读音辨析 (找全对组)</button>
+        <button class="btn btn-main" onclick="start(3)">3. 易错字形辨析 (找全对组)</button>
     </div>
 
     <div id="quiz-page" class="hidden">
         <div class="progress-bar" id="prog-txt"></div>
         <div id="quiz-content"></div>
-        <div id="nav-area" class="hidden" style="margin-top:20px;">
-            <button class="btn btn-main" style="width:auto; float:right; padding:10px 40px;" onclick="goNext()">下一个</button>
-        </div>
     </div>
 
     <div id="result-page" class="hidden">
         <h2 style="text-align:center; color:var(--success)">挑战结束！</h2>
         <div id="score-box" style="text-align:center; font-size:24px; font-weight:bold; margin:20px 0;"></div>
         <div id="result-detail" class="result-card"></div>
-        <button class="btn btn-main" style="margin-top:25px; background:#2ecc71" onclick="location.reload()">回主菜单</button>
+        <button class="btn btn-main" style="margin-top:25px; background:#2ecc71" onclick="location.reload()">回到主菜单</button>
     </div>
 </div>
 
@@ -62,12 +59,14 @@ let fullData = [], list = [], mode = 0, idx = 0, score = 0, history = [];
 
 async function init() {
     try {
-        const response = await fetch(API_URL, { headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` } });
+        const response = await fetch(API_URL, { 
+            headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` } 
+        });
         fullData = await response.json();
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('main-menu').classList.remove('hidden');
     } catch (err) {
-        document.getElementById('loading').innerHTML = `❌ 连接数据库失败`;
+        document.getElementById('loading').innerHTML = `❌ 连接失败`;
     }
 }
 
@@ -82,82 +81,96 @@ function start(m) {
 function render() {
     const content = document.getElementById('quiz-content');
     const prog = document.getElementById('prog-txt');
-    const nav = document.getElementById('nav-area');
-
     if (idx >= list.length) { showFinal(); return; }
 
     if (mode === 1) {
-        prog.innerText = `当前进度：${idx + 1} / ${list.length}`;
-        nav.classList.remove('hidden');
-        content.innerHTML = `<div class="pinyin-box">${list[idx].p}</div><p style="text-align:center; color:#95a5a6">请在纸上默写出对应的词语</p>`;
+        prog.innerText = `进度：${idx + 1} / ${list.length}`;
+        content.innerHTML = `<div class="pinyin-box">${list[idx].p}</div><button class="btn btn-main" onclick="idx++; render();">下一题</button>`;
     } else {
-        prog.innerText = `题目：${Math.floor(idx/9) + 1} / ${Math.ceil(list.length/9)}`;
-        nav.classList.add('hidden');
-        generateAdvancedChallenge();
+        prog.innerText = `题目：${Math.floor(idx/3) + 1} / ${Math.ceil(list.length/3)}`;
+        generateChallenge();
     }
 }
 
-function generateAdvancedChallenge() {
+function generateChallenge() {
     const content = document.getElementById('quiz-content');
-    let slice = list.slice(idx, idx + 9);
-    while(slice.length < 9) slice.push(fullData[Math.floor(Math.random()*fullData.length)]);
+    
+    // 1. Correct Group (3 unique words from list)
+    let correctGroup = list.slice(idx, idx + 3);
+    while(correctGroup.length < 3) correctGroup.push(fullData[Math.floor(Math.random()*fullData.length)]);
+    
+    // Create a Set of words currently in the question to prevent duplicates
+    let usedWords = new Set(correctGroup.map(item => item.w));
 
-    let correctIdx = Math.floor(Math.random() * 3);
+    // 2. Filter Pool for Traps (Exclude words already in correctGroup)
+    let trapPool = fullData.filter(item => {
+        const hasTrap = mode === 2 ? (item.trap_p && item.trap_p.trim() !== "") : (item.trap_w && item.trap_w.trim() !== "");
+        return hasTrap && !usedWords.has(item.w);
+    });
+
+    // 3. Filter Pool for Fillers (Exclude words already in usedWords)
+    let fillerPool = fullData.filter(item => !usedWords.has(item.w));
+
     let options = [];
-
+    
     for (let i = 0; i < 3; i++) {
-        let isGroupCorrect = (i === correctIdx);
-        let groupItems = [slice[i*3], slice[i*3+1], slice[i*3+2]];
-        
-        // Pick one item in the incorrect group to be the "Trap"
-        let trapTargetIdx = Math.floor(Math.random() * 3);
+        let isCorrect = (i === 0); 
+        let rowItems = [];
+        let trapPos = -1;
 
-        let optionTexts = groupItems.map((item, itemIdx) => {
-            // If group is wrong AND this is the designated trap item
-            if (!isGroupCorrect && itemIdx === trapTargetIdx) {
-                if (mode === 2) {
-                    let badP = item.trap_p || item.p.replace('sh','s').replace('zh','z');
-                    return `${item.w}(${badP})`;
-                } else {
-                    let badW = item.trap_w || item.w.replace(item.w[0], "拟");
-                    return badW;
-                }
+        if (isCorrect) {
+            rowItems = [...correctGroup];
+        } else {
+            // Pick 1 Trap word from trapPool
+            let trapIdx = Math.floor(Math.random() * trapPool.length);
+            let trapItem = trapPool.splice(trapIdx, 1)[0] || fullData[0];
+            usedWords.add(trapItem.w);
+
+            // Pick 2 Fillers from fillerPool
+            let fillers = [];
+            for(let j=0; j<2; j++) {
+                let fIdx = Math.floor(Math.random() * fillerPool.length);
+                let fItem = fillerPool.splice(fIdx, 1)[0] || fullData[1];
+                fillers.push(fItem);
+                usedWords.add(fItem.w);
             }
-            // Otherwise show correct version
+            
+            rowItems = [trapItem, ...fillers];
+            trapPos = 0; 
+
+            // Shuffle these 3 words internally
+            for (let j = 2; j > 0; j--) {
+                const k = Math.floor(Math.random() * (j + 1));
+                [rowItems[j], rowItems[k]] = [rowItems[k], rowItems[j]];
+                if (j === trapPos) trapPos = k; else if (k === trapPos) trapPos = j;
+            }
+        }
+
+        let displayArr = rowItems.map((item, pos) => {
+            if (!isCorrect && pos === trapPos) {
+                return mode === 2 ? `${item.w}(${item.trap_p})` : item.trap_w;
+            }
             return mode === 2 ? `${item.w}(${item.p})` : item.w;
         });
 
-        // Store the correct version for this specific group to show in review if needed
-        let correctVersion = groupItems.map(item => mode === 2 ? `${item.w}(${item.p})` : item.w).join("、");
-        
-        options.push({ 
-            displayText: optionTexts.join("、"), 
-            isCorrect: isGroupCorrect,
-            correctAnswer: "" // Handled in checkAnswer
+        options.push({
+            text: displayArr.join("、"),
+            isCorrect: isCorrect,
+            correctAnswer: rowItems.map(item => mode === 2 ? `${item.w}(${item.p})` : item.w).join("、")
         });
     }
-    
-    // Find the correct group's text to store in the wrong answer history
-    const actualCorrectText = options.find(o => o.isCorrect).displayText;
 
-    content.innerHTML = `<h3 style="margin-bottom:20px; font-size:18px;">找出一组 <span style="color:var(--accent)">完全正确</span> 的词语：</h3>` + 
-        `<div style="display:grid; gap:15px;">` +
-        options.map(o => `<button class="btn opt-btn" onclick="checkAnswer(${o.isCorrect}, '${o.displayText}', '${actualCorrectText}')">${o.displayText}</button>`).join('') +
-        `</div>`;
+    options.sort(() => Math.random() - 0.5);
+    const actualCorrectText = options.find(o => o.isCorrect).correctAnswer;
+
+    content.innerHTML = `<h3 style="font-size:18px; margin-bottom:20px;">找出一组 <span style="color:var(--accent)">完全正确</span> 的词语：</h3>` +
+        options.map(o => `<button class="btn opt-btn" onclick="handleSelect(${o.isCorrect}, '${o.text}', '${actualCorrectText}')">${o.text}</button>`).join('');
 }
 
-function checkAnswer(isCorrect, selectedText, correctText) {
-    if (isCorrect) {
-        score++;
-    } else {
-        history.push({ selected: selectedText, correct: correctText });
-    }
-    idx += 9;
-    render();
-}
-
-function goNext() {
-    idx++;
+function handleSelect(isCorrect, selected, correct) {
+    if (isCorrect) score++;
+    else history.push({ selected, correct });
+    idx += 3; 
     render();
 }
 
@@ -165,32 +178,16 @@ function showFinal() {
     document.getElementById('quiz-page').classList.add('hidden');
     const resPage = document.getElementById('result-page');
     resPage.classList.remove('hidden');
-
-    const totalQuestions = mode === 1 ? list.length : Math.ceil(list.length/9);
-    const percent = Math.round(score/totalQuestions*100);
-    document.getElementById('score-box').innerText = mode === 1 ? "练习完成！" : `得分：${percent}% (${score}/${totalQuestions})`;
-    
+    const total = mode === 1 ? list.length : Math.ceil(list.length/3);
+    const rate = Math.round((score / total) * 100);
+    document.getElementById('score-box').innerText = mode === 1 ? "完成练习" : `得分：${rate}%`;
     const detail = document.getElementById('result-detail');
     if (mode === 1) {
-        detail.innerHTML = `<p>核对默写：</p><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">` + 
-            list.map(i => `<div style="font-size:13px; border-bottom:1px solid #eee;">${i.p}<br><b>${i.w}</b></div>`).join('') + `</div>`;
+        detail.innerHTML = list.map(i => `<div style="padding:10px; border-bottom:1px solid #eee;">${i.p} → <b>${i.w}</b></div>`).join('');
     } else {
-        if (history.length > 0) {
-            detail.innerHTML = `<p style="color:var(--error); font-weight:bold; margin-bottom:15px;">错题回顾：</p>` + 
-                history.map(h => `
-                    <div class="review-item">
-                        <div style="font-size:12px; color:#999;">你的选择：</div>
-                        <div class="wrong-text">${h.selected}</div>
-                        <div style="font-size:12px; color:#999; margin-top:8px;">正确答案应该是：</div>
-                        <div class="right-text">${h.correct}</div>
-                    </div>
-                `).join('');
-        } else {
-            detail.innerHTML = `<p style="color:var(--success); text-align:center; font-size:18px; margin-top:20px;">🎉 真厉害！避开了所有地雷！</p>`;
-        }
+        detail.innerHTML = history.length > 0 ? `<p style="font-weight:bold; color:var(--error);">错题回顾：</p>` + history.map(h => `<div class="review-item"><div class="wrong-tag">你的选择：</div><div class="wrong-text">${h.selected}</div><div class="right-tag">正确答案：</div><div class="right-text">${h.correct}</div></div>`).join('') : `<p style="text-align:center; padding:30px; color:var(--success);">🌟 完美通关！</p>`;
     }
 }
-
 init();
 </script>
 </body>

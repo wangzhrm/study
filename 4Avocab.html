@@ -9,37 +9,32 @@
         body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { background: white; width: 95%; max-width: 800px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); min-height: 550px; position: relative; }
         h1 { font-size: 22px; color: var(--primary); text-align: center; margin-bottom: 20px; border-bottom: 2px solid #f1f1f1; padding-bottom: 15px; }
-        
-        /* 按钮样式 */
         .btn { padding: 18px; border: none; border-radius: 12px; cursor: pointer; font-size: 17px; font-weight: bold; width: 100%; margin-bottom: 12px; transition: 0.2s; }
         .btn-main { background: var(--accent); color: white; }
         .btn-main:active { transform: scale(0.98); }
-        .opt-btn { background: #fff; border: 2px solid #eaeeef; text-align: left; font-weight: normal; padding: 18px; color: #34495e; font-size: 18px; line-height: 1.6; }
-        .opt-btn:active { background: #f0f7ff; border-color: var(--accent); }
-
-        /* 游戏界面 */
+        .opt-btn { background: #fff; border: 2px solid #eaeeef; text-align: left; font-weight: normal; padding: 18px; color: #34495e; font-size: 17px; line-height: 1.6; }
+        .opt-btn:hover { border-color: var(--accent); background: #f0f7ff; }
         .hidden { display: none; }
         .pinyin-box { font-size: 55px; text-align: center; margin: 60px 0; color: #e67e22; letter-spacing: 5px; font-weight: bold; }
         .progress-bar { text-align: right; font-size: 13px; color: #95a5a6; margin-bottom: 10px; }
         #loading { text-align: center; padding: 100px 20px; color: #95a5a6; font-size: 18px; }
-        
-        /* 结果展示 */
-        .result-card { background: #fdfefe; border-radius: 12px; padding: 15px; margin-top: 15px; border: 1px solid #eee; max-height: 300px; overflow-y: auto; }
-        .wrong-text { color: var(--error); font-size: 14px; margin-bottom: 8px; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
+        .result-card { background: #fdfefe; border-radius: 12px; padding: 15px; margin-top: 15px; border: 1px solid #eee; max-height: 400px; overflow-y: auto; }
+        .review-item { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .wrong-text { color: var(--error); font-size: 15px; text-decoration: line-through; }
+        .right-text { color: var(--success); font-size: 15px; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1 id="title">四年级词语闯关 (真题级)</h1>
-
     <div id="loading">正在从云端获取真题库...</div>
 
     <div id="main-menu" class="hidden">
         <p style="text-align:center; color:#7f8c8d; margin-bottom:20px;">请选择闯关模式</p>
         <button class="btn btn-main" onclick="start(1)">1. 标注拼音练习 (纸笔默写)</button>
-        <button class="btn btn-main" onclick="start(2)">2. 易错读音辨析 (选出全对组)</button>
-        <button class="btn btn-main" onclick="start(3)">3. 易错形近字辨析 (选出全对组)</button>
+        <button class="btn btn-main" onclick="start(2)">2. 易错读音辨析 (每题3组词)</button>
+        <button class="btn btn-main" onclick="start(3)">3. 易错形近字辨析 (每题3组词)</button>
     </div>
 
     <div id="quiz-page" class="hidden">
@@ -59,33 +54,25 @@
 </div>
 
 <script>
-// --- 1. 核心配置 ---
 const PROJECT_ID = "wqvegiyfqpbqgzpmrrds";
 const ANON_KEY = "sb_publishable_iLS1hJ8VgcxVFraIxtFPTA_71Ssmn3m";
 const API_URL = `https://${PROJECT_ID}.supabase.co/rest/v1/words_library?select=w,p,trap_w,trap_p`;
 
 let fullData = [], list = [], mode = 0, idx = 0, score = 0, history = [];
 
-// --- 2. 数据初始化 ---
 async function init() {
     try {
-        const response = await fetch(API_URL, {
-            headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` }
-        });
+        const response = await fetch(API_URL, { headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` } });
         fullData = await response.json();
-        if (fullData.length === 0) throw new Error("库中无数据");
-        
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('main-menu').classList.remove('hidden');
     } catch (err) {
-        document.getElementById('loading').innerHTML = `❌ 连接数据库失败<br><small style="font-size:12px">${err.message}</small>`;
+        document.getElementById('loading').innerHTML = `❌ 连接数据库失败`;
     }
 }
 
-// --- 3. 游戏流程控制 ---
 function start(m) {
     mode = m; idx = 0; score = 0; history = [];
-    // 随机乱序题目
     list = [...fullData].sort(() => Math.random() - 0.5);
     document.getElementById('main-menu').classList.add('hidden');
     document.getElementById('quiz-page').classList.remove('hidden');
@@ -97,25 +84,21 @@ function render() {
     const prog = document.getElementById('prog-txt');
     const nav = document.getElementById('nav-area');
 
+    if (idx >= list.length) { showFinal(); return; }
+
     if (mode === 1) {
-        // 模式1：拼音默写
-        if (idx >= list.length) { showFinal(); return; }
         prog.innerText = `当前进度：${idx + 1} / ${list.length}`;
         nav.classList.remove('hidden');
         content.innerHTML = `<div class="pinyin-box">${list[idx].p}</div><p style="text-align:center; color:#95a5a6">请在纸上默写出对应的词语</p>`;
     } else {
-        // 模式2 & 3：辨析闯关
-        if (idx >= list.length) { showFinal(); return; }
-        prog.innerText = `关卡：${Math.floor(idx/9) + 1} / ${Math.ceil(list.length/9)}`;
+        prog.innerText = `题目：${Math.floor(idx/9) + 1} / ${Math.ceil(list.length/9)}`;
         nav.classList.add('hidden');
         generateAdvancedChallenge();
     }
 }
 
-// --- 4. 核心逻辑：生成真题级干扰项 ---
 function generateAdvancedChallenge() {
     const content = document.getElementById('quiz-content');
-    // 每题消耗 9 个词
     let slice = list.slice(idx, idx + 9);
     while(slice.length < 9) slice.push(fullData[Math.floor(Math.random()*fullData.length)]);
 
@@ -123,48 +106,54 @@ function generateAdvancedChallenge() {
     let options = [];
 
     for (let i = 0; i < 3; i++) {
-        let isCorrect = (i === correctIdx);
-        // 每组 3 个词语
-        let group = [slice[i*3], slice[i*3+1], slice[i*3+2]];
+        let isGroupCorrect = (i === correctIdx);
+        let groupItems = [slice[i*3], slice[i*3+1], slice[i*3+2]];
         
-        let displayTexts = group.map(item => {
-            if (!isCorrect && Math.random() > 0.3) {
-                // 如果不是正确组，制造“地雷”
+        // Pick one item in the incorrect group to be the "Trap"
+        let trapTargetIdx = Math.floor(Math.random() * 3);
+
+        let optionTexts = groupItems.map((item, itemIdx) => {
+            // If group is wrong AND this is the designated trap item
+            if (!isGroupCorrect && itemIdx === trapTargetIdx) {
                 if (mode === 2) {
-                    // 读音陷阱：优先用数据库 trap_p，没有则算法生成
-                    let badP = item.trap_p || item.p.replace('sh','s').replace('zh','z').replace('an','ang');
+                    let badP = item.trap_p || item.p.replace('sh','s').replace('zh','z');
                     return `${item.w}(${badP})`;
                 } else {
-                    // 字形陷阱：优先用数据库 trap_w，没有则算法生成
                     let badW = item.trap_w || item.w.replace(item.w[0], "拟");
                     return badW;
                 }
             }
-            // 正确显示
+            // Otherwise show correct version
             return mode === 2 ? `${item.w}(${item.p})` : item.w;
         });
 
-        options.push({ text: displayTexts.join("、"), isCorrect: isCorrect });
+        // Store the correct version for this specific group to show in review if needed
+        let correctVersion = groupItems.map(item => mode === 2 ? `${item.w}(${item.p})` : item.w).join("、");
+        
+        options.push({ 
+            displayText: optionTexts.join("、"), 
+            isCorrect: isGroupCorrect,
+            correctAnswer: "" // Handled in checkAnswer
+        });
     }
+    
+    // Find the correct group's text to store in the wrong answer history
+    const actualCorrectText = options.find(o => o.isCorrect).displayText;
 
     content.innerHTML = `<h3 style="margin-bottom:20px; font-size:18px;">找出一组 <span style="color:var(--accent)">完全正确</span> 的词语：</h3>` + 
         `<div style="display:grid; gap:15px;">` +
-        options.map(o => `<button class="btn opt-btn" onclick="checkAnswer(${o.isCorrect}, '${o.text}')">${o.text}</button>`).join('') +
+        options.map(o => `<button class="btn opt-btn" onclick="checkAnswer(${o.isCorrect}, '${o.displayText}', '${actualCorrectText}')">${o.displayText}</button>`).join('') +
         `</div>`;
 }
 
-function checkAnswer(isCorrect, text) {
+function checkAnswer(isCorrect, selectedText, correctText) {
     if (isCorrect) {
         score++;
-        idx += 9;
-        render();
     } else {
-        alert("⚠️ 错啦！这组词语里藏着“地雷”喔。");
-        history.push(text);
-        // 错题也会跳到下一组
-        idx += 9;
-        render();
+        history.push({ selected: selectedText, correct: correctText });
     }
+    idx += 9;
+    render();
 }
 
 function goNext() {
@@ -178,20 +167,30 @@ function showFinal() {
     resPage.classList.remove('hidden');
 
     const totalQuestions = mode === 1 ? list.length : Math.ceil(list.length/9);
-    document.getElementById('score-box').innerText = mode === 1 ? "练习完成！" : `得分：${Math.round(score/totalQuestions*100)} %`;
+    const percent = Math.round(score/totalQuestions*100);
+    document.getElementById('score-box').innerText = mode === 1 ? "练习完成！" : `得分：${percent}% (${score}/${totalQuestions})`;
     
     const detail = document.getElementById('result-detail');
     if (mode === 1) {
-        detail.innerHTML = `<p>请核对默写内容：</p><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">` + 
-            list.slice(0, 20).map(i => `<div style="font-size:13px; border-bottom:1px solid #eee;">${i.p}<br><b>${i.w}</b></div>`).join('') + `</div><p>...及更多</p>`;
+        detail.innerHTML = `<p>核对默写：</p><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">` + 
+            list.map(i => `<div style="font-size:13px; border-bottom:1px solid #eee;">${i.p}<br><b>${i.w}</b></div>`).join('') + `</div>`;
     } else {
-        detail.innerHTML = history.length > 0 ? 
-            `<p style="color:var(--error); font-weight:bold;">你需要注意的易错项：</p>` + history.map(h => `<div class="wrong-text">${h}</div>`).join('') :
-            `<p style="color:var(--success); text-align:center;">太棒了！你避开了所有的陷阱！</p>`;
+        if (history.length > 0) {
+            detail.innerHTML = `<p style="color:var(--error); font-weight:bold; margin-bottom:15px;">错题回顾：</p>` + 
+                history.map(h => `
+                    <div class="review-item">
+                        <div style="font-size:12px; color:#999;">你的选择：</div>
+                        <div class="wrong-text">${h.selected}</div>
+                        <div style="font-size:12px; color:#999; margin-top:8px;">正确答案应该是：</div>
+                        <div class="right-text">${h.correct}</div>
+                    </div>
+                `).join('');
+        } else {
+            detail.innerHTML = `<p style="color:var(--success); text-align:center; font-size:18px; margin-top:20px;">🎉 真厉害！避开了所有地雷！</p>`;
+        }
     }
 }
 
-// 启动应用
 init();
 </script>
 </body>

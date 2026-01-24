@@ -2,82 +2,90 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>四年级语文词语真题级闯关</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>四年级语文词语闯关 (真题级云端版)</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --error: #e74c3c; --bg: #f8f9fa; }
-        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { background: white; width: 95%; max-width: 900px; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 15px; }
-        .menu { display: grid; gap: 15px; margin: 30px 0; }
-        button { padding: 18px; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.2s; }
+        :root { --primary: #2c3e50; --accent: #3ecf8e; --success: #27ae60; --error: #e74c3c; --bg: #f8f9fa; }
+        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: white; width: 95%; max-width: 800px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); min-height: 550px; position: relative; }
+        h1 { font-size: 22px; color: var(--primary); text-align: center; margin-bottom: 20px; border-bottom: 2px solid #f1f1f1; padding-bottom: 15px; }
+        
+        /* 按钮样式 */
+        .btn { padding: 18px; border: none; border-radius: 12px; cursor: pointer; font-size: 17px; font-weight: bold; width: 100%; margin-bottom: 12px; transition: 0.2s; }
         .btn-main { background: var(--accent); color: white; }
-        .btn-main:hover { background: #2980b9; transform: translateY(-2px); }
-        .quiz-area { min-height: 450px; }
-        .pinyin-box { font-size: 50px; text-align: center; margin: 60px 0; color: #e67e22; letter-spacing: 5px; }
-        .options-list { display: flex; flex-direction: column; gap: 15px; }
-        .opt-btn { background: #fff; border: 2px solid #eaeeef; text-align: left; font-size: 18px; line-height: 1.8; padding: 20px; color: #34495e; }
-        .opt-btn:hover { border-color: var(--accent); background: #f0f7ff; }
-        .progress-info { text-align: right; color: #7f8c8d; margin-bottom: 10px; font-size: 14px; }
-        .result-item { padding: 15px; border-bottom: 1px solid #eee; }
-        .wrong-tag { color: var(--error); font-weight: bold; }
-        .correct-tag { color: var(--success); font-weight: bold; }
+        .btn-main:active { transform: scale(0.98); }
+        .opt-btn { background: #fff; border: 2px solid #eaeeef; text-align: left; font-weight: normal; padding: 18px; color: #34495e; font-size: 18px; line-height: 1.6; }
+        .opt-btn:active { background: #f0f7ff; border-color: var(--accent); }
+
+        /* 游戏界面 */
         .hidden { display: none; }
-        .word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-        .word-card { padding: 8px; background: #f9f9f9; border: 1px solid #ddd; font-size: 14px; text-align: center; }
+        .pinyin-box { font-size: 55px; text-align: center; margin: 60px 0; color: #e67e22; letter-spacing: 5px; font-weight: bold; }
+        .progress-bar { text-align: right; font-size: 13px; color: #95a5a6; margin-bottom: 10px; }
+        #loading { text-align: center; padding: 100px 20px; color: #95a5a6; font-size: 18px; }
+        
+        /* 结果展示 */
+        .result-card { background: #fdfefe; border-radius: 12px; padding: 15px; margin-top: 15px; border: 1px solid #eee; max-height: 300px; overflow-y: auto; }
+        .wrong-text { color: var(--error); font-size: 14px; margin-bottom: 8px; border-bottom: 1px dashed #eee; padding-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>四年级上册词语闯关 (真题难度)</h1>
+    <h1 id="title">四年级词语闯关 (真题级)</h1>
 
-    <div id="main-menu" class="menu">
-        <button class="btn-main" onclick="start(1)">1. 标注拼音练习 (纸笔默写)</button>
-        <button class="btn-main" onclick="start(2)">2. 易错读音辨析 (每组 9 词)</button>
-        <button class="btn-main" onclick="start(3)">3. 易错形近字辨析 (每组 9 词)</button>
+    <div id="loading">正在从云端获取真题库...</div>
+
+    <div id="main-menu" class="hidden">
+        <p style="text-align:center; color:#7f8c8d; margin-bottom:20px;">请选择闯关模式</p>
+        <button class="btn btn-main" onclick="start(1)">1. 标注拼音练习 (纸笔默写)</button>
+        <button class="btn btn-main" onclick="start(2)">2. 易错读音辨析 (选出全对组)</button>
+        <button class="btn btn-main" onclick="start(3)">3. 易错形近字辨析 (选出全对组)</button>
     </div>
 
     <div id="quiz-page" class="hidden">
-        <div class="progress-info" id="prog-txt"></div>
-        <div id="quiz-content" class="quiz-area"></div>
-        <div id="nav" class="hidden" style="text-align:right; margin-top:20px;">
-            <button class="btn-main" onclick="goNext()">下一个</button>
+        <div class="progress-bar" id="prog-txt"></div>
+        <div id="quiz-content"></div>
+        <div id="nav-area" class="hidden" style="margin-top:20px;">
+            <button class="btn btn-main" style="width:auto; float:right; padding:10px 40px;" onclick="goNext()">下一个</button>
         </div>
     </div>
 
     <div id="result-page" class="hidden">
-        <h2>测试完成！</h2>
-        <div id="result-detail"></div>
-        <button class="btn-main" style="width:100%; margin-top:20px;" onclick="location.reload()">返回主菜单</button>
+        <h2 style="text-align:center; color:var(--success)">挑战结束！</h2>
+        <div id="score-box" style="text-align:center; font-size:24px; font-weight:bold; margin:20px 0;"></div>
+        <div id="result-detail" class="result-card"></div>
+        <button class="btn btn-main" style="margin-top:25px; background:#2ecc71" onclick="location.reload()">回主菜单</button>
     </div>
 </div>
 
 <script>
-// 高仿真“地雷”库：基于小学语文易错点编码
-const masterTraps = {
-    pinyin: {
-        "血液":"xiě yè", "角色":"jiǎo sè", "惩罚":"chěng fá", "空隙":"xī xì", "尽管":"jǐn guǎn", 
-        "既然":"jì rán", "甚至":"sèn zhì", "震撼":"zhèng hàn", "慎重":"shèn zòng", "弯曲":"wān qǔ",
-        "宁可":"níng kě", "挖掘":"wā qüé", "住宅":"zhǔ zhái", "临时":"lín sí", "旋转":"xuán zhuàn",
-        "降临":"xiáng lín", "舒适":"sū shì", "潜入":"qián rù", "模样":"mó yàng", "抛出":"pāo chū"
-    },
-    typo: {
-        "提心吊胆":"提心掉胆", "通情达理":"通情答理", "既然":"即然", "即使":"既使", "辫子":"辩子", 
-        "争辩":"辨子", "严厉":"严历", "震撼":"震憾", "灌溉":"灌概", "挖掘":"挖倔", "犹如":"尤如",
-        "毕竟":"必竟", "操场":"澡场", "舒服":"舒服", "茂盛":"茂胜", "支撑":"支称", "甚至":"甚致",
-        "清晰":"清析", "博学":"搏学", "博斗":"搏斗", "狠心":"恨心", "纪念":"纪年", "逐渐":"逐斩"
+// --- 1. 核心配置 ---
+const PROJECT_ID = "wqvegiyfqpbqgzpmrrds";
+const ANON_KEY = "sb_publishable_iLS1hJ8VgcxVFraIxtFPTA_71Ssmn3m";
+const API_URL = `https://${PROJECT_ID}.supabase.co/rest/v1/words_library?select=w,p,trap_w,trap_p`;
+
+let fullData = [], list = [], mode = 0, idx = 0, score = 0, history = [];
+
+// --- 2. 数据初始化 ---
+async function init() {
+    try {
+        const response = await fetch(API_URL, {
+            headers: { 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` }
+        });
+        fullData = await response.json();
+        if (fullData.length === 0) throw new Error("库中无数据");
+        
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('main-menu').classList.remove('hidden');
+    } catch (err) {
+        document.getElementById('loading').innerHTML = `❌ 连接数据库失败<br><small style="font-size:12px">${err.message}</small>`;
     }
-};
+}
 
-// 1-26 课全量词库
-const fullData = [
-    {w:"奇观",p:"qí guān"},{w:"据说",p:"jù shuō"},{w:"人山人海",p:"rén shān rén hǎi"},{w:"逐渐",p:"zhú jiàn"},{w:"犹如",p:"yóu rú"},{w:"山崩地裂",p:"shān bēng dì liè"},{w:"霎时",p:"shà shí"},{w:"余波",p:"yú bō"},{w:"柔和",p:"róu hé"},{w:"鹅卵石",p:"é luǎn shí"},{w:"庄稼",p:"zhuāng jia"},{w:"成熟",p:"chéng shú"},{w:"传说",p:"chuán shuō"},{w:"按照",p:"àn zhào"},{w:"舒适",p:"shū shì"},{w:"僵硬",p:"jiāng yìng"},{w:"虚弱",p:"xū ruò"},{w:"耐心",p:"nài xīn"},{w:"曾经",p:"céng jīng"},{w:"洋溢",p:"yáng yì"},{w:"灵巧",p:"líng qiǎo"},{w:"科学家",p:"kē xué jiā"},{w:"证明",p:"zhèng míng"},{w:"研究",p:"yán jiū"},{w:"驾驶员",p:"jià shǐ yuán"},{w:"呼风唤雨",p:"hū fēng huàn yǔ"},{w:"奥秘",p:"ào mì"},{w:"改善",p:"gǎi shàn"},{w:"操场",p:"cāo chǎng"},{w:"嫩红",p:"nèn hóng"},{w:"均匀",p:"jūn yún"},{w:"空隙",p:"kòng xì"},{w:"触角",p:"chù jiǎo"},{w:"弯曲",p:"wān qū"},{w:"痕迹",p:"hén jì"},{w:"牢固",p:"láo gù"},{w:"住宅",p:"zhù zhái"},{w:"临时",p:"lín shí"},{w:"随遇而安",p:"suí yù ér ān"},{w:"慎重",p:"shèn zhòng"},{w:"即便",p:"jí biàn"},{w:"精疲力竭",p:"jīng pí lì jié"},{w:"血液",p:"xuè yè"},{w:"奔流不息",p:"bēn liú bù xī"},{w:"茂盛",p:"mào shèng"},{w:"滋润",p:"zī rùn"},{w:"劈开",p:"pī kāi"},{w:"支撑",p:"zhī chēng"},{w:"悲惨",p:"bēi cǎn"},{w:"严厉",p:"yán lì"},{w:"敬佩",p:"jìng pèi"},{w:"既然",p:"jì rán"},{w:"著名",p:"zhù míng"},{w:"获得",p:"huò dé"},{w:"无可奈何",p:"wú kě nài hé"},{w:"身躯",p:"shēn qū"},{w:"庞大",p:"páng dà"},{w:"发颤",p:"fā chàn"},{w:"辫子",p:"biàn zi"},{w:"居然",p:"jū rán"},{w:"甚至",p:"shèn zhì"},{w:"大概",p:"dà gài"},{w:"把握",p:"bǎ wò"},{w:"角色",p:"jué sè"},{w:"通情达理",p:"tōng qíng dá lǐ"},{w:"提示",p:"tí shì"},{w:"哄堂大笑",p:"hōng táng dà xiào"},{w:"挖掘",p:"wā jué"},{w:"垂头丧气",p:"chuí tóu sàng qì"},{w:"冰天雪地",p:"bīng tiān xuě dì"},{w:"重整旗鼓",p:"chóng zhěng qí gǔ"},{w:"不动声色",p:"bù dòng shēng sè"},{w:"清晰",p:"qīng xī"},{w:"灌溉",p:"guàn gài"},{w:"提心吊胆",p:"tí xīn diào dǎn"},{w:"聚精会神",p:"jù jīng huì shén"}
-];
-
-let mode = 0, idx = 0, score = 0, list = [], history = [];
-
+// --- 3. 游戏流程控制 ---
 function start(m) {
     mode = m; idx = 0; score = 0; history = [];
+    // 随机乱序题目
     list = [...fullData].sort(() => Math.random() - 0.5);
     document.getElementById('main-menu').classList.add('hidden');
     document.getElementById('quiz-page').classList.remove('hidden');
@@ -87,104 +95,104 @@ function start(m) {
 function render() {
     const content = document.getElementById('quiz-content');
     const prog = document.getElementById('prog-txt');
-    const nav = document.getElementById('nav');
+    const nav = document.getElementById('nav-area');
 
     if (mode === 1) {
-        prog.innerText = `进度：${idx + 1} / ${list.length}`;
-        nav.classList.remove('hidden');
-        content.innerHTML = `<div class="pinyin-box">${list[idx].p}</div><p style="text-align:center; color:#999">请在纸上默写汉字词语</p>`;
-    } else {
+        // 模式1：拼音默写
         if (idx >= list.length) { showFinal(); return; }
-        prog.innerText = `题目：${Math.floor(idx/9)+1} / ${Math.ceil(list.length/9)}`;
+        prog.innerText = `当前进度：${idx + 1} / ${list.length}`;
+        nav.classList.remove('hidden');
+        content.innerHTML = `<div class="pinyin-box">${list[idx].p}</div><p style="text-align:center; color:#95a5a6">请在纸上默写出对应的词语</p>`;
+    } else {
+        // 模式2 & 3：辨析闯关
+        if (idx >= list.length) { showFinal(); return; }
+        prog.innerText = `关卡：${Math.floor(idx/9) + 1} / ${Math.ceil(list.length/9)}`;
         nav.classList.add('hidden');
-        generateChallenge();
+        generateAdvancedChallenge();
     }
 }
 
-function generateChallenge() {
+// --- 4. 核心逻辑：生成真题级干扰项 ---
+function generateAdvancedChallenge() {
     const content = document.getElementById('quiz-content');
-    // 取 9 个词作为本题素材
+    // 每题消耗 9 个词
     let slice = list.slice(idx, idx + 9);
-    // 补齐 9 个
     while(slice.length < 9) slice.push(fullData[Math.floor(Math.random()*fullData.length)]);
 
-    let groups = [
-        [slice[0], slice[1], slice[2]], // 组 A
-        [slice[3], slice[4], slice[5]], // 组 B
-        [slice[6], slice[7], slice[8]]  // 组 C
-    ];
-
-    // 随机设定哪一组是正确的（0, 1, or 2）
     let correctIdx = Math.floor(Math.random() * 3);
     let options = [];
 
     for (let i = 0; i < 3; i++) {
-        let currentGroup = [...groups[i]];
-        let isThisCorrect = (i === correctIdx);
+        let isCorrect = (i === correctIdx);
+        // 每组 3 个词语
+        let group = [slice[i*3], slice[i*3+1], slice[i*3+2]];
         
-        if (!isThisCorrect) {
-            // 制造一个非常像的陷阱词
-            let trapWordIdx = Math.floor(Math.random() * 3);
-            currentGroup[trapWordIdx] = getTrap(currentGroup[trapWordIdx]);
-        }
-        
-        options.push({
-            text: currentGroup.map(item => (mode === 2 ? `${item.w}(${item.p})` : item.w)).join("、"),
-            isCorrect: isThisCorrect
+        let displayTexts = group.map(item => {
+            if (!isCorrect && Math.random() > 0.3) {
+                // 如果不是正确组，制造“地雷”
+                if (mode === 2) {
+                    // 读音陷阱：优先用数据库 trap_p，没有则算法生成
+                    let badP = item.trap_p || item.p.replace('sh','s').replace('zh','z').replace('an','ang');
+                    return `${item.w}(${badP})`;
+                } else {
+                    // 字形陷阱：优先用数据库 trap_w，没有则算法生成
+                    let badW = item.trap_w || item.w.replace(item.w[0], "拟");
+                    return badW;
+                }
+            }
+            // 正确显示
+            return mode === 2 ? `${item.w}(${item.p})` : item.w;
         });
+
+        options.push({ text: displayTexts.join("、"), isCorrect: isCorrect });
     }
 
-    content.innerHTML = `<h3>找出一组 <span style="color:var(--accent)">完全正确</span> 的词语：</h3><div class="options-list">` + 
-        options.map(o => `<button class="opt-btn" onclick="submitAns(${o.isCorrect}, '${o.text}')">${o.text}</button>`).join('') + 
+    content.innerHTML = `<h3 style="margin-bottom:20px; font-size:18px;">找出一组 <span style="color:var(--accent)">完全正确</span> 的词语：</h3>` + 
+        `<div style="display:grid; gap:15px;">` +
+        options.map(o => `<button class="btn opt-btn" onclick="checkAnswer(${o.isCorrect}, '${o.text}')">${o.text}</button>`).join('') +
         `</div>`;
 }
 
-function getTrap(item) {
-    let newItem = { ...item };
-    if (mode === 2) {
-        // 拼音陷阱
-        newItem.p = masterTraps.pinyin[item.w] || item.p.replace('sh', 's').replace('zh', 'z').replace('uè', 'uě').replace('ǐ', 'ì');
+function checkAnswer(isCorrect, text) {
+    if (isCorrect) {
+        score++;
+        idx += 9;
+        render();
     } else {
-        // 字形陷阱
-        newItem.w = masterTraps.typo[item.w] || (item.w.length > 1 ? item.w.replace(item.w[0], "㐅") : item.w);
-        // 如果没有预设陷阱且是自动替换，尝试更真实的形近字
-        if(newItem.w.includes("㐅")) {
-            const char = item.w[0];
-            const sim = {"级":"极", "份":"分", "末":"未", "拔":"拨", "采":"彩", "竞":"竟"};
-            newItem.w = item.w.replace(char, sim[char] || "拟");
-        }
+        alert("⚠️ 错啦！这组词语里藏着“地雷”喔。");
+        history.push(text);
+        // 错题也会跳到下一组
+        idx += 9;
+        render();
     }
-    return newItem;
-}
-
-function submitAns(isCorrect, text) {
-    if (isCorrect) score++;
-    else history.push(text);
-    idx += 9;
-    render();
 }
 
 function goNext() {
     idx++;
-    if (idx < list.length) render(); else showFinal();
+    render();
 }
 
 function showFinal() {
     document.getElementById('quiz-page').classList.add('hidden');
     const resPage = document.getElementById('result-page');
-    const detail = document.getElementById('result-detail');
     resPage.classList.remove('hidden');
 
+    const totalQuestions = mode === 1 ? list.length : Math.ceil(list.length/9);
+    document.getElementById('score-box').innerText = mode === 1 ? "练习完成！" : `得分：${Math.round(score/totalQuestions*100)} %`;
+    
+    const detail = document.getElementById('result-detail');
     if (mode === 1) {
-        detail.innerHTML = `<p>请核对您的默写：</p><div class="word-grid">` + 
-            list.map(i => `<div class="word-card">${i.p}<br><b>${i.w}</b></div>`).join('') + `</div>`;
+        detail.innerHTML = `<p>请核对默写内容：</p><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">` + 
+            list.slice(0, 20).map(i => `<div style="font-size:13px; border-bottom:1px solid #eee;">${i.p}<br><b>${i.w}</b></div>`).join('') + `</div><p>...及更多</p>`;
     } else {
-        let total = Math.ceil(list.length/9);
-        detail.innerHTML = `<h3>正确率：${Math.round(score/total*100)}%</h3>` +
-            (history.length > 0 ? `<p class="wrong-tag">你选错的组（含陷阱词）：</p>` + 
-            history.map(h => `<div class="result-item">${h}</div>`).join('') : `<p class="correct-tag">真厉害！全对了！</p>`);
+        detail.innerHTML = history.length > 0 ? 
+            `<p style="color:var(--error); font-weight:bold;">你需要注意的易错项：</p>` + history.map(h => `<div class="wrong-text">${h}</div>`).join('') :
+            `<p style="color:var(--success); text-align:center;">太棒了！你避开了所有的陷阱！</p>`;
     }
 }
+
+// 启动应用
+init();
 </script>
 </body>
 </html>

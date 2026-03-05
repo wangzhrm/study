@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Word Export Version</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h2, h3 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        textarea { width: 95%; height: 50px; border-radius: 4px; border: 1px solid #ccc; padding: 5px; resize: vertical; }
+
+        .btn { padding: 10px 18px; cursor: pointer; border: none; border-radius: 6px; font-weight: 600; transition: 0.2s; margin-right: 5px; }
+        .btn-save { background: #28a745; color: white; font-size: 0.85em; }
+        .btn-save:hover { background: #218838; }
+        .btn-action { background: #6c757d; color: white; margin-top: 20px; }
+        .btn-word { background: #2b579a; color: white; margin-top: 20px; } /* Word Blue Color */
+        .btn-save-all { background: #007bff; color: white; margin-bottom: 10px; }
+
+        #statusReport { padding: 15px; border-radius: 6px; display: none; margin-bottom: 20px; font-weight: bold; }
+        .status-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        #resultsSection { margin-top: 40px; padding: 20px; background: #fff; border: 2px solid #007bff; border-radius: 8px; }
+        .answer-entry { padding: 15px; border-bottom: 1px solid #eee; }
+        .student-name { color: #007bff; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>1. Student Settings</h2>
+    <div id="statusReport"></div>
+    
+    <button class="btn btn-save-all" onclick="saveAllChanges()">Save All Changes</button>
+
+    <table id="studentTable">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Allow Login</th>
+                <th>Assigned Paragraph</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <hr>
+
+    <h2>2. Student Submissions</h2>
+    <p style="color: #d9534f; font-weight: bold; font-size: 0.9em;">* Only students with "Allow Login" checked will be displayed and exported.</p>
+    <button class="btn btn-action" onclick="loadResults()">Refresh Answers</button>
+    <button class="btn btn-word" onclick="exportToWord()">Export These to Word (.doc)</button>
+
+    <div id="resultsSection">
+        <p style="color: #888;">Click "Refresh Answers" to view active submissions...</p>
+    </div>
+</div>
+
+<script>
+    const _URL = "https://btwdbphheotbqrmbswgk.supabase.co";
+    const _KEY = "sb_publishable_9lY3A1HrgERNIC597NEAKQ_YTCmkh2k";
+    const supabaseClient = supabase.createClient(_URL, _KEY);
+
+    let currentStudents = [];
+
+    async function loadStudents() {
+        const { data, error } = await supabaseClient
+            .from('student_accounts')
+            .select('*')
+            .order('username', { ascending: true }); 
+
+        if (error) { console.error(error); return; }
+        
+        currentStudents = data;
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        data.forEach((student, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong id="user-${index}">${student.username}</strong></td>
+                    <td><input type="checkbox" id="check-${index}" ${student.is_allowed ? 'checked' : ''}></td>
+                    <td><textarea id="text-${index}">${student.assigned_text || ''}</textarea></td>
+                    <td><button class="btn btn-save" onclick="saveSingle(${index})">Update</button></td>
+                </tr>`;
+        });
+    }
+
+    async function saveSingle(index) {
+        const username = document.getElementById(`user-${index}`).innerText;
+        const isAllowed = document.getElementById(`check-${index}`).checked;
+        const text = document.getElementById(`text-${index}`).value;
+
+        const { data, error } = await supabaseClient
+            .from('student_accounts')
+            .update({ is_allowed: isAllowed, assigned_text: text })
+            .eq('username', username)
+            .select();
+
+        if (error || data.length === 0) {
+            alert(`Failed to save ${username}.`);
+        } else {
+            alert(`Saved successfully for ${username}`);
+            const student = currentStudents.find(s => s.username === username);
+            if(student) student.is_allowed = isAllowed;
+        }
+    }
+
+    async function saveAllChanges() {
+        const reportDiv = document.getElementById('statusReport');
+        reportDiv.style.display = "block";
+        reportDiv.className = "status-success";
+        reportDiv.innerHTML = "Processing all updates...";
+
+        let successCount = 0;
+        let failCount = 0;
+
+        const updatePromises = currentStudents.map(async (student, index) => {
+            const username = document.getElementById(`user-${index}`).innerText;
+            const isAllowed = document.getElementById(`check-${index}`).checked;
+            const text = document.getElementById(`text-${index}`).value;
+
+            const { data, error } = await supabaseClient
+                .from('student_accounts')
+                .update({ is_allowed: isAllowed, assigned_text: text })
+                .eq('username', username)
+                .select();
+
+            if (!error && data && data.length > 0) {
+                successCount++;
+                student.is_allowed = isAllowed;
+            } else failCount++;
+        });
+
+        await Promise.all(updatePromises);
+        reportDiv.innerHTML = `Update Finished: ${successCount} saved, ${failCount} failed.`;
+        if (failCount > 0) reportDiv.className = "status-error";
+        loadStudents(); 
+    }
+
+    async function loadResults() {
+        const { data, error } = await supabaseClient
+            .from('student_accounts')
+            .select('username, student_answer, is_allowed')
+            .eq('is_allowed', true)
+            .order('username', { ascending: true });
+
+        if (error) { alert(error.message); return; }
+
+        const resultsDiv = document.getElementById('resultsSection');
+        resultsDiv.innerHTML = '<h3>Active Student Answers:</h3>';
+
+        if (data.length === 0) {
+            resultsDiv.innerHTML += '<p>No students are currently "Allowed to Login".</p>';
+            return;
+        }
+
+        data.forEach(s => {
+            const answer = s.student_answer || "(No answer submitted)";
+            resultsDiv.innerHTML += `
+                <div class="answer-entry">
+                    <p><strong>${s.username}</strong>: ${answer}</p>
+                </div>`;
+        });
+    }
+
+    // 5. NEW: Export to Word Function
+    function exportToWord() {
+        const content = document.getElementById('resultsSection').innerHTML;
+        
+        if (content.includes("Refresh Answers") || content.includes("No students are currently")) {
+            alert("Please refresh answers first and ensure at least one student is active.");
+            return;
+        }
+
+        // HTML structure that Microsoft Word understands as a document
+        const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' "+
+                "xmlns:w='urn:schemas-microsoft-com:office:word' "+
+                "xmlns='http://www.w3.org/TR/REC-html40'>"+
+                "<head><meta charset='utf-8'><title>Export Data</title></head><body>";
+        const footer = "</body></html>";
+        const sourceHTML = header + content + footer;
+        
+        const blob = new Blob(['\ufeff', sourceHTML], {
+            type: 'application/msword'
+        });
+        
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'Student_Submissions.doc'; 
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    loadStudents();
+</script>
+</body>
+</html>

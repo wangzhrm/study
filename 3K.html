@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>三国杀积分系统 - 全人数版</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --zhugong: linear-gradient(135deg, #d4af37, #8b0000);
+            --neijian: linear-gradient(135deg, #4b0082, #1a2a6c);
+            --fanzei: linear-gradient(135deg, #8b0000, #310000);
+            --zhongchen: linear-gradient(135deg, #0d6b1a, #05330a);
+        }
+
+        body {
+            background: #121212;
+            background: radial-gradient(circle at center, #1a2a6c 0%, #000 100%);
+            color: #fff;
+            font-family: 'STKaiti', 'Microsoft YaHei', serif;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container { width: 100%; max-width: 700px; text-align: center; }
+
+        h1 { font-size: 1.6rem; margin: 10px 0; color: #ffd700; }
+
+        /* 统计面板 */
+        .stats-panel {
+            width: 95%;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #ffd700;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-around;
+            font-size: 0.9rem;
+        }
+
+        .score-board-mini { text-align: left; border-right: 1px solid #333; padding-right: 10px; }
+        .role-stats-mini { text-align: left; padding-left: 10px; }
+
+        /* 身份提示栏 */
+        .status-bar {
+            background: rgba(255, 215, 0, 0.1);
+            padding: 12px;
+            border-radius: 25px;
+            border: 1px solid #ffd700;
+            margin: 10px 0;
+            font-size: 1rem;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* 身份配置提示 */
+        .role-tip {
+            background: rgba(255, 193, 7, 0.15);
+            border: 1px solid #ffc107;
+            border-radius: 12px;
+            padding: 8px 15px;
+            margin: 10px 0;
+            font-size: 0.95rem;
+        }
+
+        /* 卡片网格 - 自适应人数 */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        .card-wrapper {
+            aspect-ratio: 2 / 3;
+            perspective: 1000px;
+        }
+
+        .card {
+            width: 100%; height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            cursor: pointer;
+        }
+
+        .card.flipped { transform: rotateY(180deg); }
+
+        .card-face {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            font-size: 0.7rem;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        .card-back { 
+            background: #1a5e20; 
+        }
+        .card-back .player-name {
+            font-weight: bold;
+            color: #ffd700;
+            margin-top: 5px;
+        }
+
+        .card-front { 
+            transform: rotateY(180deg); 
+            text-align: center;
+        }
+        .card-front.zhugong { background: var(--zhugong); }
+        .card-front.neijian { background: var(--neijian); }
+        .card-front.fanzei { background: var(--fanzei); }
+        .card-front.zhongchen { background: var(--zhongchen); }
+
+        .card-front .icon { font-size: 2rem; margin-bottom: 5px; }
+        .card-front h3 { font-size: 0.9rem; margin: 0; }
+
+        /* 按钮样式 */
+        .btn {
+            background: #ffd700; 
+            color: #000;
+            border: none; 
+            padding: 12px 24px;
+            border-radius: 25px; 
+            font-weight: bold;
+            cursor: pointer; 
+            margin: 8px 5px;
+            font-size: 1rem;
+            width: 80%;
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            position: fixed; 
+            top:0; 
+            left:0; 
+            width:100%; 
+            height:100%; 
+            background:rgba(0,0,0,0.95); 
+            display: flex; 
+            justify-content:center; 
+            align-items:center; 
+            z-index:100;
+        }
+        .modal-content {
+            background:#222; 
+            border-radius:15px; 
+            border:1px solid #ffd700; 
+            text-align:center;
+            width: 85%;
+            padding: 20px;
+            max-width: 400px;
+        }
+        input {
+            padding: 12px;
+            margin: 8px 0;
+            width: 90%;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 统计面板 -->
+    <div class="stats-panel" id="statsPanel" style="display:none;">
+        <div class="score-board-mini" id="scoreBoard"></div>
+        <div class="role-stats-mini" id="roleStats"></div>
+    </div>
+
+    <div class="container">
+        <h1>三国杀 · 积分系统</h1>
+        <div class="status-bar" id="status">准备游戏...</div>
+        <div class="role-tip" id="roleTip" style="display:none;"></div>
+
+        <!-- 身份卡片容器 -->
+        <div class="cards-container" id="cardsContainer"></div>
+
+        <!-- 游戏控制按钮 -->
+        <div id="gameControls">
+            <button class="btn" onclick="revealAll()" id="endBtn" style="display:none">本局结算</button>
+            <button class="btn" onclick="startNewRound()" id="nextBtn" style="display:none">下一局</button>
+        </div>
+
+        <!-- 获胜方选择 -->
+        <div id="winnerSelect" style="display:none; margin-top: 20px;">
+            <h3 style="color:#ffd700">选择获胜阵营</h3>
+            <div id="winnerBtns"></div>
+        </div>
+    </div>
+
+    <!-- 第一步：选择玩家数量 -->
+    <div class="modal" id="countModal">
+        <div class="modal-content">
+            <h2 style="color:#ffd700">设置玩家数量</h2>
+            <p>支持 2~8 人游戏</p>
+            <input type="number" id="playerCount" min="2" max="8" value="3">
+            <button class="btn" onclick="setPlayerCount()">确认</button>
+        </div>
+    </div>
+
+    <!-- 第二步：输入玩家姓名 -->
+    <div class="modal" id="nameModal" style="display:none;">
+        <div class="modal-content">
+            <h2 style="color:#ffd700">输入玩家姓名</h2>
+            <div id="nameInputs"></div>
+            <button class="btn" onclick="initGame()">开始游戏</button>
+        </div>
+    </div>
+
+<script>
+    // 全局变量
+    let players = [];           // 玩家列表
+    let playerCount = 0;        // 玩家数量
+    let scores = {};            // 积分
+    let roleHistory = {};       // 身份历史
+    let currentRoles = [];      // 当前本局身份
+    let assignments = {};       // 玩家-身份对应关系
+
+    // ====================== 三国杀官方身份配置 ======================
+    // 格式：人数: [主公, 忠臣, 反贼, 内奸]
+    const ROLE_CONFIG = {
+        2: [1, 0, 1, 0],
+        3: [1, 0, 1, 1],
+        4: [1, 1, 2, 0],
+        5: [1, 1, 2, 1],
+        6: [1, 1, 3, 1],
+        7: [1, 2, 3, 1],
+        8: [1, 2, 4, 1]
+    };
+
+    // 身份名称映射
+    const ROLE_MAP = ['主公', '忠臣', '反贼', '内奸'];
+    // 身份图标
+    const ROLE_ICON = { '主公': '👑', '忠臣': '🛡️', '反贼': '⚔️', '内奸': '🎭' };
+    // 身份CSS类名
+    const ROLE_CLASS = { '主公': 'zhugong', '忠臣': 'zhongchen', '反贼': 'fanzei', '内奸': 'neijian' };
+    // 获胜积分
+    const SCORE_RULE = { '主公': 2, '忠臣': 2, '反贼': 2, '内奸': 3 };
+
+    // ====================== 游戏初始化流程 ======================
+    // 第一步：设置玩家数量
+    function setPlayerCount() {
+        playerCount = parseInt(document.getElementById('playerCount').value);
+        if (playerCount < 2 || playerCount > 8) {
+            alert('请输入2~8之间的数字');
+            return;
+        }
+        document.getElementById('countModal').style.display = 'none';
+        document.getElementById('nameModal').style.display = 'flex';
+        
+        // 生成姓名输入框
+        const nameInputs = document.getElementById('nameInputs');
+        nameInputs.innerHTML = '';
+        for (let i = 1; i <= playerCount; i++) {
+            nameInputs.innerHTML += `<input type="text" placeholder="玩家${i}姓名" value="玩家${i}" id="p${i}"><br>`;
+        }
+    }
+
+    // 第二步：初始化游戏数据
+    function initGame() {
+        // 收集玩家姓名
+        players = [];
+        for (let i = 1; i <= playerCount; i++) {
+            const name = document.getElementById(`p${i}`).value.trim() || `玩家${i}`;
+            players.push(name);
+        }
+
+        // 初始化积分和历史记录
+        players.forEach(p => {
+            scores[p] = 0;
+            roleHistory[p] = { '主公': 0, '忠臣': 0, '反贼': 0, '内奸': 0 };
+        });
+
+        // 关闭弹窗，显示游戏界面
+        document.getElementById('nameModal').style.display = 'none';
+        document.getElementById('statsPanel').style.display = 'flex';
+        startNewRound();
+    }
+
+    // 开始新一局
+    function startNewRound() {
+        // 重置界面状态
+        document.getElementById('nextBtn').style.display = 'none';
+        document.getElementById('winnerSelect').style.display = 'none';
+        document.getElementById('endBtn').style.display = 'inline-block';
+        document.getElementById('status').innerText = '身份已发放，请各位玩家查看自己的身份';
+
+        // 随机生成本局身份
+        generateRoles();
+        // 渲染身份卡片
+        renderCards();
+        // 更新统计和提示
+        updateStats();
+        showRoleTip();
+    }
+
+    // 生成随机身份（严格按照官方配置）
+    function generateRoles() {
+        const config = ROLE_CONFIG[playerCount];
+        currentRoles = [];
+        
+        // 根据配置生成身份列表
+        for (let i = 0; i < 4; i++) {
+            const count = config[i];
+            for (let j = 0; j < count; j++) {
+                currentRoles.push(ROLE_MAP[i]);
+            }
+        }
+        
+        // 打乱顺序（随机分配）
+        currentRoles.sort(() => Math.random() - 0.5);
+        // 绑定玩家与身份
+        assignments = {};
+        players.forEach((p, idx) => {
+            assignments[p] = currentRoles[idx];
+            roleHistory[p][currentRoles[idx]]++;
+        });
+    }
+
+    // 渲染身份卡片
+    function renderCards() {
+        const container = document.getElementById('cardsContainer');
+        container.innerHTML = '';
+
+        players.forEach((player, idx) => {
+            const role = assignments[player];
+            const wrapper = document.createElement('div');
+            wrapper.className = 'card-wrapper';
+            wrapper.innerHTML = `
+                <div class="card" id="card-${idx}" onclick="toggleCard(${idx})">
+                    <div class="card-face card-back">
+                        <span>身份牌</span>
+                        <div class="player-name">${player}</div>
+                    </div>
+                    <div class="card-face card-front ${ROLE_CLASS[role]}">
+                        <div class="icon">${ROLE_ICON[role]}</div>
+                        <h3>${role}</h3>
+                        <span>${player}</span>
+                    </div>
+                </div>`;
+            container.appendChild(wrapper);
+        });
+    }
+
+    // ====================== 核心交互 ======================
+    // 翻转卡片（查看/盖回身份）
+    function toggleCard(idx) {
+        const card = document.getElementById(`card-${idx}`);
+        card.classList.toggle('flipped');
+    }
+
+    // 结算：展示所有身份
+    function revealAll() {
+        document.querySelectorAll('.card').forEach(card => card.classList.add('flipped'));
+        document.getElementById('endBtn').style.display = 'none';
+        document.getElementById('winnerSelect').style.display = 'block';
+
+        // 生成获胜阵营按钮
+        const btnArea = document.getElementById('winnerBtns');
+        btnArea.innerHTML = '';
+        const camps = [...new Set(Object.values(assignments))];
+        
+        camps.forEach(role => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerText = `${role}阵营获胜`;
+            btn.onclick = () => {
+                // 加分
+                players.forEach(p => {
+                    if (assignments[p] === role) scores[p] += SCORE_RULE[role];
+                });
+                updateStats();
+                document.getElementById('winnerSelect').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+            };
+            btnArea.appendChild(btn);
+        });
+    }
+
+    // ====================== 辅助功能 ======================
+    // 显示本局身份配置提示
+    function showRoleTip() {
+        const config = ROLE_CONFIG[playerCount];
+        const tip = `本局配置：${playerCount}人 → 主公${config[0]}名 + 忠臣${config[1]}名 + 反贼${config[2]}名 + 内奸${config[3]}名`;
+        document.getElementById('roleTip').innerText = tip;
+        document.getElementById('roleTip').style.display = 'block';
+    }
+
+    // 更新统计面板
+    function updateStats() {
+        // 积分
+        document.getElementById('scoreBoard').innerHTML = `<b>🏆 积分排行</b><br>` + 
+            players.map(p => `${p}: ${scores[p]}`).join('<br>');
+        
+        // 身份历史
+        document.getElementById('roleStats').innerHTML = `<b>📊 身份统计</b><br>` + 
+            players.map(p => `${p.slice(0,2)}: 主${roleHistory[p]['主公']} 忠${roleHistory[p]['忠臣']} 反${roleHistory[p]['反贼']} 内${roleHistory[p]['内奸']}`).join('<br>');
+    }
+</script>
+</body>
+</html>

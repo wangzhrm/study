@@ -84,7 +84,7 @@
       <div class="text-center my-8">
         <h2 id="targetPrompt" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 break-words px-2 mb-6">Prompt</h2>
         
-        <div id="letterBlanksWrapper" class="hidden flex justify-center gap-0.5 flex-wrap max-w-full mx-auto px-2"></div>
+        <div id="letterBlanksWrapper" class="hidden inline-flex justify-center flex-wrap max-w-full mx-auto px-2"></div>
       </div>
 
       <div id="mcqContainer" class="hidden grid grid-cols-1 gap-3 mt-6"></div>
@@ -145,7 +145,7 @@
     let selectedMode = '';
     let errorLog = [];
     let successCount = 0;
-    let totalAnsweredCount = 0; // Tracks 'b'
+    let totalAnsweredCount = 0; 
     let isAwaitingNextQuestion = false;
 
     window.addEventListener('DOMContentLoaded', async () => {
@@ -220,7 +220,6 @@
           document.getElementById('displayModeBadge').textContent = selectedMode.endsWith('20') ? "Chinese ➔ English (20 Items)" : "Chinese ➔ English";
         }
 
-        // Initialize score text tracking layout display metrics
         updateLiveScoreTracker();
         renderQuestion();
       } catch (e) {
@@ -228,7 +227,6 @@
       }
     });
 
-    // Central function to keep top right corner tracking matrix accurate
     function updateLiveScoreTracker() {
       document.getElementById('liveScoreRatio').textContent = `${successCount}/${totalAnsweredCount}`;
     }
@@ -292,7 +290,7 @@
           
           if(char === ' ' || char === '-') {
             const separator = document.createElement('span');
-            separator.className = "w-6 text-center font-bold text-slate-400 text-xl self-center px-1";
+            separator.className = "w-5 text-center font-bold text-slate-400 text-xl self-center mx-1.5";
             separator.textContent = char;
             labelsDiv.appendChild(separator);
           } else {
@@ -300,7 +298,14 @@
             input.type = "text";
             input.maxLength = 1;
             input.autocomplete = "off";
-            input.className = "letter-input w-7 h-10 sm:w-9 sm:h-12 text-center font-mono font-bold text-xl sm:text-2xl text-slate-900 border-b-4 border-slate-300 focus:border-indigo-500 focus:outline-none transition-all bg-slate-50/30 rounded-t-sm";
+            
+            // FIXED: Added absolute suppression attributes for native mobile keyboards (autocapitalize="none")
+            input.setAttribute('autocapitalize', 'none');
+            input.setAttribute('autocorrect', 'off');
+            input.setAttribute('spellcheck', 'false');
+
+            // Force visual text alignment style to lowercase explicitly
+            input.className = "letter-input w-6 h-11 sm:w-8 sm:h-12 text-center font-mono font-bold text-xl sm:text-2xl text-slate-900 border-b-4 border-slate-300 focus:border-indigo-500 focus:outline-none transition-all bg-slate-50/20 m-0 p-0 rounded-none lowercase";
             input.dataset.index = inputIndex;
             
             input.addEventListener('input', function(e) {
@@ -335,13 +340,13 @@
     }
 
     function verifyMcqAnswer(selected, obj) {
-      totalAnsweredCount++; // Increment total answers (b)
+      totalAnsweredCount++;
       if(selected === obj.chinese) {
-        successCount++; // Increment correct answers (a)
+        successCount++;
       } else {
         errorLog.push({ item: obj.english, solution: obj.chinese, input: selected });
       }
-      updateLiveScoreTracker(); // Update visual top right metrics
+      updateLiveScoreTracker();
       activeIndex++;
       renderQuestion();
     }
@@ -373,7 +378,7 @@
 
       if(!studentInput.trim()) return;
 
-      totalAnsweredCount++; // Increment total answers (b)
+      totalAnsweredCount++;
       const feedbackBanner = document.getElementById('feedbackBanner');
       const submitBtn = document.getElementById('submitFibBtn');
       
@@ -381,7 +386,7 @@
       inputs.forEach(inp => inp.disabled = true);
 
       if(isCorrect) {
-        successCount++; // Increment correct answers (a)
+        successCount++;
         feedbackBanner.className = "p-4 rounded-xl font-bold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 text-center animate-fade-in";
         feedbackBanner.innerHTML = `✓ Correct!`;
       } else {
@@ -393,7 +398,7 @@
         `;
       }
 
-      updateLiveScoreTracker(); // Update visual top right metrics immediately on submission check
+      updateLiveScoreTracker();
       feedbackBanner.classList.remove('hidden');
       isAwaitingNextQuestion = true;
       

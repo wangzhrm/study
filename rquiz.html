@@ -185,9 +185,7 @@
 
       try {
         const { data: listWords, error: err1 } = await rQuizStudentClient
-          .from('rquiz_vocabularies')
-          .select('english, chinese')
-          .eq('list_id', listId);
+          .from('rquiz_vocabularies').select('english, chinese').eq('list_id', listId);
           
         if(err1) throw err1;
         if(!listWords || listWords.length === 0) throw new Error("Target subset array mapping turned up empty.");
@@ -196,9 +194,7 @@
         if(listWords.length < 3 && isMcqMode) throw new Error("At least 3 context rows are required to map option clusters.");
 
         const { data: poolWords, error: err2 } = await rQuizStudentClient
-          .from('rquiz_vocabularies')
-          .select('chinese')
-          .limit(100);
+          .from('rquiz_vocabularies').select('chinese').limit(100);
           
         if(err2) throw err2;
 
@@ -290,7 +286,7 @@
           
           if(char === ' ' || char === '-') {
             const separator = document.createElement('span');
-            separator.className = "w-5 text-center font-bold text-slate-400 text-xl self-center mx-1.5";
+            separator.className = "w-5 text-center font-bold text-slate-400 text-xl self-center mx-2";
             separator.textContent = char;
             labelsDiv.appendChild(separator);
           } else {
@@ -299,13 +295,13 @@
             input.maxLength = 1;
             input.autocomplete = "off";
             
-            // FIXED: Added absolute suppression attributes for native mobile keyboards (autocapitalize="none")
+            // Absolute suppression fields for native mobile phone keyboard layouts
             input.setAttribute('autocapitalize', 'none');
             input.setAttribute('autocorrect', 'off');
             input.setAttribute('spellcheck', 'false');
 
-            // Force visual text alignment style to lowercase explicitly
-            input.className = "letter-input w-6 h-11 sm:w-8 sm:h-12 text-center font-mono font-bold text-xl sm:text-2xl text-slate-900 border-b-4 border-slate-300 focus:border-indigo-500 focus:outline-none transition-all bg-slate-50/20 m-0 p-0 rounded-none lowercase";
+            // FIXED: Full boxes removed! Switched back to a flat bottom underline style with horizontal line padding separation (mx-1)
+            input.className = "letter-input w-6 h-11 sm:w-7 sm:h-12 text-center font-mono font-bold text-xl sm:text-2xl text-slate-900 border-b-4 border-slate-400 focus:border-indigo-500 focus:outline-none transition-all bg-transparent m-0 p-0 rounded-none lowercase mx-1";
             input.dataset.index = inputIndex;
             
             input.addEventListener('input', function(e) {

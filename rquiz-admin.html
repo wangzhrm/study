@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RQuiz Portal - Teacher Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans antialiased text-slate-800">
+
+  <div class="max-w-3xl mx-auto px-4 py-6 sm:py-12">
+    <header class="mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-6 gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-600 tracking-tight">RQuiz Creator</h1>
+        <p class="text-sm text-slate-500 mt-1">Transform Excel sheets into interactive vocabulary challenges</p>
+      </div>
+      <div class="inline-flex self-center sm:self-auto items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+        <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span> Portal Active
+      </div>
+    </header>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 mb-6 transition-all">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-sm">1</span>
+        <h2 class="text-lg font-bold text-slate-900">Select Vocabulary Document</h2>
+      </div>
+      
+      <label class="group relative flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-slate-300 rounded-xl hover:border-indigo-500 hover:bg-slate-50/50 cursor-pointer transition-all p-4 text-center">
+        <div class="space-y-1">
+          <svg class="mx-auto h-8 w-8 text-slate-400 group-hover:text-indigo-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <div class="text-sm text-slate-600 font-medium">
+            <span class="text-indigo-600 hover:text-indigo-500">Tap to browse files</span>
+          </div>
+          <p class="text-xs text-slate-400">Supports .xlsx and .xls formats</p>
+        </div>
+        <input type="file" id="excelFile" accept=".xlsx, .xls" class="hidden"/>
+      </label>
+      <div id="fileFeedback" class="hidden mt-3 text-xs text-emerald-600 font-medium flex items-center gap-1.5 justify-center">
+        ✓ Document loaded successfully
+      </div>
+    </div>
+
+    <div id="previewContainer" style="display: none;" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 transition-all">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-sm">2</span>
+        <h2 class="text-lg font-bold text-slate-900">Review & Database Commit</h2>
+      </div>
+      
+      <div class="mb-6">
+        <label for="listName" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Word List Title</label>
+        <input type="text" id="listName" placeholder="e.g., Grade 3 Unit 4 Vocab" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none text-slate-900 font-medium placeholder-slate-400 transition-all text-sm">
+      </div>
+
+      <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Data Extracted Preview (<span id="itemCount">0</span> rows)</label>
+      <div class="overflow-x-auto max-h-72 border border-slate-200 rounded-xl mb-6 bg-slate-50">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-100 sticky top-0 backdrop-blur">
+            <tr>
+              <th class="px-4 py-3 text-left font-semibold text-slate-600">English Terms</th>
+              <th class="px-4 py-3 text-left font-semibold text-slate-600">Chinese Definitions</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody" class="divide-y divide-slate-200 bg-white text-slate-700"></tbody>
+        </table>
+      </div>
+
+      <button id="uploadBtn" class="w-full px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-semibold rounded-xl shadow-md shadow-indigo-100 transition-all disabled:opacity-50 text-sm cursor-pointer">
+        Save Word List to Database
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://fepooifleoeseapsbisy.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'sb_publishable_2dWpQ1VOvdSToPTXymandw_VOSZUpTy';
+    const rQuizAdminClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let parsedVocabularyData = [];
+
+    document.getElementById('excelFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          // FIX: Use ArrayBuffer for better compatibility
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+          
+          parsedVocabularyData = [];
+          const tbody = document.getElementById('previewBody');
+          tbody.innerHTML = '';
+
+          for(let i = 0; i < rows.length; i++) {
+            if (!rows[i] || rows[i].length < 2) continue;
+
+            const eng = rows[i][0] ? String(rows[i][0]).trim() : '';
+            const chn = rows[i][1] ? String(rows[i][1]).trim() : '';
+
+            if (eng.toLowerCase() === 'english' || chn.toLowerCase() === 'chinese' || eng.toLowerCase() === 'vocabulary') {
+              continue;
+            }
+
+            // FIX: Allow rows with just English text, don't require Chinese
+            if (eng) {
+              parsedVocabularyData.push({ english: eng, chinese: chn });
+
+              const tr = document.createElement('tr');
+              tr.className = "hover:bg-slate-50/80 transition-colors";
+              
+              const tdEng = document.createElement('td');
+              tdEng.className = "px-4 py-3 font-medium text-slate-900 border-r border-slate-100";
+              tdEng.textContent = eng;
+
+              const tdChn = document.createElement('td');
+              tdChn.className = "px-4 py-3 text-slate-500 font-mono text-xs sm:text-sm";
+              tdChn.textContent = chn;
+
+              tr.appendChild(tdEng);
+              tr.appendChild(tdChn);
+              tbody.appendChild(tr);
+            }
+          }
+
+          if(parsedVocabularyData.length > 0) {
+            document.getElementById('fileFeedback').style.setProperty('display', 'flex', 'important');
+            document.getElementById('itemCount').textContent = parsedVocabularyData.length;
+            const container = document.getElementById('previewContainer');
+            container.style.setProperty('display', 'block', 'important');
+            container.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            alert("Could not extract any vocabulary items. Verify Column A is English and Column B is Chinese.");
+          }
+        } catch (err) {
+          alert("Excel processing error: " + err.message);
+        }
+      };
+      // FIX: Read as ArrayBuffer
+      reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById('uploadBtn').addEventListener('click', async function() {
+      const listName = document.getElementById('listName').value.trim();
+      if (!listName) {
+        alert("Please enter a name for this Word List before saving.");
+        return;
+      }
+
+      this.disabled = true;
+      this.textContent = "Uploading to database...";
+
+      try {
+        const { data: listData, error: listError } = await rQuizAdminClient
+          .from('rquiz_word_lists')
+          .insert([{ list_name: listName }])
+          .select()
+          .single();
+
+        if (listError) throw listError;
+
+        const listId = listData.id;
+        const bulkPayload = parsedVocabularyData.map(item => ({
+          list_id: listId,
+          english: item.english,
+          chinese: item.chinese
+        }));
+
+        const { error: vocabError } = await rQuizAdminClient
+          .from('rquiz_vocabularies')
+          .insert(bulkPayload);
+
+        if (vocabError) throw vocabError;
+
+        alert(`Successfully saved "${listName}" with ${bulkPayload.length} terms!`);
+        window.location.reload();
+
+      } catch (err) {
+        console.error(err);
+        alert("Database upload failed: " + err.message);
+        this.disabled = false;
+        this.textContent = "Save Word List to Database";
+      }
+    });
+  </script>
+</body>
+</html>

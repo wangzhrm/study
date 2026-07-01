@@ -92,7 +92,10 @@
       <div id="fibActionRow" class="hidden mt-8 text-center space-y-4">
         <div id="feedbackBanner" class="hidden p-4 rounded-xl font-medium text-sm transition-all animate-fade-in"></div>
         
-        <button id="submitFibBtn" class="w-full px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer">Submit Answer</button>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button id="retryFibBtn" class="hidden flex-1 px-6 py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer">Try Again ↺</button>
+          <button id="submitFibBtn" class="flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer">Submit Answer</button>
+        </div>
       </div>
     </div>
 
@@ -125,9 +128,14 @@
         </div>
       </div>
       
-      <button onclick="window.location.reload()" class="w-full mt-6 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl transition-all cursor-pointer">
-        Return to Dashboard
-      </button>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+        <button id="retrySameListBtn" class="w-full px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all cursor-pointer shadow-sm">
+          Try the Same List Again
+        </button>
+        <button onclick="window.location.reload()" class="w-full px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl transition-all cursor-pointer">
+          Return to Dashboard
+        </button>
+      </div>
     </div>
 
   </div>
@@ -198,30 +206,43 @@
           
         if(err2) throw err2;
 
-        let preparedSet = listWords.sort(() => 0.5 - Math.random());
-        
-        if ((selectedMode === 'E2C_20' || selectedMode === 'C2E_20') && preparedSet.length > 20) {
-          preparedSet = preparedSet.slice(0, 20);
-        }
-
-        activeVocabSet = preparedSet;
-        globalPool = [...new Set(poolWords.map(w => w.chinese))]; 
-
-        document.getElementById('setupView').classList.add('hidden');
-        document.getElementById('quizView').classList.remove('hidden');
-        
-        if (selectedMode.startsWith('E2C')) {
-          document.getElementById('displayModeBadge').textContent = selectedMode.endsWith('20') ? "English ➔ Chinese (20 Items)" : "English ➔ Chinese";
-        } else {
-          document.getElementById('displayModeBadge').textContent = selectedMode.endsWith('20') ? "Chinese ➔ English (20 Items)" : "Chinese ➔ English";
-        }
-
-        updateLiveScoreTracker();
-        renderQuestion();
+        setupQuizRun(listWords, poolWords);
       } catch (e) {
         alert(e.message);
       }
     });
+
+    function setupQuizRun(listWords, poolWords) {
+      let preparedSet = [...listWords].sort(() => 0.5 - Math.random());
+      
+      if ((selectedMode === 'E2C_20' || selectedMode === 'C2E_20') && preparedSet.length > 20) {
+        preparedSet = preparedSet.slice(0, 20);
+      }
+
+      activeVocabSet = preparedSet;
+      if (poolWords) {
+        globalPool = [...new Set(poolWords.map(w => w.chinese))]; 
+      }
+
+      // Reset runtime values
+      activeIndex = 0;
+      errorLog = [];
+      successCount = 0;
+      totalAnsweredCount = 0;
+
+      document.getElementById('setupView').classList.add('hidden');
+      document.getElementById('resultsView').classList.add('hidden');
+      document.getElementById('quizView').classList.remove('hidden');
+      
+      if (selectedMode.startsWith('E2C')) {
+        document.getElementById('displayModeBadge').textContent = selectedMode.endsWith('20') ? "English ➔ Chinese (20 Items)" : "English ➔ Chinese";
+      } else {
+        document.getElementById('displayModeBadge').textContent = selectedMode.endsWith('20') ? "Chinese ➔ English (20 Items)" : "Chinese ➔ English";
+      }
+
+      updateLiveScoreTracker();
+      renderQuestion();
+    }
 
     function updateLiveScoreTracker() {
       document.getElementById('liveScoreRatio').textContent = `${successCount}/${totalAnsweredCount}`;
@@ -237,6 +258,7 @@
       document.getElementById('mcqContainer').classList.add('hidden');
       document.getElementById('fibActionRow').classList.add('hidden');
       document.getElementById('letterBlanksWrapper').classList.add('hidden');
+      document.getElementById('retryFibBtn').classList.add('hidden');
       
       const feedbackBanner = document.getElementById('feedbackBanner');
       feedbackBanner.classList.add('hidden');
@@ -244,7 +266,7 @@
       
       const submitBtn = document.getElementById('submitFibBtn');
       submitBtn.textContent = "Submit Answer";
-      submitBtn.className = "w-full px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
+      submitBtn.className = "flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
 
       if (selectedMode.startsWith('E2C')) {
         document.getElementById('targetPrompt').textContent = currentObj.english;
@@ -295,12 +317,10 @@
             input.maxLength = 1;
             input.autocomplete = "off";
             
-            // Absolute suppression fields for native mobile phone keyboard layouts
             input.setAttribute('autocapitalize', 'none');
             input.setAttribute('autocorrect', 'off');
             input.setAttribute('spellcheck', 'false');
 
-            // FIXED: Full boxes removed! Switched back to a flat bottom underline style with horizontal line padding separation (mx-1)
             input.className = "letter-input w-6 h-11 sm:w-7 sm:h-12 text-center font-mono font-bold text-xl sm:text-2xl text-slate-900 border-b-4 border-slate-400 focus:border-indigo-500 focus:outline-none transition-all bg-transparent m-0 p-0 rounded-none lowercase mx-1";
             input.dataset.index = inputIndex;
             
@@ -319,7 +339,9 @@
                   prevInput.value = '';
                 }
               } else if (e.key === 'Enter') {
-                processFibSubmit();
+                if (!isAwaitingNextQuestion) {
+                  processFibSubmit();
+                }
               }
             });
 
@@ -347,15 +369,39 @@
       renderQuestion();
     }
 
-    document.getElementById('submitFibBtn').addEventListener('click', processFibSubmit);
-
-    function processFibSubmit() {
+    document.getElementById('submitFibBtn').addEventListener('click', () => {
       if (isAwaitingNextQuestion) {
         activeIndex++;
         renderQuestion();
-        return;
+      } else {
+        processFibSubmit();
       }
+    });
 
+    document.getElementById('retryFibBtn').addEventListener('click', () => {
+      // Re-enable inputs and clear values for a fresh attempt
+      const inputs = document.getElementById('letterBlanksWrapper').querySelectorAll('.letter-input');
+      inputs.forEach(inp => {
+        inp.disabled = false;
+        inp.value = '';
+      });
+      
+      // Hide banner and retry button, restore Submit text
+      document.getElementById('feedbackBanner').classList.add('hidden');
+      document.getElementById('retryFibBtn').classList.add('hidden');
+      isAwaitingNextQuestion = false;
+      
+      const submitBtn = document.getElementById('submitFibBtn');
+      submitBtn.textContent = "Submit Answer";
+      submitBtn.className = "flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
+
+      setTimeout(() => {
+        const firstInput = document.getElementById('letterBlanksWrapper').querySelector('.letter-input[data-index="0"]');
+        if (firstInput) firstInput.focus();
+      }, 50);
+    });
+
+    function processFibSubmit() {
       const currentObj = activeVocabSet[activeIndex];
       const inputs = document.getElementById('letterBlanksWrapper').querySelectorAll('.letter-input');
       const rawTargetWord = currentObj.english.trim();
@@ -377,6 +423,7 @@
       totalAnsweredCount++;
       const feedbackBanner = document.getElementById('feedbackBanner');
       const submitBtn = document.getElementById('submitFibBtn');
+      const retryBtn = document.getElementById('retryFibBtn');
       
       const isCorrect = studentInput.toLowerCase() === rawTargetWord.toLowerCase();
       inputs.forEach(inp => inp.disabled = true);
@@ -385,29 +432,37 @@
         successCount++;
         feedbackBanner.className = "p-4 rounded-xl font-bold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 text-center animate-fade-in";
         feedbackBanner.innerHTML = `✓ Correct!`;
+        retryBtn.classList.add('hidden'); // Keep hidden on success
+        
+        isAwaitingNextQuestion = true;
+        submitBtn.textContent = "Next Question ➔";
+        submitBtn.className = "flex-1 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
+        submitBtn.focus();
       } else {
         errorLog.push({ item: currentObj.english, solution: currentObj.chinese, input: studentInput || '[Left Blank]' });
         feedbackBanner.className = "p-4 rounded-xl font-medium text-sm bg-red-50 text-red-700 border border-red-200 text-left space-y-1 animate-fade-in";
         feedbackBanner.innerHTML = `
           <div class="font-bold">✗ Incorrect!</div>
-          <div>Correct answer: <span class="font-mono font-bold underline bg-red-100/50 px-1 rounded">${rawTargetWord}</span></div>
+          <div>Try again, or skip to view the correct answer on the final layout summary card.</div>
         `;
+        
+        // Show Retry action option
+        retryBtn.classList.remove('hidden');
+        
+        isAwaitingNextQuestion = true;
+        submitBtn.textContent = "Skip Question ➔";
+        submitBtn.className = "flex-1 px-6 py-3.5 bg-slate-400 hover:bg-slate-500 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
       }
 
       updateLiveScoreTracker();
       feedbackBanner.classList.remove('hidden');
-      isAwaitingNextQuestion = true;
-      
-      submitBtn.textContent = "Next Question ➔";
-      submitBtn.className = "w-full px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
-      submitBtn.focus();
     }
 
     function viewMetricsSummary() {
       document.getElementById('quizView').classList.add('hidden');
       document.getElementById('resultsView').classList.remove('hidden');
 
-      const ratio = Math.round((successCount / activeVocabSet.length) * 100);
+      const ratio = totalAnsweredCount > 0 ? Math.round((successCount / totalAnsweredCount) * 100) : 0;
       document.getElementById('accuracyRatio').textContent = `${ratio}%`;
 
       if(errorLog.length > 0) {
@@ -425,8 +480,17 @@
           `;
           errTable.appendChild(row);
         });
+      } else {
+        document.getElementById('errorAnalysisSection').classList.add('hidden');
       }
     }
+
+    // Set up the event target connection for retrying identical word list runs
+    document.getElementById('retrySameListBtn').addEventListener('click', () => {
+      if(activeVocabSet.length > 0) {
+        setupQuizRun(activeVocabSet, null);
+      }
+    });
   </script>
 </body>
 </html>

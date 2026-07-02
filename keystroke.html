@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Space Typing Blast</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc;
+        }
+
+        #score-board {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        #lives-container {
+            display: flex;
+            gap: 5px;
+            color: #ff3366;
+            font-size: 1.4rem;
+            text-shadow: 0 0 8px #ff3366;
+        }
+
+        .workspace {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            height: 410px;
+        }
+
+        .side-keyboard {
+            width: 320px;
+            background-color: #1a1a1a;
+            border: 3px solid #333;
+            border-radius: 6px;
+            padding: 15px 10px;
+            box-sizing: border-box;
+            display: none; 
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        .keyboard-row {
+            display: flex;
+            gap: 4px;
+        }
+
+        /* Keyboard Staggering / Realistic Row Slant */
+        .row-1 { padding-left: 0px; }
+        .row-2 { padding-left: 14px; } 
+        .row-3 { padding-left: 28px; } 
+
+        .key {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #444;
+            border-radius: 4px;
+            background-color: #222;
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        /* High-visibility retro flashing highlight animation */
+        @keyframes urgentPulse {
+            0% {
+                background-color: #ffffff;
+                color: #000000;
+                box-shadow: 0 0 8px #ffffff;
+                transform: scale(1.0);
+            }
+            50% {
+                background-color: #ffcc00;
+                color: #000000;
+                box-shadow: 0 0 25px #ffcc00, inset 0 0 10px #ffffff;
+                transform: scale(1.2);
+            }
+            100% {
+                background-color: #ffffff;
+                color: #000000;
+                box-shadow: 0 0 8px #ffffff;
+                transform: scale(1.0);
+            }
+        }
+
+        .key.active-target {
+            animation: urgentPulse 0.4s infinite ease-in-out !important;
+            border-color: #ffffff !important;
+            z-index: 5;
+        }
+
+        .game-container {
+            position: relative;
+            width: 600px;
+            height: 400px;
+        }
+
+        canvas {
+            border: 4px solid #333;
+            background-color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+            border-radius: 4px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 600px;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.92);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid #00ffcc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .config-row {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .config-row label {
+            font-size: 1rem;
+            color: #fff;
+            width: 180px;
+            text-align: right;
+        }
+
+        select {
+            background: #000;
+            color: #00ffcc;
+            border: 2px solid #00ffcc;
+            padding: 5px 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+            width: 220px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        button {
+            background-color: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 10px 24px;
+            font-size: 1.1rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background-color: #fff;
+            box-shadow: 0 0 15px #00ffcc;
+        }
+
+        button.secondary-btn {
+            background-color: #ffaa00;
+        }
+        button.secondary-btn:hover {
+            background-color: #fff;
+            box-shadow: 0 0 15px #ffaa00;
+        }
+
+        .instructions {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>RETRO TYPING BLAST</h1>
+    <div id="score-board">
+        <div>Hits: <span id="score">0</span> / 100</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            Shields: <div id="lives-container">♥♥♥♥♥</div>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div id="left-keyboard" class="side-keyboard">
+            <div style="text-align:center; font-size:0.8rem; color:#ff3366; font-weight:bold; margin-bottom:10px;">LEFT HAND ZONE</div>
+            <div class="keyboard-row row-1">
+                <div class="key" id="key-Q">Q</div><div class="key" id="key-W">W</div><div class="key" id="key-E">E</div><div class="key" id="key-R">R</div><div class="key" id="key-T">T</div>
+            </div>
+            <div class="keyboard-row row-2">
+                <div class="key" id="key-A">A</div><div class="key" id="key-S">S</div><div class="key" id="key-D">D</div><div class="key" id="key-F">F</div><div class="key" id="key-G">G</div>
+            </div>
+            <div class="keyboard-row row-3">
+                <div class="key" id="key-Z">Z</div><div class="key" id="key-X">X</div><div class="key" id="key-C">C</div><div class="key" id="key-V">V</div><div class="key" id="key-B">B</div>
+            </div>
+        </div>
+
+        <div class="game-container">
+            <canvas id="gameCanvas" width="600" height="400"></canvas>
+            
+            <div id="start-screen">
+                <h2 id="game-title" style="color: #00ffcc; margin-bottom: 20px;">READY PLAYER ONE</h2>
+                <p id="game-desc" style="margin-bottom: 25px; text-align: center; width: 85%; line-height: 1.4; font-size: 0.95rem;">
+                    Type the matching letters on enemy aircraft before they break through your defenses! Get 100 hits to win the level.
+                </p>
+                
+                <div id="controls-panel">
+                    <div class="config-row">
+                        <label for="mode-select">OPERATION MODE:</label>
+                        <select id="mode-select">
+                            <option value="fight">Fight Mode (Pure Action)</option>
+                            <option value="learning">Learning Mode (Hand Guide)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="config-row">
+                        <label for="level-select">MISSION LEVEL:</label>
+                        <select id="level-select">
+                            <option value="1">Level 1 (Cadet)</option>
+                            <option value="2">Level 2</option>
+                            <option value="3">Level 3 (Standard)</option>
+                            <option value="4">Level 4</option>
+                            <option value="5">Level 5 (Expert)</option>
+                            <option value="6">Level 6</option>
+                            <option value="7">Level 7 (Ace Fighter)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="btn-group" id="action-buttons">
+                    <button id="start-btn" onclick="startGame()">LAUNCH FIGHTER</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="right-keyboard" class="side-keyboard">
+            <div style="text-align:center; font-size:0.8rem; color:#00ccff; font-weight:bold; margin-bottom:10px;">RIGHT HAND ZONE</div>
+            <div class="keyboard-row row-1">
+                <div class="key" id="key-Y">Y</div><div class="key" id="key-U">U</div><div class="key" id="key-I">I</div><div class="key" id="key-O">O</div><div class="key" id="key-P">P</div>
+            </div>
+            <div class="keyboard-row row-2">
+                <div class="key" id="key-H">H</div><div class="key" id="key-J">J</div><div class="key" id="key-K">K</div><div class="key" id="key-L">L</div>
+            </div>
+            <div class="keyboard-row row-3">
+                <div class="key" id="key-N">N</div><div class="key" id="key-M">M</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        Make sure your Caps Lock is off. Practice keeping your hands on the home row!
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreEl = document.getElementById("score");
+        const livesContainer = document.getElementById("lives-container");
+        const startScreen = document.getElementById("start-screen");
+        const gameTitle = document.getElementById("game-title");
+        const gameDesc = document.getElementById("game-desc");
+        const levelSelect = document.getElementById("level-select");
+        const modeSelect = document.getElementById("mode-select");
+        const actionButtons = document.getElementById("action-buttons");
+        const controlsPanel = document.getElementById("controls-panel");
+        const leftKeyboard = document.getElementById("left-keyboard");
+        const rightKeyboard = document.getElementById("right-keyboard");
+
+        let score = 0;
+        let lives = 5;
+        let gameActive = false;
+        let gameMode = "fight"; 
+        let enemies = [];
+        let lasers = [];
+        
+        let baseSpawnRate = 1800; 
+        let baseEnemySpeed = 0.8;
+        let currentSpawnRate = 1800;
+        let currentEnemySpeed = 0.8;
+        let lastSpawn = 0;
+        
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        // Color profiles matching finger columns. "M" key set accurately to Cyan (Index)
+        const fingerColors = {
+            "Q": "#ff3366", "A": "#ff3366", "Z": "#ff3366", "P": "#ff3366", 
+            "W": "#ffaa00", "S": "#ffaa00", "X": "#ffaa00", "O": "#ffaa00", "L": "#ffaa00", 
+            "E": "#ffff00", "D": "#ffff00", "C": "#ffff00", "I": "#ffff00", "K": "#ffff00", 
+            "R": "#00ccff", "F": "#00ccff", "V": "#00ccff", "T": "#00ccff", "G": "#00ccff", "B": "#00ccff", 
+            "Y": "#00ccff", "H": "#00ccff", "N": "#00ccff", "U": "#00ccff", "J": "#00ccff", "M": "#00ccff"  
+        };
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 35,
+            width: 34,
+            height: 30
+        };
+
+        const difficultyLevels = {
+            1: { speed: 0.6, spawn: 2200 },
+            2: { speed: 0.9, spawn: 1800 },
+            3: { speed: 1.2, spawn: 1500 },
+            4: { speed: 1.6, spawn: 1200 },
+            5: { speed: 2.0, spawn: 1000 },
+            6: { speed: 2.5, spawn: 850 },
+            7: { speed: 3.2, spawn: 650 }
+        };
+
+        function initializePhysicalKeyboardColors() {
+            Object.keys(fingerColors).forEach(char => {
+                const domEl = document.getElementById(`key-${char}`);
+                if (domEl) {
+                    domEl.style.borderColor = fingerColors[char];
+                    domEl.style.color = fingerColors[char];
+                }
+            });
+        }
+        initializePhysicalKeyboardColors();
+
+        function updateLivesDisplay() {
+            livesContainer.innerHTML = "♥".repeat(Math.max(0, lives));
+        }
+
+        // Refreshes highlights flawlessly regardless of positive or negative coordinate states
+        function refreshKeyboardHighlights() {
+            document.querySelectorAll('.key').forEach(el => el.classList.remove('active-target'));
+            
+            if (gameMode !== "learning" || !gameActive || enemies.length === 0) return;
+
+            let lowestEnemy = enemies[0];
+            let maxHeadingY = enemies[0].y;
+            
+            for (let i = 1; i < enemies.length; i++) {
+                if (enemies[i].y > maxHeadingY) {
+                    maxHeadingY = enemies[i].y;
+                    lowestEnemy = enemies[i];
+                }
+            }
+
+            if (lowestEnemy) {
+                const targetDomKey = document.getElementById(`key-${lowestEnemy.letter}`);
+                if (targetDomKey) {
+                    targetDomKey.classList.add('active-target');
+                }
+            }
+        }
+
+        function startGame() {
+            gameMode = modeSelect.value;
+            const selectedLevel = parseInt(levelSelect.value) || 1;
+            
+            baseEnemySpeed = difficultyLevels[selectedLevel].speed;
+            baseSpawnRate = difficultyLevels[selectedLevel].spawn;
+            
+            currentEnemySpeed = baseEnemySpeed;
+            currentSpawnRate = baseSpawnRate;
+
+            score = 0;
+            lives = 5;
+            enemies = [];
+            lasers = [];
+            scoreEl.textContent = score;
+            updateLivesDisplay();
+            
+            if (gameMode === "learning") {
+                leftKeyboard.style.display = "flex";
+                rightKeyboard.style.display = "flex";
+            } else {
+                leftKeyboard.style.display = "none";
+                rightKeyboard.style.display = "none";
+            }
+
+            gameActive = true;
+            startScreen.style.display = "none";
+            lastSpawn = Date.now();
+            
+            // Initial refresh right at game launch sequence initialization
+            setTimeout(refreshKeyboardHighlights, 0);
+            requestAnimationFrame(gameLoop);
+        }
+
+        function gameOver() {
+            gameActive = false;
+            startScreen.style.display = "flex";
+            controlsPanel.style.display = "block";
+            leftKeyboard.style.display = "none";
+            rightKeyboard.style.display = "none";
+            
+            gameTitle.textContent = "MISSION FAILED";
+            gameTitle.style.color = "#ff3333";
+            gameDesc.textContent = `You ran out of structural shields. Final score: ${score} hits.`;
+            actionButtons.innerHTML = `<button onclick="startGame()">TRY AGAIN</button>`;
+        }
+
+        function gameWin() {
+            gameActive = false;
+            startScreen.style.display = "flex";
+            controlsPanel.style.display = "none"; 
+            leftKeyboard.style.display = "none";
+            rightKeyboard.style.display = "none";
+            
+            gameTitle.textContent = "MISSION ACCOMPLISHED!";
+            gameTitle.style.color = "#00ffcc";
+            gameDesc.textContent = `Fantastic typing! You successfully completed Level ${levelSelect.value} in ${gameMode === 'learning' ? 'Learning' : 'Fight'} Mode!`;
+            
+            const currentLevel = parseInt(levelSelect.value);
+            if (currentLevel < 7) {
+                actionButtons.innerHTML = `
+                    <button onclick="startGame()">RESTART LEVEL</button>
+                    <button class="secondary-btn" onclick="nextLevel()">PROCEED TO LEVEL ${currentLevel + 1}</button>
+                `;
+            } else {
+                actionButtons.innerHTML = `
+                    <button onclick="startGame()">RESTART LEVEL</button>
+                    <button class="secondary-btn" onclick="resetToBeginning()">PLAY FROM LEVEL 1</button>
+                `;
+                gameDesc.textContent += " You have conquered the final tier!";
+            }
+        }
+
+        function nextLevel() {
+            let nextLvl = parseInt(levelSelect.value) + 1;
+            levelSelect.value = nextLvl.toString();
+            startGame();
+        }
+
+        function resetToBeginning() {
+            levelSelect.value = "1";
+            startGame();
+        }
+
+        function spawnEnemy() {
+            if (gameMode === "learning" && levelSelect.value === "1" && enemies.length >= 1) {
+                return; 
+            }
+
+            const randomLetter = letters[Math.floor(Math.random() * letters.length)];
+            const xPos = Math.random() * (canvas.width - 60) + 30;
+            enemies.push({
+                x: xPos,
+                y: -10,
+                letter: randomLetter,
+                width: 42,
+                height: 32
+            });
+
+            // Instant force refresh directly within the spawn frame loop boundary execution
+            refreshKeyboardHighlights();
+        }
+
+        window.addEventListener("keydown", (e) => {
+            if (!gameActive) return;
+
+            const pressedKey = e.key.toUpperCase();
+            let targetIndex = -1;
+            let highestY = -Infinity;
+
+            for (let i = 0; i < enemies.length; i++) {
+                if (enemies[i].letter === pressedKey && enemies[i].y > highestY) {
+                    highestY = enemies[i].y;
+                    targetIndex = i;
+                }
+            }
+
+            if (targetIndex !== -1) {
+                const target = enemies[targetIndex];
+                
+                lasers.push({
+                    startX: player.x,
+                    startY: player.y - 15,
+                    endX: target.x,
+                    endY: target.y,
+                    alpha: 1.0
+                });
+
+                enemies.splice(targetIndex, 1);
+                score += 1;
+                scoreEl.textContent = score;
+
+                if (score >= 100) {
+                    gameWin();
+                    return;
+                }
+
+                if (score % 10 === 0) {
+                    currentEnemySpeed += baseEnemySpeed * 0.05;
+                }
+                
+                refreshKeyboardHighlights();
+            }
+        });
+
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.fillStyle = "#00ffcc";
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#00ffcc";
+
+            ctx.beginPath();
+            ctx.moveTo(0, -18);
+            ctx.lineTo(4, -6);
+            ctx.lineTo(4, 12);
+            ctx.lineTo(-4, 12);
+            ctx.lineTo(-4, -6);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(4, 0);
+            ctx.lineTo(17, 8);
+            ctx.lineTo(17, 12);
+            ctx.lineTo(4, 6);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(-4, 0);
+            ctx.lineTo(-17, 8);
+            ctx.lineTo(-17, 12);
+            ctx.lineTo(-4, 6);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "#ffaa00";
+            ctx.shadowColor = "#ffaa00";
+            ctx.fillRect(-2, 12, 4, 4);
+            ctx.restore();
+        }
+
+        function drawEnemy(e) {
+            ctx.save();
+            ctx.translate(e.x, e.y);
+
+            ctx.fillStyle = "#ff3366";
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = "#ff3366";
+
+            ctx.fillRect(-8, -8, 16, 16);
+
+            ctx.beginPath();
+            ctx.moveTo(8, -3);
+            ctx.lineTo(22, -8);
+            ctx.lineTo(18, 5);
+            ctx.lineTo(8, 3);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(-8, -3);
+            ctx.lineTo(-22, -8);
+            ctx.lineTo(-18, 5);
+            ctx.lineTo(-8, 3);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillRect(10, 5, 4, 8);
+            ctx.fillRect(-14, 5, 4, 8);
+
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+            ctx.fillRect(-10, -10, 20, 20);
+
+            ctx.fillStyle = "#ffff00"; 
+            ctx.font = "bold 22px 'Courier New'";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(e.letter, 0, 1);
+
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const now = Date.now();
+            if (now - lastSpawn > currentSpawnRate) {
+                spawnEnemy();
+                lastSpawn = now;
+            }
+
+            for (let i = lasers.length - 1; i >= 0; i--) {
+                let l = lasers[i];
+                ctx.strokeStyle = `rgba(0, 255, 204, ${l.alpha})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(l.startX, l.startY);
+                ctx.lineTo(l.endX, l.endY);
+                ctx.stroke();
+                
+                l.alpha -= 0.12;
+                if (l.alpha <= 0) lasers.splice(i, 1);
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+                e.y += currentEnemySpeed;
+
+                drawEnemy(e);
+
+                if (e.y > canvas.height - 25) {
+                    enemies.splice(i, 1);
+                    lives--;
+                    updateLivesDisplay();
+                    refreshKeyboardHighlights();
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                        return;
+                    }
+                }
+            }
+
+            drawPlayer();
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>

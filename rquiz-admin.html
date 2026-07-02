@@ -86,8 +86,12 @@
         Loading saved word lists...
       </div>
 
-      <ul id="existingListsContainer" class="divide-y divide-slate-100 border border-slate-100 rounded-xl hidden">
-        </ul>
+      <ul id="existingListsContainer" class="divide-y divide-slate-100 border border-slate-100 rounded-xl hidden mb-6">
+      </ul>
+
+      <button id="saveManagementChangesBtn" class="w-full px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold rounded-xl shadow-md shadow-emerald-100 transition-all disabled:opacity-50 text-sm cursor-pointer hidden">
+        Save Management Changes
+      </button>
     </div>
   </div>
 
@@ -97,60 +101,73 @@
     const rQuizAdminClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let parsedVocabularyData = [];
-    let existingLists = [];
+    let existingLists = [];      
+    let originalListsLookup = {}; 
+    let pendingDeletions = []; 
+    let isOrderChanged = false;
 
-    // Trigger lists display immediately on initialization
     document.addEventListener('DOMContentLoaded', () => fetchExistingLists('force'));
     document.getElementById('refreshBtn').addEventListener('click', () => fetchExistingLists('force'));
+    document.getElementById('saveManagementChangesBtn').addEventListener('click', saveAllManagementChanges);
 
-    // Select existing word list frames directly using exact database structural keys
     async function fetchExistingLists(strategy = 'lazy') {
       const container = document.getElementById('existingListsContainer');
       const loader = document.getElementById('listsLoading');
+      const masterSaveBtn = document.getElementById('saveManagementChangesBtn');
       
       if (strategy === 'force') {
         loader.textContent = "Loading saved word lists...";
         loader.classList.remove('hidden');
         container.classList.add('hidden');
+        masterSaveBtn.classList.add('hidden');
+        
+        pendingDeletions = [];
+        originalListsLookup = {};
+        isOrderChanged = false;
       }
 
       try {
         const { data, error } = await rQuizAdminClient
           .from('rquiz_word_lists')
-          .select('id, list_name')
-          .order('id', { ascending: true });
+          .select('id, list_name, sort_order')
+          .order('sort_order', { ascending: true });
 
         if (error) throw error;
 
-        if (existingLists.length === 0 || strategy === 'force') {
-          existingLists = data || [];
-        }
+        existingLists = data || [];
+        
+        originalListsLookup = {};
+        existingLists.forEach(item => {
+          originalListsLookup[String(item.id)] = item.list_name;
+        });
 
         renderListsUI();
       } catch (err) {
         loader.innerHTML = `
           <div class="text-rose-500 font-medium">Failed to retrieve data layer elements.</div>
-          <div class="text-xs text-slate-400 mt-1 max-w-md mx-auto">Error: ${err.message}. If database records exist, ensure your table's Row Level Security (RLS) policies permit public read/select access.</div>
+          <div class="text-xs text-slate-400 mt-1 max-w-md mx-auto">Error: ${err.message}.</div>
         `;
         loader.classList.remove('hidden');
         container.classList.add('hidden');
       }
     }
 
-    // Dynamic component rendering engine
     function renderListsUI() {
       const container = document.getElementById('existingListsContainer');
       const loader = document.getElementById('listsLoading');
+      const masterSaveBtn = document.getElementById('saveManagementChangesBtn');
 
       if (!existingLists || existingLists.length === 0) {
         loader.textContent = "No stored word lists found.";
         loader.classList.remove('hidden');
         container.classList.add('hidden');
+        masterSaveBtn.classList.add('hidden');
         return;
       }
 
       loader.classList.add('hidden');
       container.classList.remove('hidden');
+      masterSaveBtn.classList.remove('hidden');
       container.innerHTML = '';
 
       existingLists.forEach((list, index) => {
@@ -168,13 +185,12 @@
               </button>
             </div>
             
-            <input type="text" value="${escapeHtml(list.list_name || '')}" 
-              class="flex-1 px-3 py-1.5 font-medium text-slate-800 bg-transparent border border-transparent hover:border-slate-200 focus:border-indigo-500 focus:bg-white focus:outline-none rounded-lg transition-all text-sm"
-              onchange="renameList(${list.id}, this.value)">
+            <input type="text" data-list-id="${list.id}" value="${escapeHtml(list.list_name || '')}" 
+              class="list-title-input flex-1 px-3 py-1.5 font-medium text-slate-800 bg-transparent border border-transparent hover:border-slate-200 focus:border-indigo-500 focus:bg-white focus:outline-none rounded-lg transition-all text-sm">
           </div>
 
           <div class="flex items-center justify-end gap-2">
-            <button onclick="deleteList(${list.id}, '${escapeHtml(list.list_name || '')}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer" title="Delete List">
+            <button onclick="queueDeletion(${index}, '${list.id}', '${escapeHtml(list.list_name || '')}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer" title="Delete List">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
           </div>
@@ -183,66 +199,134 @@
       });
     }
 
-    // Dynamic updates translation layer
-    async function renameList(id, newName) {
-      const trimmed = newName.trim();
-      if (!trimmed) {
-        alert("List title structure cannot remain empty.");
-        fetchExistingLists('force');
-        return;
-      }
-
-      try {
-        const { error } = await rQuizAdminClient
-          .from('rquiz_word_lists')
-          .update({ list_name: trimmed })
-          .eq('id', id);
-
-        if (error) throw error;
-        
-        const target = existingLists.find(l => l.id === id);
-        if (target) target.list_name = trimmed;
-      } catch (err) {
-        alert("Failed to modify title state: " + err.message);
-        fetchExistingLists('force');
-      }
+    // FIXED: Keeps ID as standard string to accommodate UUID types
+    function syncInputStateToData() {
+      const inputs = document.querySelectorAll('.list-title-input');
+      inputs.forEach(input => {
+        const id = input.getAttribute('data-list-id');
+        const targetObj = existingLists.find(l => String(l.id) === id);
+        if (targetObj) {
+          targetObj.list_name = input.value;
+        }
+      });
     }
 
-    // Interface list row reordering shifts
     function moveList(currentIndex, direction) {
+      syncInputStateToData();
+      
       const targetIndex = currentIndex + direction;
       if (targetIndex < 0 || targetIndex >= existingLists.length) return;
 
-      const targetRowData = existingLists[currentIndex];
+      const currentItem = existingLists[currentIndex];
       existingLists[currentIndex] = existingLists[targetIndex];
-      existingLists[targetIndex] = targetRowData;
+      existingLists[targetIndex] = currentItem;
 
+      isOrderChanged = true;
       renderListsUI();
     }
 
-    // Cascading deletion configuration handlers
-    async function deleteList(id, name) {
-      if (!confirm(`Are you certain you want to permanently delete "${name}"?\nThis removes all related vocabulary words.`)) {
+    function queueDeletion(arrayIndex, id, name) {
+      if (!confirm(`Queue "${name}" for permanent deletion? Changes won't apply until you hit "Save Management Changes".`)) {
+        return;
+      }
+      syncInputStateToData();
+      pendingDeletions.push(id);
+      existingLists.splice(arrayIndex, 1);
+      
+      isOrderChanged = true; 
+      renderListsUI();
+    }
+
+    // FIXED: Removed parseInt wrapping around UUID string keys entirely
+    async function saveAllManagementChanges() {
+      syncInputStateToData();
+
+      const btn = document.getElementById('saveManagementChangesBtn');
+      const finalRenamesLookup = {};
+      let validationError = false;
+
+      const inputs = document.querySelectorAll('.list-title-input');
+      inputs.forEach(input => {
+        const rawId = input.getAttribute('data-list-id');
+        const currentName = input.value.trim();
+        const originalName = originalListsLookup[rawId]; 
+
+        if (!currentName) {
+          validationError = true;
+          return;
+        }
+
+        if (originalName !== undefined && currentName !== originalName) {
+          finalRenamesLookup[rawId] = currentName;
+        }
+      });
+
+      if (validationError) {
+        alert("Operation aborted: Word list titles cannot be left completely blank.");
         return;
       }
 
+      const hasRenames = Object.keys(finalRenamesLookup).length > 0;
+      const hasDeletions = pendingDeletions.length > 0;
+
+      if (!hasRenames && !hasDeletions && !isOrderChanged) {
+        alert("No pending modifications found to sync.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Processing changes...";
+
       try {
-        await rQuizAdminClient
-          .from('rquiz_vocabularies')
-          .delete()
-          .eq('list_id', id);
+        const dbPromises = [];
 
-        const { error } = await rQuizAdminClient
-          .from('rquiz_word_lists')
-          .delete()
-          .eq('id', id);
+        // 1. Process Deletions
+        if (hasDeletions) {
+          dbPromises.push(
+            rQuizAdminClient.from('rquiz_vocabularies').delete().in('list_id', pendingDeletions).then(res => {
+              if (res.error) throw new Error(`Vocabulary Delete Error: ${res.error.message}`);
+            })
+          );
+          dbPromises.push(
+            rQuizAdminClient.from('rquiz_word_lists').delete().in('id', pendingDeletions).then(res => {
+              if (res.error) throw new Error(`Word List Delete Error: ${res.error.message}`);
+            })
+          );
+        }
 
-        if (error) throw error;
-        
-        existingLists = [];
-        fetchExistingLists('force');
+        // 2. Process Renames
+        for (const [id, list_name] of Object.entries(finalRenamesLookup)) {
+          dbPromises.push(
+            rQuizAdminClient.from('rquiz_word_lists').update({ list_name }).eq('id', id).then(res => {
+              if (res.error) throw new Error(`Rename Error (ID ${id}): ${res.error.message}`);
+            })
+          );
+        }
+
+        // 3. Process Sorting
+        if (isOrderChanged && existingLists.length > 0) {
+          existingLists.forEach((listObj, index) => {
+            dbPromises.push(
+              rQuizAdminClient.from('rquiz_word_lists').update({ sort_order: index }).eq('id', listObj.id).then(res => {
+                if (res.error) throw new Error(`Reorder Error (ID ${listObj.id}): ${res.error.message}`);
+              })
+            );
+          });
+        }
+
+        if (dbPromises.length > 0) {
+          await Promise.all(dbPromises);
+          alert("All changes successfully synced to the database!");
+        }
+
+        fetchExistingLists('force'); 
+
       } catch (err) {
-        alert("Failed to drop record row: " + err.message);
+        console.error("Database batch save execution failed:", err);
+        alert("Failed syncing state updates to storage cluster:\n" + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Save Management Changes";
       }
     }
 
@@ -250,7 +334,7 @@
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    /* --- File Parsing Infrastructure Core --- */
+    /* --- File Parsing Core --- */
     document.getElementById('excelFile').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -325,9 +409,11 @@
       this.textContent = "Uploading to database...";
 
       try {
+        const nextOrderIndex = existingLists.length;
+
         const { data: listData, error: listError } = await rQuizAdminClient
           .from('rquiz_word_lists')
-          .insert([{ list_name: listName }])
+          .insert([{ list_name: listName, sort_order: nextOrderIndex }])
           .select()
           .single();
 
@@ -341,8 +427,7 @@
         }));
 
         const { error: vocabError } = await rQuizAdminClient
-          .from('rquiz_vocabularies')
-          .insert(bulkPayload);
+          .from('rquiz_vocabularies').insert(bulkPayload);
 
         if (vocabError) throw vocabError;
 

@@ -99,80 +99,96 @@
     let parsedVocabularyData = [];
     let existingLists = [];
 
-    // On Load
-    document.addEventListener('DOMContentLoaded', fetchExistingLists);
-    document.getElementById('refreshBtn').addEventListener('click', fetchExistingLists);
+    // Trigger lists display immediately on initialization
+    document.addEventListener('DOMContentLoaded', () => fetchExistingLists('force'));
+    document.getElementById('refreshBtn').addEventListener('click', () => fetchExistingLists('force'));
 
-    // Fetch existing word lists
-    async function fetchExistingLists() {
+    // Select existing word list frames directly using exact database structural keys
+    async function fetchExistingLists(strategy = 'lazy') {
       const container = document.getElementById('existingListsContainer');
       const loader = document.getElementById('listsLoading');
       
-      loader.classList.remove('hidden');
-      container.classList.add('hidden');
-      container.innerHTML = '';
+      if (strategy === 'force') {
+        loader.textContent = "Loading saved word lists...";
+        loader.classList.remove('hidden');
+        container.classList.add('hidden');
+      }
 
       try {
-        // Assumes an optional 'display_order' or falls back to sorting by 'id'
         const { data, error } = await rQuizAdminClient
           .from('rquiz_word_lists')
-          .select('*')
-          .order('display_order', { ascending: true })
+          .select('id, list_name')
           .order('id', { ascending: true });
 
         if (error) throw error;
-        existingLists = data;
 
-        if (existingLists.length === 0) {
-          loader.textContent = "No stored word lists found.";
-          return;
+        if (existingLists.length === 0 || strategy === 'force') {
+          existingLists = data || [];
         }
 
-        loader.classList.add('hidden');
-        container.classList.remove('hidden');
-
-        existingLists.forEach((list, index) => {
-          const li = document.createElement('li');
-          li.className = "flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 bg-white hover:bg-slate-50/50 transition-colors first:rounded-t-xl last:rounded-b-xl";
-          li.dataset.id = list.id;
-          li.dataset.index = index;
-
-          li.innerHTML = `
-            <div class="flex items-center gap-3 flex-1">
-              <div class="flex flex-col gap-0.5">
-                <button onclick="moveList(${index}, -1)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-30 disabled:pointer-events-none" ${index === 0 ? 'disabled' : ''}>
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
-                </button>
-                <button onclick="moveList(${index}, 1)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-30 disabled:pointer-events-none" ${index === existingLists.length - 1 ? 'disabled' : ''}>
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                </button>
-              </div>
-              
-              <input type="text" value="${escapeHtml(list.list_name)}" 
-                class="flex-1 px-3 py-1.5 font-medium text-slate-800 bg-transparent border border-transparent hover:border-slate-200 focus:border-indigo-500 focus:bg-white focus:outline-none rounded-lg transition-all text-sm"
-                onchange="renameList(${list.id}, this.value)">
-            </div>
-
-            <div class="flex items-center justify-end gap-2">
-              <button onclick="deleteList(${list.id}, '${escapeHtml(list.list_name)}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer" title="Delete List">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-              </button>
-            </div>
-          `;
-          container.appendChild(li);
-        });
-
+        renderListsUI();
       } catch (err) {
-        loader.textContent = "Failed to load lists: " + err.message;
+        loader.innerHTML = `
+          <div class="text-rose-500 font-medium">Failed to retrieve data layer elements.</div>
+          <div class="text-xs text-slate-400 mt-1 max-w-md mx-auto">Error: ${err.message}. If database records exist, ensure your table's Row Level Security (RLS) policies permit public read/select access.</div>
+        `;
+        loader.classList.remove('hidden');
+        container.classList.add('hidden');
       }
     }
 
-    // Inline Rename Action
+    // Dynamic component rendering engine
+    function renderListsUI() {
+      const container = document.getElementById('existingListsContainer');
+      const loader = document.getElementById('listsLoading');
+
+      if (!existingLists || existingLists.length === 0) {
+        loader.textContent = "No stored word lists found.";
+        loader.classList.remove('hidden');
+        container.classList.add('hidden');
+        return;
+      }
+
+      loader.classList.add('hidden');
+      container.classList.remove('hidden');
+      container.innerHTML = '';
+
+      existingLists.forEach((list, index) => {
+        const li = document.createElement('li');
+        li.className = "flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 bg-white hover:bg-slate-50/50 transition-colors first:rounded-t-xl last:rounded-b-xl";
+        
+        li.innerHTML = `
+          <div class="flex items-center gap-3 flex-1">
+            <div class="flex flex-col gap-0.5">
+              <button onclick="moveList(${index}, -1)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-30 disabled:pointer-events-none" ${index === 0 ? 'disabled' : ''}>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+              </button>
+              <button onclick="moveList(${index}, 1)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-30 disabled:pointer-events-none" ${index === existingLists.length - 1 ? 'disabled' : ''}>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+            </div>
+            
+            <input type="text" value="${escapeHtml(list.list_name || '')}" 
+              class="flex-1 px-3 py-1.5 font-medium text-slate-800 bg-transparent border border-transparent hover:border-slate-200 focus:border-indigo-500 focus:bg-white focus:outline-none rounded-lg transition-all text-sm"
+              onchange="renameList(${list.id}, this.value)">
+          </div>
+
+          <div class="flex items-center justify-end gap-2">
+            <button onclick="deleteList(${list.id}, '${escapeHtml(list.list_name || '')}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer" title="Delete List">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        `;
+        container.appendChild(li);
+      });
+    }
+
+    // Dynamic updates translation layer
     async function renameList(id, newName) {
       const trimmed = newName.trim();
       if (!trimmed) {
-        alert("List name cannot be blank.");
-        fetchExistingLists();
+        alert("List title structure cannot remain empty.");
+        fetchExistingLists('force');
         return;
       }
 
@@ -183,70 +199,58 @@
           .eq('id', id);
 
         if (error) throw error;
+        
+        const target = existingLists.find(l => l.id === id);
+        if (target) target.list_name = trimmed;
       } catch (err) {
-        alert("Failed to update name: " + err.message);
-        fetchExistingLists();
+        alert("Failed to modify title state: " + err.message);
+        fetchExistingLists('force');
       }
     }
 
-    // List Order Reallocation Action
-    async function moveList(currentIndex, direction) {
+    // Interface list row reordering shifts
+    function moveList(currentIndex, direction) {
       const targetIndex = currentIndex + direction;
       if (targetIndex < 0 || targetIndex >= existingLists.length) return;
 
-      // Swap positions in local runtime array
-      const temp = existingLists[currentIndex];
+      const targetRowData = existingLists[currentIndex];
       existingLists[currentIndex] = existingLists[targetIndex];
-      existingLists[targetIndex] = temp;
+      existingLists[targetIndex] = targetRowData;
 
-      try {
-        // Sync the updated collection order directly back to the DB layer sequentially
-        const promises = existingLists.map((list, index) => {
-          return rQuizAdminClient
-            .from('rquiz_word_lists')
-            .update({ display_order: index })
-            .eq('id', list.id);
-        });
-
-        await Promise.all(promises);
-        fetchExistingLists();
-      } catch (err) {
-        alert("Failed to save modified sorting order: " + err.message);
-      }
+      renderListsUI();
     }
 
-    // Row Deletion Action
+    // Cascading deletion configuration handlers
     async function deleteList(id, name) {
       if (!confirm(`Are you certain you want to permanently delete "${name}"?\nThis removes all related vocabulary words.`)) {
         return;
       }
 
       try {
-        // Delete dependent vocab elements first
         await rQuizAdminClient
           .from('rquiz_vocabularies')
           .delete()
           .eq('list_id', id);
 
-        // Terminate parent list container
         const { error } = await rQuizAdminClient
           .from('rquiz_word_lists')
           .delete()
           .eq('id', id);
 
         if (error) throw error;
-        fetchExistingLists();
+        
+        existingLists = [];
+        fetchExistingLists('force');
       } catch (err) {
-        alert("Failed to drop list item: " + err.message);
+        alert("Failed to drop record row: " + err.message);
       }
     }
 
-    // Form Helper Utility
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    /* --- Existing File Parsing Logic --- */
+    /* --- File Parsing Infrastructure Core --- */
     document.getElementById('excelFile').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;

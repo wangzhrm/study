@@ -379,6 +379,11 @@
     });
 
     document.getElementById('retryFibBtn').addEventListener('click', () => {
+      // Revert tracker metrics if replacing a previous mismatch layout save state
+      if (totalAnsweredCount > 0) totalAnsweredCount--;
+      if (errorLog.length > 0) errorLog.pop();
+      updateLiveScoreTracker();
+
       // Re-enable inputs and clear values for a fresh attempt
       const inputs = document.getElementById('letterBlanksWrapper').querySelectorAll('.letter-input');
       inputs.forEach(inp => {
@@ -443,7 +448,8 @@
         feedbackBanner.className = "p-4 rounded-xl font-medium text-sm bg-red-50 text-red-700 border border-red-200 text-left space-y-1 animate-fade-in";
         feedbackBanner.innerHTML = `
           <div class="font-bold">✗ Incorrect!</div>
-          <div>Try again, or skip to view the correct answer on the final layout summary card.</div>
+          <div class="text-xs text-red-600 font-semibold mb-1">Correct Answer: <span class="underline font-mono text-sm">${rawTargetWord}</span></div>
+          <div class="text-xs text-slate-500">Choose to try writing this term over again, or skip to drop into the next question framework row.</div>
         `;
         
         // Show Retry action option

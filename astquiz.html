@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AST Quiz - Student Hub</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans antialiased text-slate-800 select-none">
+
+  <div class="max-w-xl mx-auto px-4 py-6 sm:py-12">
+    
+    <div id="setupView" class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/80">
+      <div class="text-center mb-8">
+        <span class="text-xs uppercase font-bold tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">AST Practice Matrix</span>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 tracking-tight">AST Student Quiz Hub</h1>
+      </div>
+      
+      <div class="space-y-6">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">1. Choose a Word List</label>
+          <div class="relative">
+            <select id="listSelector" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none font-medium text-sm text-slate-800 appearance-none cursor-pointer transition-all">
+              <option value="">Fetching active sets...</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">2. Choose Testing Mode</label>
+          <div class="grid grid-cols-1 gap-3">
+            <label class="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-indigo-50/30 hover:border-indigo-300 transition-all group">
+              <div class="flex items-center">
+                <input type="radio" name="quizMode" value="E2C" checked class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                <span class="ml-3 font-semibold text-sm text-slate-800">English ➔ Chinese (All Words)</span>
+              </div>
+              <span class="text-[10px] text-slate-400 font-bold uppercase px-2 py-0.5 bg-slate-200/60 rounded group-hover:bg-indigo-100/80 transition-colors">MCQ</span>
+            </label>
+            
+            <label class="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-indigo-50/30 hover:border-indigo-300 transition-all group">
+              <div class="flex items-center">
+                <input type="radio" name="quizMode" value="C2E" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                <span class="ml-3 font-semibold text-sm text-slate-800">Chinese ➔ English (All Words)</span>
+              </div>
+              <span class="text-[10px] text-slate-400 font-bold uppercase px-2 py-0.5 bg-slate-200/60 rounded group-hover:bg-indigo-100/80 transition-colors">Blank Fill</span>
+            </label>
+
+            <label class="flex items-center justify-between p-4 bg-slate-50 border border-indigo-200 bg-indigo-50/10 rounded-xl cursor-pointer hover:bg-indigo-50/30 hover:border-indigo-300 transition-all group">
+              <div class="flex items-center">
+                <input type="radio" name="quizMode" value="E2C_20" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                <span class="ml-3 font-semibold text-sm text-indigo-900">English ➔ Chinese (Random 20)</span>
+              </div>
+              <span class="text-[10px] text-indigo-500 font-bold uppercase px-2 py-0.5 bg-indigo-100/70 rounded group-hover:bg-indigo-200/80 transition-colors">MCQ</span>
+            </label>
+
+            <label class="flex items-center justify-between p-4 bg-slate-50 border border-indigo-200 bg-indigo-50/10 rounded-xl cursor-pointer hover:bg-indigo-50/30 hover:border-indigo-300 transition-all group">
+              <div class="flex items-center">
+                <input type="radio" name="quizMode" value="C2E_20" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                <span class="ml-3 font-semibold text-sm text-indigo-900">Chinese ➔ English (Random 20)</span>
+              </div>
+              <span class="text-[10px] text-indigo-500 font-bold uppercase px-2 py-0.5 bg-indigo-100/70 rounded group-hover:bg-indigo-200/80 transition-colors">Blank Fill</span>
+            </label>
+          </div>
+        </div>
+
+        <button id="startQuizBtn" class="w-full mt-4 px-6 py-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold rounded-xl shadow-md shadow-indigo-100 transition-all text-sm cursor-pointer">
+          Initialize Quiz
+        </button>
+      </div>
+    </div>
+
+    <div id="quizView" class="hidden bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-slate-200/80 relative">
+      <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+        <div class="flex flex-col gap-1">
+          <span id="quizProgress" class="text-xs font-bold tracking-wider uppercase text-slate-400">Question 0/0</span>
+          <span id="displayModeBadge" class="text-[10px] text-indigo-600 font-semibold"></span>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Score</span>
+          <span id="liveScoreRatio" class="text-sm font-black text-slate-700 font-mono">0/0</span>
+        </div>
+      </div>
+
+      <div class="text-center my-8">
+        <h2 id="targetPrompt" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 break-words px-2 mb-6">Prompt</h2>
+        
+        <div id="letterBlanksWrapper" class="hidden inline-flex justify-center flex-wrap max-w-full mx-auto px-2"></div>
+      </div>
+
+      <div id="mcqContainer" class="hidden grid grid-cols-1 gap-3 mt-6"></div>
+      
+      <div id="fibActionRow" class="hidden mt-8 text-center space-y-4">
+        <div id="feedbackBanner" class="hidden p-4 rounded-xl font-medium text-sm transition-all animate-fade-in"></div>
+        
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button id="retryFibBtn" class="hidden flex-1 px-6 py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer">Try Again ↺</button>
+          <button id="submitFibBtn" class="flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer">Submit Answer</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="resultsView" class="hidden bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/80">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-extrabold text-slate-900">Quiz Finished</h2>
+        <p class="text-sm text-slate-400 mt-1">Review your practice performance parameters below</p>
+      </div>
+
+      <div class="text-center py-6 mb-6 bg-slate-50 rounded-2xl border border-slate-100">
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Accuracy Score</p>
+        <p id="accuracyRatio" class="text-5xl font-black text-indigo-600 mt-2 tracking-tight">0%</p>
+      </div>
+
+      <div id="errorAnalysisSection" class="hidden space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-red-500 flex items-center gap-1">
+          ⚠️ Flagged Mistakes Analysis
+        </h3>
+        <div class="overflow-x-auto border border-slate-200 rounded-xl bg-slate-50 shadow-inner">
+          <table class="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
+            <thead class="bg-slate-100">
+              <tr>
+                <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Target</th>
+                <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Correct Meaning</th>
+                <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Your Answer</th>
+              </tr>
+            </thead>
+            <tbody id="errorTableBody" class="bg-white divide-y divide-slate-200 text-slate-700"></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+        <button id="retrySameListBtn" class="w-full px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all cursor-pointer shadow-sm">
+          Try the Same List Again
+        </button>
+        <button onclick="window.location.reload()" class="w-full px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl transition-all cursor-pointer">
+          Return to Dashboard
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://fepooifleoeseapsbisy.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_2dWpQ1VOvdSToPTXymandw_VOSZUpTy';
+    
+    const rQuizStudentClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let activeVocabSet = [];
+    let globalPool = []; 
+    let activeIndex = 0;
+    let selectedMode = '';
+    let errorLog = [];
+    let successCount = 0;
+    let totalAnsweredCount = 0; 
+    let isAwaitingNextQuestion = false;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const { data, error } = await rQuizStudentClient
+          .from('ast_word_lists')
+          .select('id, list_name')
+          .order('sort_order', { ascending: true });
+          
+        if(error) throw error;
+        
+        const selector = document.getElementById('listSelector');
+        
+        if (!data || data.length === 0) {
+          selector.innerHTML = '<option value="">No configurations initialized inside database.</option>';
+          return;
+        }
+        
+        selector.innerHTML = '<option value="">-- Choose target word list --</option>';
+        data.forEach(list => {
+          const opt = document.createElement('option');
+          opt.value = list.id;
+          opt.textContent = list.list_name;
+          selector.appendChild(opt);
+        });
+      } catch (err) {
+        console.error("Fetch layout execution trace:", err);
+        alert("Syncing failure matrix: " + err.message);
+      }
+    });
+
+    document.getElementById('startQuizBtn').addEventListener('click', async () => {
+      const listId = document.getElementById('listSelector').value;
+      selectedMode = document.querySelector('input[name="quizMode"]:checked').value;
+
+      if(!listId) return alert('Select an active vocabulary dataset first.');
+
+      try {
+        const { data: listWords, error: err1 } = await rQuizStudentClient
+          .from('ast_vocabularies').select('english, chinese').eq('list_id', listId);
+          
+        if(err1) throw err1;
+        if(!listWords || listWords.length === 0) throw new Error("Target subset array mapping turned up empty.");
+        
+        const isMcqMode = selectedMode === 'E2C' || selectedMode === 'E2C_20';
+        if(listWords.length < 3 && isMcqMode) throw new Error("At least 3 context rows are required to map option clusters.");
+
+        const { data: poolWords, error: err2 } = await rQuizStudentClient
+          .from('ast_vocabularies').select('chinese').limit(100);
+          
+        if(err2) throw err2;
+
+        setupQuizRun(listWords, poolWords);
+      } catch (e) {
+        alert(e.message);
+      }
+    });
+
+    function setupQuizRun(listWords, poolWords) {
+      let preparedSet = [...listWords].sort(() => 0.5 - Math.random());
+      
+      if ((selectedMode === 'E2C_20' || selectedMode === 'C2E_20') && preparedSet.length > 20) {
+        preparedSet = preparedSet.slice(0, 20);
+      }
+
+      activeVocabSet = preparedSet;
+      if (poolWords) {
+        globalPool = [...new Set(poolWords.map(w => w.chinese))]; 
+      }
+
+      activeIndex = 0;
+      errorLog = [];
+      successCount = 0;
+      totalAnsweredCount = 0;
+
+      document.getElementById('setupView').classList.add('hidden');
+      document.getElementById('resultsView').classList.add('hidden');
+      document.getElementById('quizView').classList.remove('hidden');
+      
+      if (selectedMode.startsWith('E2C')) {
+        document.getElementById('displayModeBadge').textContent = selectedMode.endsWith('20') ? "English ➔ Chinese (20 Items)" : "English ➔ Chinese";
+      } else {
+        document.getElementById('displayModeBadge').textContent = selectedMode.endsWith('20') ? "Chinese ➔ English (20 Items)" : "Chinese ➔ English";
+      }
+
+      updateLiveScoreTracker();
+      renderQuestion();
+    }
+
+    function updateLiveScoreTracker() {
+      document.getElementById('liveScoreRatio').textContent = `${successCount}/${totalAnsweredCount}`;
+    }
+
+    function renderQuestion() {
+      if(activeIndex >= activeVocabSet.length) return viewMetricsSummary();
+
+      isAwaitingNextQuestion = false;
+      document.getElementById('quizProgress').textContent = `Question ${activeIndex + 1}/${activeVocabSet.length}`;
+      const currentObj = activeVocabSet[activeIndex];
+
+      document.getElementById('mcqContainer').classList.add('hidden');
+      document.getElementById('fibActionRow').classList.add('hidden');
+      document.getElementById('letterBlanksWrapper').classList.add('hidden');
+      document.getElementById('retryFibBtn').classList.add('hidden');
+      
+      const feedbackBanner = document.getElementById('feedbackBanner');
+      feedbackBanner.classList.add('hidden');
+      feedbackBanner.innerHTML = '';
+      
+      const submitBtn = document.getElementById('submitFibBtn');
+      submitBtn.textContent = "Submit Answer";
+      submitBtn.className = "flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
+
+      if (selectedMode.startsWith('E2C')) {
+        document.getElementById('targetPrompt').textContent = currentObj.english;
+        const mcqBox = document.getElementById('mcqContainer');
+        mcqBox.innerHTML = '';
+        mcqBox.classList.remove('hidden');
+
+        let choices = [currentObj.chinese];
+        let availableDistractors = globalPool.filter(c => c !== currentObj.chinese);
+        
+        availableDistractors.sort(() => 0.5 - Math.random());
+        for(let i = 0; i < 2; i++) {
+          if (availableDistractors[i]) choices.push(availableDistractors[i]);
+          else choices.push("Fallback Target Definition Option");
+        }
+        choices.sort(() => 0.5 - Math.random());
+
+        choices.forEach(optionText => {
+          const btn = document.createElement('button');
+          btn.className = "w-full text-left p-4 rounded-xl border-2 border-slate-200 text-slate-700 font-semibold text-sm hover:bg-indigo-50/50 hover:border-indigo-400 active:bg-indigo-50 active:scale-[0.99] transition-all cursor-pointer break-words shadow-sm";
+          btn.textContent = optionText;
+          btn.onclick = () => verifyMcqAnswer(optionText, currentObj);
+          mcqBox.appendChild(btn);
+        });
+
+      } else {
+        document.getElementById('targetPrompt').textContent = currentObj.chinese;
+        
+        const labelsDiv = document.getElementById('letterBlanksWrapper');
+        document.getElementById('fibActionRow').classList.remove('hidden');
+        labelsDiv.classList.remove('hidden');
+        labelsDiv.innerHTML = '';
+
+        const rawTargetWord = currentObj.english.trim();
+        let inputIndex = 0;
+
+        for(let i = 0; i < rawTargetWord.length; i++) {
+          const char = rawTargetWord[i];
+          
+          if(char === ' ' || char === '-') {
+            const separator = document.createElement('span');
+            separator.className = "w-5 text-center font-bold text-slate-400 text-xl self-center mx-2";
+            separator.textContent = char;
+            labelsDiv.appendChild(separator);
+          } else {
+            const input = document.createElement('input');
+            input.type = "text";
+            input.maxLength = 1;
+            input.autocomplete = "off";
+            
+            input.setAttribute('autocapitalize', 'none');
+            input.setAttribute('autocorrect', 'off');
+            input.setAttribute('spellcheck', 'false');
+
+            input.className = "letter-input w-6 h-11 sm:w-7 sm:h-12 text-center font-mono font-bold text-xl sm:text-2xl text-slate-900 border-b-4 border-slate-400 focus:border-indigo-500 focus:outline-none transition-all bg-transparent m-0 p-0 rounded-none lowercase mx-1";
+            input.dataset.index = inputIndex;
+            
+            input.addEventListener('input', function(e) {
+              if (this.value.length === 1) {
+                const nextInput = labelsDiv.querySelector(`.letter-input[data-index="${parseInt(this.dataset.index) + 1}"]`);
+                if (nextInput) nextInput.focus();
+              }
+            });
+
+            input.addEventListener('keydown', function(e) {
+              if (e.key === 'Backspace' && this.value.length === 0) {
+                const prevInput = labelsDiv.querySelector(`.letter-input[data-index="${parseInt(this.dataset.index) - 1}"]`);
+                if (prevInput) {
+                  prevInput.focus();
+                  prevInput.value = '';
+                }
+              } else if (e.key === 'Enter') {
+                if (!isAwaitingNextQuestion) {
+                  processFibSubmit();
+                }
+              }
+            });
+
+            labelsDiv.appendChild(input);
+            inputIndex++;
+          }
+        }
+        
+        setTimeout(() => {
+          const firstInput = labelsDiv.querySelector('.letter-input[data-index="0"]');
+          if (firstInput) firstInput.focus();
+        }, 50);
+      }
+    }
+
+    function verifyMcqAnswer(selected, obj) {
+      totalAnsweredCount++;
+      if(selected === obj.chinese) {
+        successCount++;
+      } else {
+        errorLog.push({ item: obj.english, solution: obj.chinese, input: selected });
+      }
+      updateLiveScoreTracker();
+      activeIndex++;
+      renderQuestion();
+    }
+
+    document.getElementById('submitFibBtn').addEventListener('click', () => {
+      if (isAwaitingNextQuestion) {
+        activeIndex++;
+        renderQuestion();
+      } else {
+        processFibSubmit();
+      }
+    });
+
+    document.getElementById('retryFibBtn').addEventListener('click', () => {
+      if (totalAnsweredCount > 0) totalAnsweredCount--;
+      if (errorLog.length > 0) errorLog.pop();
+      updateLiveScoreTracker();
+
+      const inputs = document.getElementById('letterBlanksWrapper').querySelectorAll('.letter-input');
+      inputs.forEach(inp => {
+        inp.disabled = false;
+        inp.value = '';
+      });
+      
+      document.getElementById('feedbackBanner').classList.add('hidden');
+      document.getElementById('retryFibBtn').classList.add('hidden');
+      isAwaitingNextQuestion = false;
+      
+      const submitBtn = document.getElementById('submitFibBtn');
+      submitBtn.textContent = "Submit Answer";
+      submitBtn.className = "flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
+
+      setTimeout(() => {
+        const firstInput = document.getElementById('letterBlanksWrapper').querySelector('.letter-input[data-index="0"]');
+        if (firstInput) firstInput.focus();
+      }, 50);
+    });
+
+    function processFibSubmit() {
+      const currentObj = activeVocabSet[activeIndex];
+      const inputs = document.getElementById('letterBlanksWrapper').querySelectorAll('.letter-input');
+      const rawTargetWord = currentObj.english.trim();
+      
+      let studentInput = '';
+      let currentInputIdx = 0;
+
+      for (let char of rawTargetWord) {
+        if (char === ' ' || char === '-') {
+          studentInput += char;
+        } else {
+          studentInput += inputs[currentInputIdx] ? inputs[currentInputIdx].value : '';
+          currentInputIdx++;
+        }
+      }
+
+      if(!studentInput.trim()) return;
+
+      totalAnsweredCount++;
+      const feedbackBanner = document.getElementById('feedbackBanner');
+      const submitBtn = document.getElementById('submitFibBtn');
+      const retryBtn = document.getElementById('retryFibBtn');
+      
+      const isCorrect = studentInput.toLowerCase() === rawTargetWord.toLowerCase();
+      inputs.forEach(inp => inp.disabled = true);
+
+      if(isCorrect) {
+        successCount++;
+        feedbackBanner.className = "p-4 rounded-xl font-bold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 text-center animate-fade-in";
+        feedbackBanner.innerHTML = `✓ Correct!`;
+        retryBtn.classList.add('hidden'); 
+        
+        isAwaitingNextQuestion = true;
+        submitBtn.textContent = "Next Question ➔";
+        submitBtn.className = "flex-1 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
+        submitBtn.focus();
+      } else {
+        errorLog.push({ item: currentObj.english, solution: currentObj.chinese, input: studentInput || '[Left Blank]' });
+        feedbackBanner.className = "p-4 rounded-xl font-medium text-sm bg-red-50 text-red-700 border border-red-200 text-left space-y-1 animate-fade-in";
+        feedbackBanner.innerHTML = `
+          <div class="font-bold">✗ Incorrect!</div>
+          <div class="text-xs text-red-600 font-semibold mb-1">Correct Answer: <span class="underline font-mono text-sm">${rawTargetWord}</span></div>
+          <div class="text-xs text-slate-500">Choose to try writing this term over again, or skip to drop into the next question framework row.</div>
+        `;
+        
+        retryBtn.classList.remove('hidden');
+        
+        isAwaitingNextQuestion = true;
+        submitBtn.textContent = "Skip Question ➔";
+        submitBtn.className = "flex-1 px-6 py-3.5 bg-slate-400 hover:bg-slate-500 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
+      }
+
+      updateLiveScoreTracker();
+      feedbackBanner.classList.remove('hidden');
+    }
+
+    function viewMetricsSummary() {
+      document.getElementById('quizView').classList.add('hidden');
+      document.getElementById('resultsView').classList.remove('hidden');
+
+      const ratio = totalAnsweredCount > 0 ? Math.round((successCount / totalAnsweredCount) * 100) : 0;
+      document.getElementById('accuracyRatio').textContent = `${ratio}%`;
+
+      if(errorLog.length > 0) {
+        document.getElementById('errorAnalysisSection').classList.remove('hidden');
+        const errTable = document.getElementById('errorTableBody');
+        errTable.innerHTML = '';
+
+        errorLog.forEach(err => {
+          const row = document.createElement('tr');
+          row.className = "hover:bg-slate-50 transition-colors";
+          row.innerHTML = `
+            <td class="px-4 py-3 font-medium text-slate-900 border-r border-slate-100">${err.item}</td>
+            <td class="px-4 py-3 text-emerald-600 font-semibold">${err.solution}</td>
+            <td class="px-4 py-3 text-red-500 font-mono text-xs sm:text-sm">${err.input}</td>
+          `;
+          errTable.appendChild(row);
+        });
+      } else {
+        document.getElementById('errorAnalysisSection').classList.add('hidden');
+      }
+    }
+
+    document.getElementById('retrySameListBtn').addEventListener('click', () => {
+      if(activeVocabSet.length > 0) {
+        setupQuizRun(activeVocabSet, null);
+      }
+    });
+  </script>
+</body>
+</html>

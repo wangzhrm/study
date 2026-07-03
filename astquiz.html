@@ -76,14 +76,13 @@
           <span id="displayModeBadge" class="text-[10px] text-indigo-600 font-semibold"></span>
         </div>
         <div class="text-right">
-          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Score</span>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Correct / Trials</span>
           <span id="liveScoreRatio" class="text-sm font-black text-slate-700 font-mono">0/0</span>
         </div>
       </div>
 
       <div class="text-center my-8">
         <h2 id="targetPrompt" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 break-words px-2 mb-6">Prompt</h2>
-        
         <div id="letterBlanksWrapper" class="hidden inline-flex justify-center flex-wrap max-w-full mx-auto px-2"></div>
       </div>
 
@@ -91,7 +90,6 @@
       
       <div id="fibActionRow" class="hidden mt-8 text-center space-y-4">
         <div id="feedbackBanner" class="hidden p-4 rounded-xl font-medium text-sm transition-all animate-fade-in"></div>
-        
         <div class="flex flex-col sm:flex-row gap-3">
           <button id="retryFibBtn" class="hidden flex-1 px-6 py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer">Try Again ↺</button>
           <button id="submitFibBtn" class="flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer">Submit Answer</button>
@@ -106,13 +104,14 @@
       </div>
 
       <div class="text-center py-6 mb-6 bg-slate-50 rounded-2xl border border-slate-100">
-        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Accuracy Score</p>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Trial Accuracy</p>
         <p id="accuracyRatio" class="text-5xl font-black text-indigo-600 mt-2 tracking-tight">0%</p>
+        <p id="rawTrialRatio" class="text-xs font-semibold text-slate-500 mt-1">0 / 0 total attempts</p>
       </div>
 
       <div id="errorAnalysisSection" class="hidden space-y-3">
         <h3 class="text-xs font-bold uppercase tracking-wider text-red-500 flex items-center gap-1">
-          ⚠️ Flagged Mistakes Analysis
+          ⚠️ Flagged Mistakes Analysis (Final States)
         </h3>
         <div class="overflow-x-auto border border-slate-200 rounded-xl bg-slate-50 shadow-inner">
           <table class="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
@@ -120,7 +119,7 @@
               <tr>
                 <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Target</th>
                 <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Correct Meaning</th>
-                <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Your Answer</th>
+                <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Your Last Attempt</th>
               </tr>
             </thead>
             <tbody id="errorTableBody" class="bg-white divide-y divide-slate-200 text-slate-700"></tbody>
@@ -151,7 +150,9 @@
     let globalPool = []; 
     let activeIndex = 0;
     let selectedMode = '';
-    let errorLog = [];
+    
+    // We use a key-value object map for errors to prevent duplication if a word is missed multiple times
+    let errorLogMap = {};
     let successCount = 0;
     let totalAnsweredCount = 0; 
     let isAwaitingNextQuestion = false;
@@ -225,7 +226,7 @@
       }
 
       activeIndex = 0;
-      errorLog = [];
+      errorLogMap = {};
       successCount = 0;
       totalAnsweredCount = 0;
 
@@ -360,8 +361,10 @@
       totalAnsweredCount++;
       if(selected === obj.chinese) {
         successCount++;
+        // If they previously guessed wrong, clean up the final diagnostic map state
+        delete errorLogMap[activeIndex];
       } else {
-        errorLog.push({ item: obj.english, solution: obj.chinese, input: selected });
+        errorLogMap[activeIndex] = { item: obj.english, solution: obj.chinese, input: selected };
       }
       updateLiveScoreTracker();
       activeIndex++;
@@ -378,9 +381,8 @@
     });
 
     document.getElementById('retryFibBtn').addEventListener('click', () => {
-      if (totalAnsweredCount > 0) totalAnsweredCount--;
-      if (errorLog.length > 0) errorLog.pop();
-      updateLiveScoreTracker();
+      // FIX: Removed totalAnsweredCount-- and errorLogMap mutation rollbacks.
+      // Every single trial selection counts towards total trials (b) permanently now.
 
       const inputs = document.getElementById('letterBlanksWrapper').querySelectorAll('.letter-input');
       inputs.forEach(inp => {
@@ -431,6 +433,9 @@
 
       if(isCorrect) {
         successCount++;
+        // Safe to remove the entry if they ultimately solved it during a retry trial
+        delete errorLogMap[activeIndex];
+        
         feedbackBanner.className = "p-4 rounded-xl font-bold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 text-center animate-fade-in";
         feedbackBanner.innerHTML = `✓ Correct!`;
         retryBtn.classList.add('hidden'); 
@@ -440,7 +445,7 @@
         submitBtn.className = "flex-1 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
         submitBtn.focus();
       } else {
-        errorLog.push({ item: currentObj.english, solution: currentObj.chinese, input: studentInput || '[Left Blank]' });
+        errorLogMap[activeIndex] = { item: currentObj.english, solution: currentObj.chinese, input: studentInput || '[Left Blank]' };
         feedbackBanner.className = "p-4 rounded-xl font-medium text-sm bg-red-50 text-red-700 border border-red-200 text-left space-y-1 animate-fade-in";
         feedbackBanner.innerHTML = `
           <div class="font-bold">✗ Incorrect!</div>
@@ -465,13 +470,23 @@
 
       const ratio = totalAnsweredCount > 0 ? Math.round((successCount / totalAnsweredCount) * 100) : 0;
       document.getElementById('accuracyRatio').textContent = `${ratio}%`;
+      
+      // Inject a dynamic label explaining the breakdown cleanly
+      const subLabel = document.getElementById('rawTrialRatio') || document.createElement('p');
+      subLabel.id = 'rawTrialRatio';
+      subLabel.className = "text-xs font-semibold text-slate-500 mt-1";
+      subLabel.textContent = `${successCount} correct / ${totalAnsweredCount} total input trials`;
+      if (!document.getElementById('rawTrialRatio')) {
+        document.getElementById('accuracyRatio').parentNode.appendChild(subLabel);
+      }
 
-      if(errorLog.length > 0) {
+      const mistakesArray = Object.values(errorLogMap);
+      if(mistakesArray.length > 0) {
         document.getElementById('errorAnalysisSection').classList.remove('hidden');
         const errTable = document.getElementById('errorTableBody');
         errTable.innerHTML = '';
 
-        errorLog.forEach(err => {
+        mistakesArray.forEach(err => {
           const row = document.createElement('tr');
           row.className = "hover:bg-slate-50 transition-colors";
           row.innerHTML = `

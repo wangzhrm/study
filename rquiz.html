@@ -76,14 +76,13 @@
           <span id="displayModeBadge" class="text-[10px] text-indigo-600 font-semibold"></span>
         </div>
         <div class="text-right">
-          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Score</span>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Correct / Trials</span>
           <span id="liveScoreRatio" class="text-sm font-black text-slate-700 font-mono">0/0</span>
         </div>
       </div>
 
       <div class="text-center my-8">
         <h2 id="targetPrompt" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 break-words px-2 mb-6">Prompt</h2>
-        
         <div id="letterBlanksWrapper" class="hidden inline-flex justify-center flex-wrap max-w-full mx-auto px-2"></div>
       </div>
 
@@ -91,7 +90,6 @@
       
       <div id="fibActionRow" class="hidden mt-8 text-center space-y-4">
         <div id="feedbackBanner" class="hidden p-4 rounded-xl font-medium text-sm transition-all animate-fade-in"></div>
-        
         <div class="flex flex-col sm:flex-row gap-3">
           <button id="retryFibBtn" class="hidden flex-1 px-6 py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer">Try Again ↺</button>
           <button id="submitFibBtn" class="flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer">Submit Answer</button>
@@ -106,13 +104,14 @@
       </div>
 
       <div class="text-center py-6 mb-6 bg-slate-50 rounded-2xl border border-slate-100">
-        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Accuracy Score</p>
+        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Trial Accuracy</p>
         <p id="accuracyRatio" class="text-5xl font-black text-indigo-600 mt-2 tracking-tight">0%</p>
+        <p id="rawTrialRatio" class="text-xs font-semibold text-slate-500 mt-1">0 / 0 total attempts</p>
       </div>
 
       <div id="errorAnalysisSection" class="hidden space-y-3">
         <h3 class="text-xs font-bold uppercase tracking-wider text-red-500 flex items-center gap-1">
-          ⚠️ Flagged Mistakes Analysis
+          ⚠️ Flagged Mistakes Analysis (Final States)
         </h3>
         <div class="overflow-x-auto border border-slate-200 rounded-xl bg-slate-50 shadow-inner">
           <table class="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
@@ -120,7 +119,7 @@
               <tr>
                 <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Target</th>
                 <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Correct Meaning</th>
-                <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Your Answer</th>
+                <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Your Last Attempt</th>
               </tr>
             </thead>
             <tbody id="errorTableBody" class="bg-white divide-y divide-slate-200 text-slate-700"></tbody>
@@ -145,15 +144,20 @@
     const SUPABASE_URL = 'https://fepooifleoeseapsbisy.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_2dWpQ1VOvdSToPTXymandw_VOSZUpTy';
     
-    const rQuizStudentClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { createClient } = supabase;
+    const rQuizStudentClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let activeVocabSet = [];
     let globalPool = []; 
     let activeIndex = 0;
     let selectedMode = '';
-    let errorLog = [];
-    let successCount = 0;
-    let totalAnsweredCount = 0; 
+    
+    // Explicit global trial score metrics counters (a / b logic)
+    let correctTrialsCount = 0;
+    let totalTrialsCount = 0;
+    
+    // Kept to render the error diagnostics table on the final view screen
+    let finalQuestionLog = {}; 
     let isAwaitingNextQuestion = false;
 
     window.addEventListener('DOMContentLoaded', async () => {
@@ -163,12 +167,16 @@
           .select('id, list_name')
           .order('id', { ascending: false });
           
-        if(error) throw error;
+        if(error) {
+          console.error("Supabase API Retrieval Fault:", error);
+          alert(`Database Access Fault [${error.code}]: ${error.message}`);
+          return;
+        }
         
         const selector = document.getElementById('listSelector');
         
         if (!data || data.length === 0) {
-          selector.innerHTML = '<option value="">No configurations initialized inside database.</option>';
+          selector.innerHTML = '<option value="">No configurations returned from database.</option>';
           return;
         }
         
@@ -180,8 +188,8 @@
           selector.appendChild(opt);
         });
       } catch (err) {
-        console.error("Fetch layout execution trace:", err);
-        alert("Syncing failure matrix: " + err.message);
+        console.error("Fetch handling crash:", err);
+        alert("Client Crash Trace Error: " + err.message);
       }
     });
 
@@ -208,7 +216,7 @@
 
         setupQuizRun(listWords, poolWords);
       } catch (e) {
-        alert(e.message);
+        alert("Failed to map question arrays: " + e.message);
       }
     });
 
@@ -224,11 +232,11 @@
         globalPool = [...new Set(poolWords.map(w => w.chinese))]; 
       }
 
-      // Reset runtime values
+      // Explicitly reset math performance metrics counters
       activeIndex = 0;
-      errorLog = [];
-      successCount = 0;
-      totalAnsweredCount = 0;
+      correctTrialsCount = 0;
+      totalTrialsCount = 0;
+      finalQuestionLog = {};
 
       document.getElementById('setupView').classList.add('hidden');
       document.getElementById('resultsView').classList.add('hidden');
@@ -245,9 +253,10 @@
     }
 
     function updateLiveScoreTracker() {
-      document.getElementById('liveScoreRatio').textContent = `${successCount}/${totalAnsweredCount}`;
+      document.getElementById('liveScoreRatio').textContent = `${correctTrialsCount}/${totalTrialsCount}`;
     }
 
+    // [Remainder of layout setup code blocks mapped exactly logic preservation]
     function renderQuestion() {
       if(activeIndex >= activeVocabSet.length) return viewMetricsSummary();
 
@@ -358,12 +367,19 @@
     }
 
     function verifyMcqAnswer(selected, obj) {
-      totalAnsweredCount++;
-      if(selected === obj.chinese) {
-        successCount++;
-      } else {
-        errorLog.push({ item: obj.english, solution: obj.chinese, input: selected });
-      }
+      const isCorrect = (selected === obj.chinese);
+      
+      // Update running metrics registers immediately
+      totalTrialsCount++;
+      if (isCorrect) correctTrialsCount++;
+
+      finalQuestionLog[activeIndex] = {
+        item: obj.english,
+        solution: obj.chinese,
+        input: selected,
+        correct: isCorrect
+      };
+
       updateLiveScoreTracker();
       activeIndex++;
       renderQuestion();
@@ -379,19 +395,12 @@
     });
 
     document.getElementById('retryFibBtn').addEventListener('click', () => {
-      // Revert tracker metrics if replacing a previous mismatch layout save state
-      if (totalAnsweredCount > 0) totalAnsweredCount--;
-      if (errorLog.length > 0) errorLog.pop();
-      updateLiveScoreTracker();
-
-      // Re-enable inputs and clear values for a fresh attempt
       const inputs = document.getElementById('letterBlanksWrapper').querySelectorAll('.letter-input');
       inputs.forEach(inp => {
         inp.disabled = false;
         inp.value = '';
       });
       
-      // Hide banner and retry button, restore Submit text
       document.getElementById('feedbackBanner').classList.add('hidden');
       document.getElementById('retryFibBtn').classList.add('hidden');
       isAwaitingNextQuestion = false;
@@ -425,7 +434,6 @@
 
       if(!studentInput.trim()) return;
 
-      totalAnsweredCount++;
       const feedbackBanner = document.getElementById('feedbackBanner');
       const submitBtn = document.getElementById('submitFibBtn');
       const retryBtn = document.getElementById('retryFibBtn');
@@ -433,18 +441,27 @@
       const isCorrect = studentInput.toLowerCase() === rawTargetWord.toLowerCase();
       inputs.forEach(inp => inp.disabled = true);
 
+      // Increment counters systematically per action step trial
+      totalTrialsCount++;
+      if (isCorrect) correctTrialsCount++;
+
+      finalQuestionLog[activeIndex] = {
+        item: currentObj.english,
+        solution: currentObj.chinese,
+        input: studentInput || '[Left Blank]',
+        correct: isCorrect
+      };
+
       if(isCorrect) {
-        successCount++;
         feedbackBanner.className = "p-4 rounded-xl font-bold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 text-center animate-fade-in";
         feedbackBanner.innerHTML = `✓ Correct!`;
-        retryBtn.classList.add('hidden'); // Keep hidden on success
+        retryBtn.classList.add('hidden');
         
         isAwaitingNextQuestion = true;
         submitBtn.textContent = "Next Question ➔";
         submitBtn.className = "flex-1 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
         submitBtn.focus();
       } else {
-        errorLog.push({ item: currentObj.english, solution: currentObj.chinese, input: studentInput || '[Left Blank]' });
         feedbackBanner.className = "p-4 rounded-xl font-medium text-sm bg-red-50 text-red-700 border border-red-200 text-left space-y-1 animate-fade-in";
         feedbackBanner.innerHTML = `
           <div class="font-bold">✗ Incorrect!</div>
@@ -452,7 +469,6 @@
           <div class="text-xs text-slate-500">Choose to try writing this term over again, or skip to drop into the next question framework row.</div>
         `;
         
-        // Show Retry action option
         retryBtn.classList.remove('hidden');
         
         isAwaitingNextQuestion = true;
@@ -468,15 +484,24 @@
       document.getElementById('quizView').classList.add('hidden');
       document.getElementById('resultsView').classList.remove('hidden');
 
-      const ratio = totalAnsweredCount > 0 ? Math.round((successCount / totalAnsweredCount) * 100) : 0;
+      // Accurate evaluation parsing over exact trial parameters
+      const ratio = totalTrialsCount > 0 ? Math.round((correctTrialsCount / totalTrialsCount) * 100) : 0;
       document.getElementById('accuracyRatio').textContent = `${ratio}%`;
+      document.getElementById('rawTrialRatio').textContent = `${correctTrialsCount} correct / ${totalTrialsCount} total input trials`;
 
-      if(errorLog.length > 0) {
+      let mistakesArray = [];
+      Object.keys(finalQuestionLog).forEach(idx => {
+        if(!finalQuestionLog[idx].correct) {
+          mistakesArray.push(finalQuestionLog[idx]);
+        }
+      });
+
+      if(mistakesArray.length > 0) {
         document.getElementById('errorAnalysisSection').classList.remove('hidden');
         const errTable = document.getElementById('errorTableBody');
         errTable.innerHTML = '';
 
-        errorLog.forEach(err => {
+        mistakesArray.forEach(err => {
           const row = document.createElement('tr');
           row.className = "hover:bg-slate-50 transition-colors";
           row.innerHTML = `
@@ -491,7 +516,6 @@
       }
     }
 
-    // Set up the event target connection for retrying identical word list runs
     document.getElementById('retrySameListBtn').addEventListener('click', () => {
       if(activeVocabSet.length > 0) {
         setupQuizRun(activeVocabSet, null);

@@ -109,10 +109,16 @@
         <p id="rawTrialRatio" class="text-xs font-semibold text-slate-500 mt-1">0 / 0 total attempts</p>
       </div>
 
-      <div id="errorAnalysisSection" class="hidden space-y-3">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-red-500 flex items-center gap-1">
-          ⚠️ Flagged Mistakes Analysis (All Faulted Items)
-        </h3>
+      <div id="errorAnalysisSection" class="hidden space-y-3 mb-6">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-red-500 flex items-center gap-1">
+            ⚠️ Flagged Mistakes Analysis (All Faulted Items)
+          </h3>
+          <button id="saveAsBtn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold text-xs rounded-lg transition-all shadow-sm cursor-pointer flex items-center gap-1">
+            📥 Save As New List
+          </button>
+        </div>
+        
         <div class="overflow-x-auto border border-slate-200 rounded-xl bg-slate-50 shadow-inner">
           <table class="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
             <thead class="bg-slate-100">
@@ -127,7 +133,7 @@
         </div>
       </div>
       
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 pt-4 border-t border-slate-100">
         <button id="retrySameListBtn" class="w-full px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all cursor-pointer shadow-sm">
           Try the Same List Again
         </button>
@@ -152,11 +158,9 @@
     let activeIndex = 0;
     let selectedMode = '';
     
-    // Explicit global trial score metrics counters (a / b logic)
     let correctTrialsCount = 0;
     let totalTrialsCount = 0;
     
-    // Dedicated array to preserve errors persistently across retries
     let permanentMistakesLog = []; 
     let isAwaitingNextQuestion = false;
 
@@ -232,7 +236,6 @@
         globalPool = [...new Set(poolWords.map(w => w.chinese))]; 
       }
 
-      // Explicitly reset performance metrics counters and logs
       activeIndex = 0;
       correctTrialsCount = 0;
       totalTrialsCount = 0;
@@ -247,6 +250,12 @@
       } else {
         document.getElementById('displayModeBadge').textContent = selectedMode.endsWith('20') ? "Chinese ➔ English (20 Items)" : "Chinese ➔ English";
       }
+
+      // Restore save button default appearance state
+      const saveBtn = document.getElementById('saveAsBtn');
+      saveBtn.disabled = false;
+      saveBtn.textContent = "📥 Save As New List";
+      saveBtn.className = "px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold text-xs rounded-lg transition-all shadow-sm cursor-pointer flex items-center gap-1";
 
       updateLiveScoreTracker();
       renderQuestion();
@@ -372,7 +381,6 @@
       if (isCorrect) {
         correctTrialsCount++;
       } else {
-        // Log the mistake immediately if it hasn't been logged yet
         const alreadyLogged = permanentMistakesLog.some(err => err.item === obj.english);
         if (!alreadyLogged) {
           permanentMistakesLog.push({
@@ -448,7 +456,6 @@
       if (isCorrect) {
         correctTrialsCount++;
       } else {
-        // Track the mistake permanently right here
         const alreadyLogged = permanentMistakesLog.some(err => err.item === currentObj.english);
         if (!alreadyLogged) {
           permanentMistakesLog.push({
@@ -495,7 +502,6 @@
       document.getElementById('accuracyRatio').textContent = `${ratio}%`;
       document.getElementById('rawTrialRatio').textContent = `${correctTrialsCount} correct / ${totalTrialsCount} total input trials`;
 
-      // Read directly from the persistent array instead of filtering dynamic states
       if(permanentMistakesLog.length > 0) {
         document.getElementById('errorAnalysisSection').classList.remove('hidden');
         const errTable = document.getElementById('errorTableBody');
@@ -515,6 +521,62 @@
         document.getElementById('errorAnalysisSection').classList.add('hidden');
       }
     }
+
+    // New transactional logic handling: Saving Flagged mistakes into Supabase database structures
+    document.getElementById('saveAsBtn').addEventListener('click', async () => {
+      if (permanentMistakesLog.length === 0) return;
+
+      const saveBtn = document.getElementById('saveAsBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = "⏳ Saving...";
+
+      // 1. Generate timestamp string (YYYYMMDDHHMM format)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const date = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      
+      const customListName = `${year}${month}${date}${hours}${minutes}`;
+
+      try {
+        // 2. Insert new list configuration structure row
+        const { data: newList, error: listErr } = await rQuizStudentClient
+          .from('rquiz_word_lists')
+          .insert([{ list_name: customListName }])
+          .select('id')
+          .single();
+
+        if (listErr) throw listErr;
+        if (!newList) throw new Error("Database failed to produce valid confirmation structural index mapping row.");
+
+        // 3. Format words for the rquiz_vocabularies schema insertion array
+        const bulkPayload = permanentMistakesLog.map(err => ({
+          list_id: newList.id,
+          english: err.item,
+          chinese: err.solution
+        }));
+
+        // 4. Perform bulk sub-row insertion tracking
+        const { error: vocabErr } = await rQuizStudentClient
+          .from('rquiz_vocabularies')
+          .insert(bulkPayload);
+
+        if (vocabErr) throw vocabErr;
+
+        // 5. Render interactive Success State confirmation indicator UI adjustments
+        saveBtn.textContent = "✓ Saved Successfully";
+        saveBtn.className = "px-3 py-1.5 bg-emerald-500 text-white font-bold text-xs rounded-lg cursor-not-allowed flex items-center gap-1";
+        alert(`Successfully saved mistakes to a new word list named: ${customListName}`);
+
+      } catch (err) {
+        console.error("Save transaction failure handling trace mapping details:", err);
+        alert(`Failed to save database configuration records: ${err.message}`);
+        saveBtn.disabled = false;
+        saveBtn.textContent = "📥 Save As New List";
+      }
+    });
 
     document.getElementById('retrySameListBtn').addEventListener('click', () => {
       if(activeVocabSet.length > 0) {

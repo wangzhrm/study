@@ -111,7 +111,7 @@
 
       <div id="errorAnalysisSection" class="hidden space-y-3">
         <h3 class="text-xs font-bold uppercase tracking-wider text-red-500 flex items-center gap-1">
-          ⚠️ Flagged Mistakes Analysis (Final States)
+          ⚠️ Flagged Mistakes Analysis (All Faulted Items)
         </h3>
         <div class="overflow-x-auto border border-slate-200 rounded-xl bg-slate-50 shadow-inner">
           <table class="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
@@ -119,7 +119,7 @@
               <tr>
                 <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Target</th>
                 <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Correct Meaning</th>
-                <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Your Last Attempt</th>
+                <th class="px-4 py-2.5 text-left font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Your First Faulted Entry</th>
               </tr>
             </thead>
             <tbody id="errorTableBody" class="bg-white divide-y divide-slate-200 text-slate-700"></tbody>
@@ -156,8 +156,8 @@
     let correctTrialsCount = 0;
     let totalTrialsCount = 0;
     
-    // Kept to render the error diagnostics table on the final view screen
-    let finalQuestionLog = {}; 
+    // Dedicated array to preserve errors persistently across retries
+    let permanentMistakesLog = []; 
     let isAwaitingNextQuestion = false;
 
     window.addEventListener('DOMContentLoaded', async () => {
@@ -232,11 +232,11 @@
         globalPool = [...new Set(poolWords.map(w => w.chinese))]; 
       }
 
-      // Explicitly reset math performance metrics counters
+      // Explicitly reset performance metrics counters and logs
       activeIndex = 0;
       correctTrialsCount = 0;
       totalTrialsCount = 0;
-      finalQuestionLog = {};
+      permanentMistakesLog = [];
 
       document.getElementById('setupView').classList.add('hidden');
       document.getElementById('resultsView').classList.add('hidden');
@@ -256,7 +256,6 @@
       document.getElementById('liveScoreRatio').textContent = `${correctTrialsCount}/${totalTrialsCount}`;
     }
 
-    // [Remainder of layout setup code blocks mapped exactly logic preservation]
     function renderQuestion() {
       if(activeIndex >= activeVocabSet.length) return viewMetricsSummary();
 
@@ -369,16 +368,20 @@
     function verifyMcqAnswer(selected, obj) {
       const isCorrect = (selected === obj.chinese);
       
-      // Update running metrics registers immediately
       totalTrialsCount++;
-      if (isCorrect) correctTrialsCount++;
-
-      finalQuestionLog[activeIndex] = {
-        item: obj.english,
-        solution: obj.chinese,
-        input: selected,
-        correct: isCorrect
-      };
+      if (isCorrect) {
+        correctTrialsCount++;
+      } else {
+        // Log the mistake immediately if it hasn't been logged yet
+        const alreadyLogged = permanentMistakesLog.some(err => err.item === obj.english);
+        if (!alreadyLogged) {
+          permanentMistakesLog.push({
+            item: obj.english,
+            solution: obj.chinese,
+            input: selected
+          });
+        }
+      }
 
       updateLiveScoreTracker();
       activeIndex++;
@@ -441,16 +444,20 @@
       const isCorrect = studentInput.toLowerCase() === rawTargetWord.toLowerCase();
       inputs.forEach(inp => inp.disabled = true);
 
-      // Increment counters systematically per action step trial
       totalTrialsCount++;
-      if (isCorrect) correctTrialsCount++;
-
-      finalQuestionLog[activeIndex] = {
-        item: currentObj.english,
-        solution: currentObj.chinese,
-        input: studentInput || '[Left Blank]',
-        correct: isCorrect
-      };
+      if (isCorrect) {
+        correctTrialsCount++;
+      } else {
+        // Track the mistake permanently right here
+        const alreadyLogged = permanentMistakesLog.some(err => err.item === currentObj.english);
+        if (!alreadyLogged) {
+          permanentMistakesLog.push({
+            item: currentObj.english,
+            solution: currentObj.chinese,
+            input: studentInput || '[Left Blank]'
+          });
+        }
+      }
 
       if(isCorrect) {
         feedbackBanner.className = "p-4 rounded-xl font-bold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 text-center animate-fade-in";
@@ -484,24 +491,17 @@
       document.getElementById('quizView').classList.add('hidden');
       document.getElementById('resultsView').classList.remove('hidden');
 
-      // Accurate evaluation parsing over exact trial parameters
       const ratio = totalTrialsCount > 0 ? Math.round((correctTrialsCount / totalTrialsCount) * 100) : 0;
       document.getElementById('accuracyRatio').textContent = `${ratio}%`;
       document.getElementById('rawTrialRatio').textContent = `${correctTrialsCount} correct / ${totalTrialsCount} total input trials`;
 
-      let mistakesArray = [];
-      Object.keys(finalQuestionLog).forEach(idx => {
-        if(!finalQuestionLog[idx].correct) {
-          mistakesArray.push(finalQuestionLog[idx]);
-        }
-      });
-
-      if(mistakesArray.length > 0) {
+      // Read directly from the persistent array instead of filtering dynamic states
+      if(permanentMistakesLog.length > 0) {
         document.getElementById('errorAnalysisSection').classList.remove('hidden');
         const errTable = document.getElementById('errorTableBody');
         errTable.innerHTML = '';
 
-        mistakesArray.forEach(err => {
+        permanentMistakesLog.forEach(err => {
           const row = document.createElement('tr');
           row.className = "hover:bg-slate-50 transition-colors";
           row.innerHTML = `

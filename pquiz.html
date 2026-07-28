@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RQuiz Portal - Public Quiz</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans antialiased text-slate-800">
+
+  <div class="max-w-3xl mx-auto px-4 py-6 sm:py-12">
+    <header class="mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-6 gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-600 tracking-tight">RQuiz Practice (Public)</h1>
+        <p class="text-sm text-slate-500 mt-1">Select a vocabulary list to start practicing</p>
+      </div>
+      <div class="inline-flex self-center sm:self-auto items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Student Ready
+      </div>
+    </header>
+
+    <!-- List Selector -->
+    <div id="selectionCard" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 mb-6">
+      <h2 class="text-lg font-bold text-slate-900 mb-4">Available Word Lists</h2>
+      <div id="listLoader" class="text-center py-6 text-sm text-slate-400">Loading lists...</div>
+      <div id="listsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 hidden"></div>
+    </div>
+
+    <!-- Quiz Panel (Initially Hidden) -->
+    <div id="quizCard" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 hidden">
+      <div class="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
+        <h2 id="activeListName" class="text-lg font-bold text-slate-900">Quiz Active</h2>
+        <button id="exitQuizBtn" class="text-xs font-semibold text-slate-400 hover:text-slate-600 cursor-pointer">← Change List</button>
+      </div>
+
+      <div class="text-center py-8">
+        <span id="promptTerm" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight block mb-6">...</span>
+        
+        <div class="max-w-md mx-auto mb-6">
+          <input type="text" id="answerInput" placeholder="Type Chinese definition..." autocomplete="off" class="w-full px-4 py-3 text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none text-slate-900 font-medium text-lg transition-all">
+        </div>
+
+        <div id="quizFeedback" class="min-h-[2rem] text-sm font-semibold mb-4"></div>
+
+        <button id="checkBtn" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-semibold rounded-xl shadow-md transition-all text-sm cursor-pointer">
+          Submit Answer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://fepooifleoeseapsbisy.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'sb_publishable_2dWpQ1VOvdSToPTXymandw_VOSZUpTy';
+    const rQuizClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let activeVocabList = [];
+    let currentIndex = 0;
+
+    document.addEventListener('DOMContentLoaded', loadPublicLists);
+    document.getElementById('exitQuizBtn').addEventListener('click', showSelectionView);
+    document.getElementById('checkBtn').addEventListener('click', verifyAnswer);
+
+    async function loadPublicLists() {
+      const loader = document.getElementById('listLoader');
+      const grid = document.getElementById('listsGrid');
+
+      try {
+        const { data, error } = await rQuizClient
+          .from('public_word_lists')
+          .select('id, list_name, sort_order')
+          .order('sort_order', { ascending: true });
+
+        if (error) throw error;
+
+        loader.classList.add('hidden');
+        grid.classList.remove('hidden');
+        grid.innerHTML = '';
+
+        if (!data || data.length === 0) {
+          loader.textContent = "No active public lists found.";
+          loader.classList.remove('hidden');
+          return;
+        }
+
+        data.forEach(item => {
+          const btn = document.createElement('button');
+          btn.className = "p-4 text-left border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 rounded-xl transition-all cursor-pointer group";
+          btn.innerHTML = `
+            <div class="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">${escapeHtml(item.list_name)}</div>
+            <div class="text-xs text-slate-400 mt-1">Tap to start practice →</div>
+          `;
+          btn.onclick = () => startQuiz(item.id, item.list_name);
+          grid.appendChild(btn);
+        });
+
+      } catch (err) {
+        loader.textContent = "Failed loading lists: " + err.message;
+      }
+    }
+
+    async function startQuiz(listId, title) {
+      try {
+        const { data, error } = await rQuizClient
+          .from('public_vocabularies')
+          .select('id, english, chinese')
+          .eq('list_id', listId);
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          alert("This word list contains no terms yet.");
+          return;
+        }
+
+        activeVocabList = data;
+        currentIndex = 0;
+
+        document.getElementById('selectionCard').classList.add('hidden');
+        document.getElementById('quizCard').classList.remove('hidden');
+        document.getElementById('activeListName').textContent = title;
+
+        renderQuestion();
+      } catch (err) {
+        alert("Failed starting quiz: " + err.message);
+      }
+    }
+
+    function renderQuestion() {
+      if (currentIndex >= activeVocabList.length) {
+        document.getElementById('promptTerm').textContent = "🎉 Practice Complete!";
+        document.getElementById('answerInput').classList.add('hidden');
+        document.getElementById('checkBtn').classList.add('hidden');
+        document.getElementById('quizFeedback').textContent = "";
+        return;
+      }
+
+      const item = activeVocabList[currentIndex];
+      document.getElementById('promptTerm').textContent = item.english;
+      document.getElementById('answerInput').value = '';
+      document.getElementById('answerInput').classList.remove('hidden');
+      document.getElementById('checkBtn').classList.remove('hidden');
+      document.getElementById('quizFeedback').textContent = '';
+      document.getElementById('answerInput').focus();
+    }
+
+    function verifyAnswer() {
+      const userInput = document.getElementById('answerInput').value.trim();
+      const currentItem = activeVocabList[currentIndex];
+      const feedback = document.getElementById('quizFeedback');
+
+      if (!userInput) return;
+
+      if (userInput === currentItem.chinese) {
+        feedback.className = "min-h-[2rem] text-sm font-semibold mb-4 text-emerald-600";
+        feedback.textContent = "✓ Correct!";
+        setTimeout(() => {
+          currentIndex++;
+          renderQuestion();
+        }, 1000);
+      } else {
+        feedback.className = "min-h-[2rem] text-sm font-semibold mb-4 text-rose-500";
+        feedback.textContent = `✕ Answer: ${currentItem.chinese}`;
+      }
+    }
+
+    function showSelectionView() {
+      document.getElementById('quizCard').classList.add('hidden');
+      document.getElementById('selectionCard').classList.remove('hidden');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>

@@ -10,7 +10,7 @@
 </head>
 <body class="bg-slate-50 min-h-screen font-sans antialiased text-slate-800">
 
-  <div class="max-w-3xl mx-auto px-4 py-6 sm:py-12">
+  <div class="max-w-5xl mx-auto px-4 py-6 sm:py-12">
     <header class="mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-6 gap-4">
       <div>
         <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-600 tracking-tight">AST Quiz Creator</h1>
@@ -21,12 +21,13 @@
       </div>
     </header>
 
+    <!-- STEP 1: IMPORT -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 mb-6 transition-all">
       <div class="flex items-center gap-3 mb-4">
         <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-sm">1</span>
         <h2 class="text-lg font-bold text-slate-900">Select Vocabulary Document</h2>
       </div>
-      
+
       <label class="group relative flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-slate-300 rounded-xl hover:border-indigo-500 hover:bg-slate-50/50 cursor-pointer transition-all p-4 text-center">
         <div class="space-y-1">
           <svg class="mx-auto h-8 w-8 text-slate-400 group-hover:text-indigo-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
@@ -44,12 +45,13 @@
       </div>
     </div>
 
+    <!-- STEP 2: NEW LIST PREVIEW -->
     <div id="previewContainer" style="display: none;" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 mb-6 transition-all">
       <div class="flex items-center gap-3 mb-6">
         <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-sm">2</span>
         <h2 class="text-lg font-bold text-slate-900">Review & Database Commit</h2>
       </div>
-      
+
       <div class="mb-6">
         <label for="listName" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Word List Title</label>
         <input type="text" id="listName" placeholder="e.g., AST Grade 3 Unit 4" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none text-slate-900 font-medium placeholder-slate-400 transition-all text-sm">
@@ -73,21 +75,25 @@
       </button>
     </div>
 
+    <!-- STEP 3: MANAGEMENT -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 transition-all">
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center justify-between mb-6 gap-4">
         <div class="flex items-center gap-3">
           <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-sm">3</span>
           <h2 class="text-lg font-bold text-slate-900">Manage Existing Word Lists</h2>
         </div>
-        <button id="refreshBtn" class="text-xs font-semibold text-indigo-600 hover:text-indigo-500 cursor-pointer">✕ Refresh</button>
+        <button id="refreshBtn" class="text-xs font-semibold text-indigo-600 hover:text-indigo-500 cursor-pointer whitespace-nowrap">↻ Refresh</button>
+      </div>
+
+      <div class="mb-5 p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-xs text-indigo-700">
+        <strong>Tip:</strong> Use <strong>View / Edit Vocabulary</strong> to modify the English terms and Chinese meanings inside a word list. You can also add or remove rows and export the list to Excel.
       </div>
 
       <div id="listsLoading" class="text-center py-6 text-sm text-slate-400">
         Loading saved word lists...
       </div>
 
-      <ul id="existingListsContainer" class="divide-y divide-slate-100 border border-slate-100 rounded-xl hidden mb-6">
-      </ul>
+      <ul id="existingListsContainer" class="divide-y divide-slate-100 border border-slate-100 rounded-xl hidden mb-6"></ul>
 
       <button id="saveManagementChangesBtn" class="w-full px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold rounded-xl shadow-md shadow-emerald-100 transition-all disabled:opacity-50 text-sm cursor-pointer hidden">
         Save Management Changes
@@ -95,32 +101,111 @@
     </div>
   </div>
 
+  <!-- VOCABULARY EDITOR MODAL -->
+  <div id="vocabModal" class="fixed inset-0 z-50 hidden">
+    <div id="vocabModalBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"></div>
+
+    <div class="relative z-10 flex items-center justify-center min-h-screen p-3 sm:p-6">
+      <div class="bg-white w-full max-w-6xl max-h-[94vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+        <div class="px-5 sm:px-7 py-5 border-b border-slate-200 flex items-center justify-between gap-4">
+          <div class="min-w-0">
+            <div class="text-xs font-bold uppercase tracking-wider text-indigo-500 mb-1">Vocabulary Editor</div>
+            <h2 id="vocabModalTitle" class="text-xl font-bold text-slate-900 truncate">Word List</h2>
+            <p id="vocabModalCount" class="text-xs text-slate-500 mt-1">0 vocabulary items</p>
+          </div>
+          <button id="closeVocabModalBtn" class="shrink-0 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors" title="Close">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="px-5 sm:px-7 py-4 border-b border-slate-200 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div class="flex gap-2">
+            <button id="addVocabBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors">
+              + Add Vocabulary
+            </button>
+            <button id="exportCurrentListBtn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg transition-colors">
+              ↓ Export Excel
+            </button>
+          </div>
+          <div class="text-xs text-slate-400">Edit directly in the table, then save.</div>
+        </div>
+
+        <div class="overflow-auto flex-1">
+          <table class="min-w-[760px] w-full text-sm">
+            <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200">
+              <tr>
+                <th class="w-14 px-4 py-3 text-center font-semibold text-slate-500">#</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-600">English Vocabulary</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-600">Chinese Meaning</th>
+                <th class="w-20 px-4 py-3 text-center font-semibold text-slate-600">Action</th>
+              </tr>
+            </thead>
+            <tbody id="vocabEditorBody" class="divide-y divide-slate-100 bg-white"></tbody>
+          </table>
+        </div>
+
+        <div id="vocabEmptyState" class="hidden px-5 py-12 text-center text-slate-400 text-sm">
+          This word list contains no vocabulary yet. Click <strong class="text-indigo-600">+ Add Vocabulary</strong> to create the first row.
+        </div>
+
+        <div class="px-5 sm:px-7 py-4 border-t border-slate-200 bg-slate-50 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+          <button id="cancelVocabChangesBtn" class="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors">
+            Cancel
+          </button>
+          <button id="saveVocabChangesBtn" class="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-sm transition-colors disabled:opacity-50">
+            Save Vocabulary Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const SUPABASE_URL = 'https://fepooifleoeseapsbisy.supabase.co'; 
+    const SUPABASE_URL = 'https://fepooifleoeseapsbisy.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_2dWpQ1VOvdSToPTXymandw_VOSZUpTy';
     const rQuizAdminClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let parsedVocabularyData = [];
-    let existingLists = [];      
-    let originalListsLookup = {}; 
-    let pendingDeletions = []; 
+    let existingLists = [];
+    let originalListsLookup = {};
+    let pendingDeletions = [];
     let isOrderChanged = false;
+
+    // Vocabulary editor state
+    let activeVocabList = null;
+    let originalVocabRows = [];
+    let workingVocabRows = [];
 
     document.addEventListener('DOMContentLoaded', () => fetchExistingLists('force'));
     document.getElementById('refreshBtn').addEventListener('click', () => fetchExistingLists('force'));
     document.getElementById('saveManagementChangesBtn').addEventListener('click', saveAllManagementChanges);
 
+    document.getElementById('closeVocabModalBtn').addEventListener('click', closeVocabEditor);
+    document.getElementById('cancelVocabChangesBtn').addEventListener('click', closeVocabEditor);
+    document.getElementById('vocabModalBackdrop').addEventListener('click', closeVocabEditor);
+    document.getElementById('addVocabBtn').addEventListener('click', addVocabularyRow);
+    document.getElementById('saveVocabChangesBtn').addEventListener('click', saveVocabularyChanges);
+    document.getElementById('exportCurrentListBtn').addEventListener('click', exportCurrentList);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !document.getElementById('vocabModal').classList.contains('hidden')) {
+        closeVocabEditor();
+      }
+    });
+
     async function fetchExistingLists(strategy = 'lazy') {
       const container = document.getElementById('existingListsContainer');
       const loader = document.getElementById('listsLoading');
       const masterSaveBtn = document.getElementById('saveManagementChangesBtn');
-      
+
       if (strategy === 'force') {
         loader.textContent = "Loading saved word lists...";
         loader.classList.remove('hidden');
         container.classList.add('hidden');
         masterSaveBtn.classList.add('hidden');
-        
+
         pendingDeletions = [];
         originalListsLookup = {};
         isOrderChanged = false;
@@ -135,7 +220,7 @@
         if (error) throw error;
 
         existingLists = data || [];
-        
+
         originalListsLookup = {};
         existingLists.forEach(item => {
           originalListsLookup[String(item.id)] = item.list_name;
@@ -145,7 +230,7 @@
       } catch (err) {
         loader.innerHTML = `
           <div class="text-rose-500 font-medium">Failed to retrieve data layer elements.</div>
-          <div class="text-xs text-slate-400 mt-1 max-w-md mx-auto">Error: ${err.message}.</div>
+          <div class="text-xs text-slate-400 mt-1 max-w-md mx-auto">Error: ${escapeHtml(err.message)}.</div>
         `;
         loader.classList.remove('hidden');
         container.classList.add('hidden');
@@ -172,26 +257,45 @@
 
       existingLists.forEach((list, index) => {
         const li = document.createElement('li');
-        li.className = "flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 bg-white hover:bg-slate-50/50 transition-colors first:rounded-t-xl last:rounded-b-xl";
-        
+        li.className = "flex flex-col lg:flex-row lg:items-center justify-between p-4 gap-4 bg-white hover:bg-slate-50/50 transition-colors first:rounded-t-xl last:rounded-b-xl";
+
         li.innerHTML = `
-          <div class="flex items-center gap-3 flex-1">
-            <div class="flex flex-col gap-0.5">
-              <button onclick="moveList(${index}, -1)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-30 disabled:pointer-events-none" ${index === 0 ? 'disabled' : ''}>
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="flex flex-col gap-0.5 shrink-0">
+              <button onclick="moveList(${index}, -1)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-30 disabled:pointer-events-none" ${index === 0 ? 'disabled' : ''} title="Move up">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
               </button>
-              <button onclick="moveList(${index}, 1)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-30 disabled:pointer-events-none" ${index === existingLists.length - 1 ? 'disabled' : ''}>
+              <button onclick="moveList(${index}, 1)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-30 disabled:pointer-events-none" ${index === existingLists.length - 1 ? 'disabled' : ''} title="Move down">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
               </button>
             </div>
-            
-            <input type="text" data-list-id="${list.id}" value="${escapeHtml(list.list_name || '')}" 
-              class="list-title-input flex-1 px-3 py-1.5 font-medium text-slate-800 bg-transparent border border-transparent hover:border-slate-200 focus:border-indigo-500 focus:bg-white focus:outline-none rounded-lg transition-all text-sm">
+
+            <input type="text" data-list-id="${escapeHtml(String(list.id))}" value="${escapeHtml(list.list_name || '')}"
+              class="list-title-input min-w-0 flex-1 px-3 py-1.5 font-medium text-slate-800 bg-transparent border border-transparent hover:border-slate-200 focus:border-indigo-500 focus:bg-white focus:outline-none rounded-lg transition-all text-sm">
           </div>
 
-          <div class="flex items-center justify-end gap-2">
-            <button onclick="queueDeletion(${index}, '${list.id}', '${escapeHtml(list.list_name || '')}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer" title="Delete List">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <button onclick="openVocabEditor('${escapeJs(String(list.id))}')" class="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer" title="View and edit vocabulary">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 20h9"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 3.5a2.121 2.121 0 013 3L8 18l-4 1 1-4 11.5-11.5z"/>
+              </svg>
+              View / Edit Vocabulary
+            </button>
+
+            <button onclick="exportWordList('${escapeJs(String(list.id))}')" class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer" title="Export this word list as Excel">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 10l5 5 5-5"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 21h14"/>
+              </svg>
+              Export Excel
+            </button>
+
+            <button onclick="queueDeletion(${index}, '${escapeJs(String(list.id))}', '${escapeJs(String(list.list_name || ''))}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer" title="Delete List">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
             </button>
           </div>
         `;
@@ -212,7 +316,7 @@
 
     function moveList(currentIndex, direction) {
       syncInputStateToData();
-      
+
       const targetIndex = currentIndex + direction;
       if (targetIndex < 0 || targetIndex >= existingLists.length) return;
 
@@ -231,8 +335,8 @@
       syncInputStateToData();
       pendingDeletions.push(id);
       existingLists.splice(arrayIndex, 1);
-      
-      isOrderChanged = true; 
+
+      isOrderChanged = true;
       renderListsUI();
     }
 
@@ -247,7 +351,7 @@
       inputs.forEach(input => {
         const rawId = input.getAttribute('data-list-id');
         const currentName = input.value.trim();
-        const originalName = originalListsLookup[rawId]; 
+        const originalName = originalListsLookup[rawId];
 
         if (!currentName) {
           validationError = true;
@@ -317,7 +421,7 @@
           alert("All changes successfully synced to the database!");
         }
 
-        fetchExistingLists('force'); 
+        fetchExistingLists('force');
 
       } catch (err) {
         console.error("Database batch save execution failed:", err);
@@ -328,11 +432,371 @@
       }
     }
 
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    /* ============================================================
+       VOCABULARY EDITOR
+       ============================================================ */
+
+    async function openVocabEditor(listId) {
+      syncInputStateToData();
+
+      const list = existingLists.find(item => String(item.id) === String(listId));
+      if (!list) {
+        alert("Could not find this word list.");
+        return;
+      }
+
+      activeVocabList = list;
+      const modal = document.getElementById('vocabModal');
+      const body = document.getElementById('vocabEditorBody');
+
+      document.getElementById('vocabModalTitle').textContent = list.list_name || 'Word List';
+      document.getElementById('vocabModalCount').textContent = 'Loading vocabulary...';
+      body.innerHTML = '';
+      document.getElementById('vocabEmptyState').classList.add('hidden');
+      modal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+
+      try {
+        const { data, error } = await rQuizAdminClient
+          .from('ast_vocabularies')
+          .select('id, list_id, english, chinese')
+          .eq('list_id', listId)
+          .order('id', { ascending: true });
+
+        if (error) throw error;
+
+        originalVocabRows = (data || []).map(row => ({
+          id: row.id,
+          list_id: row.list_id,
+          english: row.english || '',
+          chinese: row.chinese || ''
+        }));
+
+        // Deep copy so edits can be cancelled without changing the original state.
+        workingVocabRows = originalVocabRows.map(row => ({ ...row }));
+
+        renderVocabularyEditor();
+      } catch (err) {
+        document.getElementById('vocabModalCount').textContent = 'Failed to load vocabulary';
+        body.innerHTML = `
+          <tr>
+            <td colspan="4" class="px-5 py-10 text-center text-rose-500">
+              Failed to load vocabulary: ${escapeHtml(err.message)}
+            </td>
+          </tr>
+        `;
+      }
     }
 
-    /* --- File Parsing Core --- */
+    function renderVocabularyEditor() {
+      const body = document.getElementById('vocabEditorBody');
+      const emptyState = document.getElementById('vocabEmptyState');
+      const count = document.getElementById('vocabModalCount');
+
+      body.innerHTML = '';
+
+      if (!workingVocabRows.length) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      count.textContent = `${workingVocabRows.length} vocabulary item${workingVocabRows.length === 1 ? '' : 's'}`;
+
+      workingVocabRows.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/70 transition-colors";
+        tr.dataset.rowIndex = String(index);
+
+        const numberTd = document.createElement('td');
+        numberTd.className = "px-4 py-2.5 text-center text-xs text-slate-400 align-top pt-4";
+        numberTd.textContent = String(index + 1);
+
+        const englishTd = document.createElement('td');
+        englishTd.className = "px-3 py-2.5 align-top";
+        const englishInput = document.createElement('input');
+        englishInput.type = 'text';
+        englishInput.value = row.english;
+        englishInput.placeholder = 'English vocabulary';
+        englishInput.className = "vocab-english-input w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none text-sm text-slate-900";
+        englishInput.addEventListener('input', (e) => {
+          workingVocabRows[index].english = e.target.value;
+        });
+        englishTd.appendChild(englishInput);
+
+        const chineseTd = document.createElement('td');
+        chineseTd.className = "px-3 py-2.5 align-top";
+        const chineseInput = document.createElement('input');
+        chineseInput.type = 'text';
+        chineseInput.value = row.chinese;
+        chineseInput.placeholder = 'Chinese meaning';
+        chineseInput.className = "vocab-chinese-input w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none text-sm text-slate-900";
+        chineseInput.addEventListener('input', (e) => {
+          workingVocabRows[index].chinese = e.target.value;
+        });
+        chineseTd.appendChild(chineseInput);
+
+        const actionTd = document.createElement('td');
+        actionTd.className = "px-3 py-2.5 text-center align-top pt-3";
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = "p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors";
+        deleteBtn.title = "Remove vocabulary";
+        deleteBtn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 01-1 1h-4a1 1 0 01-1 1v3M4 7h16"/>
+          </svg>
+        `;
+        deleteBtn.addEventListener('click', () => removeVocabularyRow(index));
+        actionTd.appendChild(deleteBtn);
+
+        tr.appendChild(numberTd);
+        tr.appendChild(englishTd);
+        tr.appendChild(chineseTd);
+        tr.appendChild(actionTd);
+        body.appendChild(tr);
+      });
+    }
+
+    function addVocabularyRow() {
+      workingVocabRows.push({
+        id: null,
+        list_id: activeVocabList.id,
+        english: '',
+        chinese: ''
+      });
+
+      renderVocabularyEditor();
+
+      // Focus the newly added English input.
+      const inputs = document.querySelectorAll('.vocab-english-input');
+      if (inputs.length) {
+        const lastInput = inputs[inputs.length - 1];
+        lastInput.focus();
+        lastInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function removeVocabularyRow(index) {
+      const row = workingVocabRows[index];
+      const label = row && row.english ? `"${row.english}"` : 'this vocabulary row';
+
+      if (!confirm(`Remove ${label}? The change will only be applied after you click "Save Vocabulary Changes".`)) {
+        return;
+      }
+
+      workingVocabRows.splice(index, 1);
+      renderVocabularyEditor();
+    }
+
+    async function saveVocabularyChanges() {
+      if (!activeVocabList) return;
+
+      // Capture any current input values before validation/save.
+      syncVocabularyInputs();
+
+      const saveBtn = document.getElementById('saveVocabChangesBtn');
+
+      // Validate: English is required; Chinese may be blank because the
+      // original importer also allowed blank Chinese values.
+      const invalidIndex = workingVocabRows.findIndex(row => !String(row.english || '').trim());
+      if (invalidIndex !== -1) {
+        alert(`Vocabulary row ${invalidIndex + 1} needs an English term before it can be saved.`);
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving vocabulary...";
+
+      try {
+        const originalIds = new Set(
+          originalVocabRows
+            .filter(row => row.id !== null && row.id !== undefined)
+            .map(row => String(row.id))
+        );
+
+        const workingExistingIds = new Set(
+          workingVocabRows
+            .filter(row => row.id !== null && row.id !== undefined)
+            .map(row => String(row.id))
+        );
+
+        // 1. Delete rows that existed before but are no longer present.
+        const idsToDelete = [...originalIds].filter(id => !workingExistingIds.has(id));
+
+        if (idsToDelete.length) {
+          const { error } = await rQuizAdminClient
+            .from('ast_vocabularies')
+            .delete()
+            .in('id', idsToDelete);
+
+          if (error) throw new Error(`Vocabulary deletion failed: ${error.message}`);
+        }
+
+        // 2. Update existing rows.
+        const existingRows = workingVocabRows.filter(row => row.id !== null && row.id !== undefined);
+
+        if (existingRows.length) {
+          const updatePayload = existingRows.map(row => ({
+            id: row.id,
+            list_id: activeVocabList.id,
+            english: String(row.english || '').trim(),
+            chinese: String(row.chinese || '').trim()
+          }));
+
+          const { error } = await rQuizAdminClient
+            .from('ast_vocabularies')
+            .upsert(updatePayload, { onConflict: 'id' });
+
+          if (error) throw new Error(`Vocabulary update failed: ${error.message}`);
+        }
+
+        // 3. Insert newly added rows.
+        const newRows = workingVocabRows.filter(row => row.id === null || row.id === undefined);
+
+        if (newRows.length) {
+          const insertPayload = newRows.map(row => ({
+            list_id: activeVocabList.id,
+            english: String(row.english || '').trim(),
+            chinese: String(row.chinese || '').trim()
+          }));
+
+          const { error } = await rQuizAdminClient
+            .from('ast_vocabularies')
+            .insert(insertPayload);
+
+          if (error) throw new Error(`New vocabulary insertion failed: ${error.message}`);
+        }
+
+        // Reload from database so IDs and state are fully synchronized.
+        const { data, error: reloadError } = await rQuizAdminClient
+          .from('ast_vocabularies')
+          .select('id, list_id, english, chinese')
+          .eq('list_id', activeVocabList.id)
+          .order('id', { ascending: true });
+
+        if (reloadError) throw reloadError;
+
+        originalVocabRows = (data || []).map(row => ({
+          id: row.id,
+          list_id: row.list_id,
+          english: row.english || '',
+          chinese: row.chinese || ''
+        }));
+
+        workingVocabRows = originalVocabRows.map(row => ({ ...row }));
+
+        renderVocabularyEditor();
+        alert(`Successfully saved "${activeVocabList.list_name}" vocabulary changes.`);
+      } catch (err) {
+        console.error("Vocabulary save failed:", err);
+        alert("Failed saving vocabulary changes:\n" + err.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Vocabulary Changes";
+      }
+    }
+
+    function syncVocabularyInputs() {
+      const rows = document.querySelectorAll('#vocabEditorBody tr[data-row-index]');
+
+      rows.forEach(tr => {
+        const index = Number(tr.dataset.rowIndex);
+        const englishInput = tr.querySelector('.vocab-english-input');
+        const chineseInput = tr.querySelector('.vocab-chinese-input');
+
+        if (workingVocabRows[index]) {
+          workingVocabRows[index].english = englishInput ? englishInput.value : '';
+          workingVocabRows[index].chinese = chineseInput ? chineseInput.value : '';
+        }
+      });
+    }
+
+    function closeVocabEditor() {
+      const modal = document.getElementById('vocabModal');
+      if (modal.classList.contains('hidden')) return;
+
+      modal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+
+      activeVocabList = null;
+      originalVocabRows = [];
+      workingVocabRows = [];
+    }
+
+    /* ============================================================
+       EXCEL EXPORT
+       ============================================================ */
+
+    async function exportWordList(listId) {
+      const list = existingLists.find(item => String(item.id) === String(listId));
+      if (!list) {
+        alert("Could not find this word list.");
+        return;
+      }
+
+      try {
+        const { data, error } = await rQuizAdminClient
+          .from('ast_vocabularies')
+          .select('english, chinese')
+          .eq('list_id', listId)
+          .order('id', { ascending: true });
+
+        if (error) throw error;
+
+        downloadVocabularyExcel(list.list_name || 'word_list', data || []);
+      } catch (err) {
+        console.error("Excel export failed:", err);
+        alert("Could not export this word list:\n" + err.message);
+      }
+    }
+
+    function exportCurrentList() {
+      if (!activeVocabList) return;
+
+      syncVocabularyInputs();
+
+      // Export the current editor state, including unsaved additions/edits.
+      // This makes the button useful as a quick local backup before saving.
+      downloadVocabularyExcel(activeVocabList.list_name || 'word_list', workingVocabRows);
+    }
+
+    function downloadVocabularyExcel(listName, rows) {
+      const exportRows = [
+        ['English', 'Chinese'],
+        ...rows.map(row => [
+          String(row.english || '').trim(),
+          String(row.chinese || '').trim()
+        ])
+      ];
+
+      const worksheet = XLSX.utils.aoa_to_sheet(exportRows);
+
+      // Make the two columns reasonably wide.
+      worksheet['!cols'] = [
+        { wch: 30 },
+        { wch: 45 }
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Vocabulary');
+
+      const safeName = sanitizeFilename(listName || 'word_list');
+      XLSX.writeFile(workbook, `${safeName}.xlsx`);
+    }
+
+    function sanitizeFilename(name) {
+      return String(name)
+        .replace(/[\\/:*?"<>|]/g, '_')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 120) || 'word_list';
+    }
+
+    /* ============================================================
+       FILE PARSING / NEW LIST CREATION
+       ============================================================ */
+
     document.getElementById('excelFile').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -345,7 +809,7 @@
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
           const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-          
+
           parsedVocabularyData = [];
           const tbody = document.getElementById('previewBody');
           tbody.innerHTML = '';
@@ -365,7 +829,7 @@
 
               const tr = document.createElement('tr');
               tr.className = "hover:bg-slate-50/80 transition-colors";
-              
+
               const tdEng = document.createElement('td');
               tdEng.className = "px-4 py-3 font-medium text-slate-900 border-r border-slate-100";
               tdEng.textContent = eng;
@@ -400,6 +864,11 @@
       const listName = document.getElementById('listName').value.trim();
       if (!listName) {
         alert("Please enter a name for this Word List before saving.");
+        return;
+      }
+
+      if (!parsedVocabularyData.length) {
+        alert("There are no vocabulary items to save.");
         return;
       }
 
@@ -439,6 +908,29 @@
         this.textContent = "Save Word List to Database";
       }
     });
+
+    /* ============================================================
+       UTILITY FUNCTIONS
+       ============================================================ */
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeJs(str) {
+      return String(str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n')
+        .replace(/</g, '\\x3c')
+        .replace(/>/g, '\\x3e');
+    }
   </script>
 </body>
 </html>

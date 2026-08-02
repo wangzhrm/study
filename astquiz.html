@@ -302,6 +302,9 @@
 
         const rawTargetWord = currentObj.english.trim();
         let inputIndex = 0;
+        const wordUnderlineColors = ['#dc2626', '#f97316', '#facc15', '#16a34a', '#0891b2', '#2563eb', '#7c3aed', '#db2777'];
+        const focusUnderlineColor = '#6366f1';
+        let wordGroupIndex = 0;
 
         for(let i = 0; i < rawTargetWord.length; i++) {
           const char = rawTargetWord[i];
@@ -311,6 +314,7 @@
             separator.className = "w-5 text-center font-bold text-slate-400 text-xl self-center mx-2";
             separator.textContent = char;
             labelsDiv.appendChild(separator);
+            wordGroupIndex++;
           } else {
             const input = document.createElement('input');
             input.type = "text";
@@ -321,8 +325,19 @@
             input.setAttribute('autocorrect', 'off');
             input.setAttribute('spellcheck', 'false');
 
-            input.className = "letter-input w-6 h-11 sm:w-7 sm:h-12 text-center font-mono font-bold text-xl sm:text-2xl text-slate-900 border-b-4 border-slate-400 focus:border-indigo-500 focus:outline-none transition-all bg-transparent m-0 p-0 rounded-none lowercase mx-1";
+            input.className = "letter-input w-6 h-11 sm:w-7 sm:h-12 text-center font-mono font-bold text-xl sm:text-2xl text-slate-900 border-b-4 focus:outline-none transition-all bg-transparent m-0 p-0 rounded-none lowercase mx-1";
             input.dataset.index = inputIndex;
+
+            const underlineColor = wordUnderlineColors[wordGroupIndex % wordUnderlineColors.length];
+            input.dataset.underlineColor = underlineColor;
+            input.style.borderBottomColor = underlineColor;
+
+            input.addEventListener('focus', function(e) {
+              this.style.borderBottomColor = focusUnderlineColor;
+            });
+            input.addEventListener('blur', function(e) {
+              this.style.borderBottomColor = this.dataset.underlineColor;
+            });
             
             input.addEventListener('input', function(e) {
               if (this.value.length === 1) {

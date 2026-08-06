@@ -1,6 +1,861 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AST Quiz Portal - Teacher Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans antialiased text-slate-800">
+
+  <div class="max-w-5xl mx-auto px-4 py-6 sm:py-12">
+    <header class="mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-6 gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-600 tracking-tight">AST Quiz Creator</h1>
+        <p class="text-sm text-slate-500 mt-1">Transform Excel sheets into interactive vocabulary challenges for AST Students</p>
+      </div>
+      <div class="inline-flex self-center sm:self-auto items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+        <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span> AST Portal Active
+      </div>
+    </header>
+
+    <!-- STEP 1: IMPORT -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 mb-6 transition-all">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-sm">1</span>
+        <h2 class="text-lg font-bold text-slate-900">Select Vocabulary Document</h2>
+      </div>
+
+      <label class="group relative flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-slate-300 rounded-xl hover:border-indigo-500 hover:bg-slate-50/50 cursor-pointer transition-all p-4 text-center">
+        <div class="space-y-1">
+          <svg class="mx-auto h-8 w-8 text-slate-400 group-hover:text-indigo-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <div class="text-sm text-slate-600 font-medium">
+            <span class="text-indigo-600 hover:text-indigo-500">Tap to browse files</span>
+          </div>
+          <p class="text-xs text-slate-400">Supports .xlsx and .xls formats</p>
+        </div>
+        <input type="file" id="excelFile" accept=".xlsx, .xls" class="hidden"/>
+      </label>
+      <div id="fileFeedback" class="hidden mt-3 text-xs text-emerald-600 font-medium flex items-center gap-1.5 justify-center">
+        ✓ Document loaded successfully
+      </div>
+    </div>
+
+    <!-- STEP 2: NEW LIST PREVIEW -->
+    <div id="previewContainer" style="display: none;" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 mb-6 transition-all">
+      <div class="flex items-center gap-3 mb-6">
+        <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-sm">2</span>
+        <h2 class="text-lg font-bold text-slate-900">Review & Database Commit</h2>
+      </div>
+
+      <div class="mb-6">
+        <label for="listName" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Word List Title</label>
+        <input type="text" id="listName" placeholder="e.g., AST Grade 3 Unit 4" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none text-slate-900 font-medium placeholder-slate-400 transition-all text-sm">
+      </div>
+
+      <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Data Extracted Preview (<span id="itemCount">0</span> rows)</label>
+      <div class="overflow-x-auto max-h-72 border border-slate-200 rounded-xl mb-6 bg-slate-50">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-100 sticky top-0 backdrop-blur">
+            <tr>
+              <th class="px-4 py-3 text-left font-semibold text-slate-600">English Terms</th>
+              <th class="px-4 py-3 text-left font-semibold text-slate-600">Chinese Definitions</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody" class="divide-y divide-slate-200 bg-white text-slate-700"></tbody>
+        </table>
+      </div>
+
+      <button id="uploadBtn" class="w-full px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-semibold rounded-xl shadow-md shadow-indigo-100 transition-all disabled:opacity-50 text-sm cursor-pointer">
+        Save Word List to Database
+      </button>
+    </div>
+
+    <!-- STEP 3: MANAGEMENT -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 transition-all">
+      <div class="flex items-center justify-between mb-6 gap-4">
+        <div class="flex items-center gap-3">
+          <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-sm">3</span>
+          <h2 class="text-lg font-bold text-slate-900">Manage Existing Word Lists</h2>
+        </div>
+        <div class="flex items-center gap-4">
+          <button id="exportAllBtn" class="text-xs font-semibold text-emerald-600 hover:text-emerald-500 cursor-pointer whitespace-nowrap">⇩ Export All (HTML)</button>
+          <button id="refreshBtn" class="text-xs font-semibold text-indigo-600 hover:text-indigo-500 cursor-pointer whitespace-nowrap">↻ Refresh</button>
+        </div>
+      </div>
+
+      <div class="mb-5 p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-xs text-indigo-700">
+        <strong>Tip:</strong> Use <strong>View / Edit Vocabulary</strong> to modify the English terms and Chinese meanings inside a word list. You can also add or remove rows and export the list to Excel.
+      </div>
+
+      <div id="listsLoading" class="text-center py-6 text-sm text-slate-400">
+        Loading saved word lists...
+      </div>
+
+      <ul id="existingListsContainer" class="divide-y divide-slate-100 border border-slate-100 rounded-xl hidden mb-6"></ul>
+
+      <button id="saveManagementChangesBtn" class="w-full px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold rounded-xl shadow-md shadow-emerald-100 transition-all disabled:opacity-50 text-sm cursor-pointer hidden">
+        Save Management Changes
+      </button>
+    </div>
+  </div>
+
+  <!-- VOCABULARY EDITOR MODAL -->
+  <div id="vocabModal" class="fixed inset-0 z-50 hidden">
+    <div id="vocabModalBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"></div>
+
+    <div class="relative z-10 flex items-center justify-center min-h-screen p-3 sm:p-6">
+      <div class="bg-white w-full max-w-6xl max-h-[94vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+        <div class="px-5 sm:px-7 py-5 border-b border-slate-200 flex items-center justify-between gap-4">
+          <div class="min-w-0">
+            <div class="text-xs font-bold uppercase tracking-wider text-indigo-500 mb-1">Vocabulary Editor</div>
+            <h2 id="vocabModalTitle" class="text-xl font-bold text-slate-900 truncate">Word List</h2>
+            <p id="vocabModalCount" class="text-xs text-slate-500 mt-1">0 vocabulary items</p>
+          </div>
+          <button id="closeVocabModalBtn" class="shrink-0 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors" title="Close">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="px-5 sm:px-7 py-4 border-b border-slate-200 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div class="flex gap-2">
+            <button id="addVocabBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors">
+              + Add Vocabulary
+            </button>
+            <button id="exportCurrentListBtn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg transition-colors">
+              ↓ Export Excel
+            </button>
+          </div>
+          <div class="text-xs text-slate-400">Edit directly in the table, then save.</div>
+        </div>
+
+        <div class="overflow-auto flex-1">
+          <table class="min-w-[760px] w-full text-sm">
+            <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200">
+              <tr>
+                <th class="w-14 px-4 py-3 text-center font-semibold text-slate-500">#</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-600">English Vocabulary</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-600">Chinese Meaning</th>
+                <th class="w-20 px-4 py-3 text-center font-semibold text-slate-600">Action</th>
+              </tr>
+            </thead>
+            <tbody id="vocabEditorBody" class="divide-y divide-slate-100 bg-white"></tbody>
+          </table>
+        </div>
+
+        <div id="vocabEmptyState" class="hidden px-5 py-12 text-center text-slate-400 text-sm">
+          This word list contains no vocabulary yet. Click <strong class="text-indigo-600">+ Add Vocabulary</strong> to create the first row.
+        </div>
+
+        <div class="px-5 sm:px-7 py-4 border-t border-slate-200 bg-slate-50 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+          <button id="cancelVocabChangesBtn" class="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors">
+            Cancel
+          </button>
+          <button id="saveVocabChangesBtn" class="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-sm transition-colors disabled:opacity-50">
+            Save Vocabulary Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://fepooifleoeseapsbisy.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_2dWpQ1VOvdSToPTXymandw_VOSZUpTy';
+    const rQuizAdminClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let parsedVocabularyData = [];
+    let existingLists = [];
+    let originalListsLookup = {};
+    let pendingDeletions = [];
+    let isOrderChanged = false;
+
+    // Vocabulary editor state
+    let activeVocabList = null;
+    let originalVocabRows = [];
+    let workingVocabRows = [];
+
+    document.addEventListener('DOMContentLoaded', () => fetchExistingLists('force'));
+    document.getElementById('refreshBtn').addEventListener('click', () => fetchExistingLists('force'));
+    document.getElementById('saveManagementChangesBtn').addEventListener('click', saveAllManagementChanges);
+
+    document.getElementById('closeVocabModalBtn').addEventListener('click', closeVocabEditor);
+    document.getElementById('cancelVocabChangesBtn').addEventListener('click', closeVocabEditor);
+    document.getElementById('vocabModalBackdrop').addEventListener('click', closeVocabEditor);
+    document.getElementById('addVocabBtn').addEventListener('click', addVocabularyRow);
+    document.getElementById('saveVocabChangesBtn').addEventListener('click', saveVocabularyChanges);
+    document.getElementById('exportCurrentListBtn').addEventListener('click', exportCurrentList);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !document.getElementById('vocabModal').classList.contains('hidden')) {
+        closeVocabEditor();
+      }
+    });
+
+    async function fetchExistingLists(strategy = 'lazy') {
+      const container = document.getElementById('existingListsContainer');
+      const loader = document.getElementById('listsLoading');
+      const masterSaveBtn = document.getElementById('saveManagementChangesBtn');
+
+      if (strategy === 'force') {
+        loader.textContent = "Loading saved word lists...";
+        loader.classList.remove('hidden');
+        container.classList.add('hidden');
+        masterSaveBtn.classList.add('hidden');
+
+        pendingDeletions = [];
+        originalListsLookup = {};
+        isOrderChanged = false;
+      }
+
+      try {
+        const { data, error } = await rQuizAdminClient
+          .from('ast_word_lists')
+          .select('id, list_name, sort_order')
+          .order('sort_order', { ascending: true });
+
+        if (error) throw error;
+
+        existingLists = data || [];
+
+        originalListsLookup = {};
+        existingLists.forEach(item => {
+          originalListsLookup[String(item.id)] = item.list_name;
+        });
+
+        renderListsUI();
+      } catch (err) {
+        loader.innerHTML = `
+          <div class="text-rose-500 font-medium">Failed to retrieve data layer elements.</div>
+          <div class="text-xs text-slate-400 mt-1 max-w-md mx-auto">Error: ${escapeHtml(err.message)}.</div>
+        `;
+        loader.classList.remove('hidden');
+        container.classList.add('hidden');
+      }
+    }
+
+    function renderListsUI() {
+      const container = document.getElementById('existingListsContainer');
+      const loader = document.getElementById('listsLoading');
+      const masterSaveBtn = document.getElementById('saveManagementChangesBtn');
+
+      if (!existingLists || existingLists.length === 0) {
+        loader.textContent = "No stored word lists found.";
+        loader.classList.remove('hidden');
+        container.classList.add('hidden');
+        masterSaveBtn.classList.add('hidden');
+        return;
+      }
+
+      loader.classList.add('hidden');
+      container.classList.remove('hidden');
+      masterSaveBtn.classList.remove('hidden');
+      container.innerHTML = '';
+
+      existingLists.forEach((list, index) => {
+        const li = document.createElement('li');
+        li.className = "flex flex-col lg:flex-row lg:items-center justify-between p-4 gap-4 bg-white hover:bg-slate-50/50 transition-colors first:rounded-t-xl last:rounded-b-xl";
+
+        li.innerHTML = `
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="flex flex-col gap-0.5 shrink-0">
+              <button onclick="moveList(${index}, -1)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-30 disabled:pointer-events-none" ${index === 0 ? 'disabled' : ''} title="Move up">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+              </button>
+              <button onclick="moveList(${index}, 1)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-30 disabled:pointer-events-none" ${index === existingLists.length - 1 ? 'disabled' : ''} title="Move down">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+            </div>
+
+            <input type="text" data-list-id="${escapeHtml(String(list.id))}" value="${escapeHtml(list.list_name || '')}"
+              class="list-title-input min-w-0 flex-1 px-3 py-1.5 font-medium text-slate-800 bg-transparent border border-transparent hover:border-slate-200 focus:border-indigo-500 focus:bg-white focus:outline-none rounded-lg transition-all text-sm">
+          </div>
+
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <button onclick="openVocabEditor('${escapeJs(String(list.id))}')" class="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer" title="View and edit vocabulary">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 20h9"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 3.5a2.121 2.121 0 013 3L8 18l-4 1 1-4 11.5-11.5z"/>
+              </svg>
+              View / Edit Vocabulary
+            </button>
+
+            <button onclick="exportWordList('${escapeJs(String(list.id))}')" class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer" title="Export this word list as Excel">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 10l5 5 5-5"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 21h14"/>
+              </svg>
+              Export Excel
+            </button>
+
+            <button onclick="queueDeletion(${index}, '${escapeJs(String(list.id))}', '${escapeJs(String(list.list_name || ''))}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer" title="Delete List">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        `;
+        container.appendChild(li);
+      });
+    }
+
+    function syncInputStateToData() {
+      const inputs = document.querySelectorAll('.list-title-input');
+      inputs.forEach(input => {
+        const id = input.getAttribute('data-list-id');
+        const targetObj = existingLists.find(l => String(l.id) === id);
+        if (targetObj) {
+          targetObj.list_name = input.value;
+        }
+      });
+    }
+
+    function moveList(currentIndex, direction) {
+      syncInputStateToData();
+
+      const targetIndex = currentIndex + direction;
+      if (targetIndex < 0 || targetIndex >= existingLists.length) return;
+
+      const currentItem = existingLists[currentIndex];
+      existingLists[currentIndex] = existingLists[targetIndex];
+      existingLists[targetIndex] = currentItem;
+
+      isOrderChanged = true;
+      renderListsUI();
+    }
+
+    function queueDeletion(arrayIndex, id, name) {
+      if (!confirm(`Queue "${name}" for permanent deletion? Changes won't apply until you hit "Save Management Changes".`)) {
+        return;
+      }
+      syncInputStateToData();
+      pendingDeletions.push(id);
+      existingLists.splice(arrayIndex, 1);
+
+      isOrderChanged = true;
+      renderListsUI();
+    }
+
+    async function saveAllManagementChanges() {
+      syncInputStateToData();
+
+      const btn = document.getElementById('saveManagementChangesBtn');
+      const finalRenamesLookup = {};
+      let validationError = false;
+
+      const inputs = document.querySelectorAll('.list-title-input');
+      inputs.forEach(input => {
+        const rawId = input.getAttribute('data-list-id');
+        const currentName = input.value.trim();
+        const originalName = originalListsLookup[rawId];
+
+        if (!currentName) {
+          validationError = true;
+          return;
+        }
+
+        if (originalName !== undefined && currentName !== originalName) {
+          finalRenamesLookup[rawId] = currentName;
+        }
+      });
+
+      if (validationError) {
+        alert("Operation aborted: Word list titles cannot be left completely blank.");
+        return;
+      }
+
+      const hasRenames = Object.keys(finalRenamesLookup).length > 0;
+      const hasDeletions = pendingDeletions.length > 0;
+
+      if (!hasRenames && !hasDeletions && !isOrderChanged) {
+        alert("No pending modifications found to sync.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Processing changes...";
+
+      try {
+        const dbPromises = [];
+
+        // 1. Process Deletions
+        if (hasDeletions) {
+          dbPromises.push(
+            rQuizAdminClient.from('ast_vocabularies').delete().in('list_id', pendingDeletions).then(res => {
+              if (res.error) throw new Error(`Vocabulary Delete Error: ${res.error.message}`);
+            })
+          );
+          dbPromises.push(
+            rQuizAdminClient.from('ast_word_lists').delete().in('id', pendingDeletions).then(res => {
+              if (res.error) throw new Error(`Word List Delete Error: ${res.error.message}`);
+            })
+          );
+        }
+
+        // 2. Process Renames
+        for (const [id, list_name] of Object.entries(finalRenamesLookup)) {
+          dbPromises.push(
+            rQuizAdminClient.from('ast_word_lists').update({ list_name }).eq('id', id).then(res => {
+              if (res.error) throw new Error(`Rename Error (ID ${id}): ${res.error.message}`);
+            })
+          );
+        }
+
+        // 3. Process Sorting
+        if (isOrderChanged && existingLists.length > 0) {
+          existingLists.forEach((listObj, index) => {
+            dbPromises.push(
+              rQuizAdminClient.from('ast_word_lists').update({ sort_order: index }).eq('id', listObj.id).then(res => {
+                if (res.error) throw new Error(`Reorder Error (ID ${listObj.id}): ${res.error.message}`);
+              })
+            );
+          });
+        }
+
+        if (dbPromises.length > 0) {
+          await Promise.all(dbPromises);
+          alert("All changes successfully synced to the database!");
+        }
+
+        fetchExistingLists('force');
+
+      } catch (err) {
+        console.error("Database batch save execution failed:", err);
+        alert("Failed syncing state updates to storage cluster:\n" + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Save Management Changes";
+      }
+    }
+
+    /* ============================================================
+       VOCABULARY EDITOR
+       ============================================================ */
+
+    async function openVocabEditor(listId) {
+      syncInputStateToData();
+
+      const list = existingLists.find(item => String(item.id) === String(listId));
+      if (!list) {
+        alert("Could not find this word list.");
+        return;
+      }
+
+      activeVocabList = list;
+      const modal = document.getElementById('vocabModal');
+      const body = document.getElementById('vocabEditorBody');
+
+      document.getElementById('vocabModalTitle').textContent = list.list_name || 'Word List';
+      document.getElementById('vocabModalCount').textContent = 'Loading vocabulary...';
+      body.innerHTML = '';
+      document.getElementById('vocabEmptyState').classList.add('hidden');
+      modal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+
+      try {
+        const { data, error } = await rQuizAdminClient
+          .from('ast_vocabularies')
+          .select('id, list_id, english, chinese')
+          .eq('list_id', listId)
+          .order('id', { ascending: true });
+
+        if (error) throw error;
+
+        originalVocabRows = (data || []).map(row => ({
+          id: row.id,
+          list_id: row.list_id,
+          english: row.english || '',
+          chinese: row.chinese || ''
+        }));
+
+        // Deep copy so edits can be cancelled without changing the original state.
+        workingVocabRows = originalVocabRows.map(row => ({ ...row }));
+
+        renderVocabularyEditor();
+      } catch (err) {
+        document.getElementById('vocabModalCount').textContent = 'Failed to load vocabulary';
+        body.innerHTML = `
+          <tr>
+            <td colspan="4" class="px-5 py-10 text-center text-rose-500">
+              Failed to load vocabulary: ${escapeHtml(err.message)}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    function renderVocabularyEditor() {
+      const body = document.getElementById('vocabEditorBody');
+      const emptyState = document.getElementById('vocabEmptyState');
+      const count = document.getElementById('vocabModalCount');
+
+      body.innerHTML = '';
+
+      if (!workingVocabRows.length) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      count.textContent = `${workingVocabRows.length} vocabulary item${workingVocabRows.length === 1 ? '' : 's'}`;
+
+      workingVocabRows.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/70 transition-colors";
+        tr.dataset.rowIndex = String(index);
+
+        const numberTd = document.createElement('td');
+        numberTd.className = "px-4 py-2.5 text-center text-xs text-slate-400 align-top pt-4";
+        numberTd.textContent = String(index + 1);
+
+        const englishTd = document.createElement('td');
+        englishTd.className = "px-3 py-2.5 align-top";
+        const englishInput = document.createElement('input');
+        englishInput.type = 'text';
+        englishInput.value = row.english;
+        englishInput.placeholder = 'English vocabulary';
+        englishInput.className = "vocab-english-input w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none text-sm text-slate-900";
+        englishInput.addEventListener('input', (e) => {
+          workingVocabRows[index].english = e.target.value;
+        });
+        englishTd.appendChild(englishInput);
+
+        const chineseTd = document.createElement('td');
+        chineseTd.className = "px-3 py-2.5 align-top";
+        const chineseInput = document.createElement('input');
+        chineseInput.type = 'text';
+        chineseInput.value = row.chinese;
+        chineseInput.placeholder = 'Chinese meaning';
+        chineseInput.className = "vocab-chinese-input w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none text-sm text-slate-900";
+        chineseInput.addEventListener('input', (e) => {
+          workingVocabRows[index].chinese = e.target.value;
+        });
+        chineseTd.appendChild(chineseInput);
+
+        const actionTd = document.createElement('td');
+        actionTd.className = "px-3 py-2.5 text-center align-top pt-3";
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = "p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors";
+        deleteBtn.title = "Remove vocabulary";
+        deleteBtn.innerHTML = `
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 01-1 1h-4a1 1 0 01-1 1v3M4 7h16"/>
+          </svg>
+        `;
+        deleteBtn.addEventListener('click', () => removeVocabularyRow(index));
+        actionTd.appendChild(deleteBtn);
+
+        tr.appendChild(numberTd);
+        tr.appendChild(englishTd);
+        tr.appendChild(chineseTd);
+        tr.appendChild(actionTd);
+        body.appendChild(tr);
+      });
+    }
+
+    function addVocabularyRow() {
+      workingVocabRows.push({
+        id: null,
+        list_id: activeVocabList.id,
+        english: '',
+        chinese: ''
+      });
+
+      renderVocabularyEditor();
+
+      // Focus the newly added English input.
+      const inputs = document.querySelectorAll('.vocab-english-input');
+      if (inputs.length) {
+        const lastInput = inputs[inputs.length - 1];
+        lastInput.focus();
+        lastInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function removeVocabularyRow(index) {
+      const row = workingVocabRows[index];
+      const label = row && row.english ? `"${row.english}"` : 'this vocabulary row';
+
+      if (!confirm(`Remove ${label}? The change will only be applied after you click "Save Vocabulary Changes".`)) {
+        return;
+      }
+
+      workingVocabRows.splice(index, 1);
+      renderVocabularyEditor();
+    }
+
+    async function saveVocabularyChanges() {
+      if (!activeVocabList) return;
+
+      // Capture any current input values before validation/save.
+      syncVocabularyInputs();
+
+      const saveBtn = document.getElementById('saveVocabChangesBtn');
+
+      // Validate: English is required; Chinese may be blank because the
+      // original importer also allowed blank Chinese values.
+      const invalidIndex = workingVocabRows.findIndex(row => !String(row.english || '').trim());
+      if (invalidIndex !== -1) {
+        alert(`Vocabulary row ${invalidIndex + 1} needs an English term before it can be saved.`);
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving vocabulary...";
+
+      try {
+        const originalIds = new Set(
+          originalVocabRows
+            .filter(row => row.id !== null && row.id !== undefined)
+            .map(row => String(row.id))
+        );
+
+        const workingExistingIds = new Set(
+          workingVocabRows
+            .filter(row => row.id !== null && row.id !== undefined)
+            .map(row => String(row.id))
+        );
+
+        // 1. Delete rows that existed before but are no longer present.
+        const idsToDelete = [...originalIds].filter(id => !workingExistingIds.has(id));
+
+        if (idsToDelete.length) {
+          const { error } = await rQuizAdminClient
+            .from('ast_vocabularies')
+            .delete()
+            .in('id', idsToDelete);
+
+          if (error) throw new Error(`Vocabulary deletion failed: ${error.message}`);
+        }
+
+        // 2. Update existing rows.
+        const existingRows = workingVocabRows.filter(row => row.id !== null && row.id !== undefined);
+
+        if (existingRows.length) {
+          const updatePayload = existingRows.map(row => ({
+            id: row.id,
+            list_id: activeVocabList.id,
+            english: String(row.english || '').trim(),
+            chinese: String(row.chinese || '').trim()
+          }));
+
+          const { error } = await rQuizAdminClient
+            .from('ast_vocabularies')
+            .upsert(updatePayload, { onConflict: 'id' });
+
+          if (error) throw new Error(`Vocabulary update failed: ${error.message}`);
+        }
+
+        // 3. Insert newly added rows.
+        const newRows = workingVocabRows.filter(row => row.id === null || row.id === undefined);
+
+        if (newRows.length) {
+          const insertPayload = newRows.map(row => ({
+            list_id: activeVocabList.id,
+            english: String(row.english || '').trim(),
+            chinese: String(row.chinese || '').trim()
+          }));
+
+          const { error } = await rQuizAdminClient
+            .from('ast_vocabularies')
+            .insert(insertPayload);
+
+          if (error) throw new Error(`New vocabulary insertion failed: ${error.message}`);
+        }
+
+        // Reload from database so IDs and state are fully synchronized.
+        const { data, error: reloadError } = await rQuizAdminClient
+          .from('ast_vocabularies')
+          .select('id, list_id, english, chinese')
+          .eq('list_id', activeVocabList.id)
+          .order('id', { ascending: true });
+
+        if (reloadError) throw reloadError;
+
+        originalVocabRows = (data || []).map(row => ({
+          id: row.id,
+          list_id: row.list_id,
+          english: row.english || '',
+          chinese: row.chinese || ''
+        }));
+
+        workingVocabRows = originalVocabRows.map(row => ({ ...row }));
+
+        renderVocabularyEditor();
+        alert(`Successfully saved "${activeVocabList.list_name}" vocabulary changes.`);
+      } catch (err) {
+        console.error("Vocabulary save failed:", err);
+        alert("Failed saving vocabulary changes:\n" + err.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Vocabulary Changes";
+      }
+    }
+
+    function syncVocabularyInputs() {
+      const rows = document.querySelectorAll('#vocabEditorBody tr[data-row-index]');
+
+      rows.forEach(tr => {
+        const index = Number(tr.dataset.rowIndex);
+        const englishInput = tr.querySelector('.vocab-english-input');
+        const chineseInput = tr.querySelector('.vocab-chinese-input');
+
+        if (workingVocabRows[index]) {
+          workingVocabRows[index].english = englishInput ? englishInput.value : '';
+          workingVocabRows[index].chinese = chineseInput ? chineseInput.value : '';
+        }
+      });
+    }
+
+    function closeVocabEditor() {
+      const modal = document.getElementById('vocabModal');
+      if (modal.classList.contains('hidden')) return;
+
+      modal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+
+      activeVocabList = null;
+      originalVocabRows = [];
+      workingVocabRows = [];
+    }
+
+    /* ============================================================
+       EXCEL EXPORT
+       ============================================================ */
+
+    async function exportWordList(listId) {
+      const list = existingLists.find(item => String(item.id) === String(listId));
+      if (!list) {
+        alert("Could not find this word list.");
+        return;
+      }
+
+      try {
+        const { data, error } = await rQuizAdminClient
+          .from('ast_vocabularies')
+          .select('english, chinese')
+          .eq('list_id', listId)
+          .order('id', { ascending: true });
+
+        if (error) throw error;
+
+        downloadVocabularyExcel(list.list_name || 'word_list', data || []);
+      } catch (err) {
+        console.error("Excel export failed:", err);
+        alert("Could not export this word list:\n" + err.message);
+      }
+    }
+
+    function exportCurrentList() {
+      if (!activeVocabList) return;
+
+      syncVocabularyInputs();
+
+      // Export the current editor state, including unsaved additions/edits.
+      // This makes the button useful as a quick local backup before saving.
+      downloadVocabularyExcel(activeVocabList.list_name || 'word_list', workingVocabRows);
+    }
+
+    function downloadVocabularyExcel(listName, rows) {
+      const exportRows = [
+        ['English', 'Chinese'],
+        ...rows.map(row => [
+          String(row.english || '').trim(),
+          String(row.chinese || '').trim()
+        ])
+      ];
+
+      const worksheet = XLSX.utils.aoa_to_sheet(exportRows);
+
+      // Make the two columns reasonably wide.
+      worksheet['!cols'] = [
+        { wch: 30 },
+        { wch: 45 }
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Vocabulary');
+
+      const safeName = sanitizeFilename(listName || 'word_list');
+      XLSX.writeFile(workbook, `${safeName}.xlsx`);
+    }
+
+    /* ============================================================
+       EXPORT ALL LISTS AS ONE PDF
+       ============================================================ */
+
+    async function exportAllListsAsHTML() {
+      if (!existingLists || existingLists.length === 0) {
+        alert("There are no word lists to export.");
+        return;
+      }
+
+      const btn = document.getElementById('exportAllBtn');
+      const originalLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Building file...";
+
+      // Keep list order in sync with any on-screen reordering before exporting.
+      syncInputStateToData();
+
+      try {
+        // Fetch vocabulary for every list, in the exact order shown on the page.
+        const sections = [];
+        for (const list of existingLists) {
+          const { data, error } = await rQuizAdminClient
+            .from('ast_vocabularies')
+            .select('english, chinese')
+            .eq('list_id', list.id)
+            .order('id', { ascending: true });
+
+          if (error) throw new Error(`Failed loading "${list.list_name}": ${error.message}`);
+
+          sections.push({ name: list.list_name || 'Untitled List', rows: data || [] });
+        }
+
+        // Build a simple table of contents plus one section per word list.
+        let tocHtml = '';
+        let sectionsHtml = '';
+
+        sections.forEach((section, index) => {
+          const anchorId = `list-${index}`;
+          tocHtml += `<li><a href="#${anchorId}">${escapeHtml(section.name)}</a> <span class="toc-count">(${section.rows.length})</span></li>`;
+
+          sectionsHtml += `<section id="${anchorId}">
+            <h2>${escapeHtml(section.name)}</h2>
+            <table>
+              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
+              <tbody>`;
+
+          if (!section.rows.length) {
+            sectionsHtml += `<tr><td colspan="2" class="empty">No vocabulary in this list.</td></tr>`;
+          } else {
+            section.rows.forEach((row) => {
+              sectionsHtml += `<tr>
+                <td>${escapeHtml(row.english || '')}</td>
+                <td>${escapeHtml(row.chinese || '')}</td>
+              </tr>`;
+            });
+          }
+
+          sectionsHtml += `</tbody>
+            </table>
+          </section>`;
+        });
+
+        const generatedOn = new Date().toLocaleString();
+
+        const docHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AST Word Lists</title>
@@ -39,1336 +894,187 @@
 <body>
   <div class="wrap">
     <h1>AST Word Lists</h1>
-    <p class="meta">Exported 2026/8/6 11:11:56 &middot; 14 word lists</p>
+    <p class="meta">Exported ${escapeHtml(generatedOn)} &middot; ${sections.length} word list${sections.length === 1 ? '' : 's'}</p>
 
     <nav class="toc" id="top">
       <h2>Contents</h2>
-      <ol><li><a href="#list-0">1 sets</a> <span class="toc-count">(26)</span></li><li><a href="#list-1">3 equality and inequality</a> <span class="toc-count">(37)</span></li><li><a href="#list-2">4 functions</a> <span class="toc-count">(52)</span></li><li><a href="#list-3">5 trigonometric function</a> <span class="toc-count">(54)</span></li><li><a href="#list-4">6 preliminary solid geometry</a> <span class="toc-count">(54)</span></li><li><a href="#list-5">7 planetary analytic geometry</a> <span class="toc-count">(15)</span></li><li><a href="#list-6">8 plane vectors and 9 space vectors</a> <span class="toc-count">(23)</span></li><li><a href="#list-7">10 sequence of numbers</a> <span class="toc-count">(20)</span></li><li><a href="#list-8">11 complex numbers</a> <span class="toc-count">(15)</span></li><li><a href="#list-9">12 counting principle</a> <span class="toc-count">(18)</span></li><li><a href="#list-10">13 probability</a> <span class="toc-count">(19)</span></li><li><a href="#list-11">14 statistics</a> <span class="toc-count">(35)</span></li><li><a href="#list-12">15 dervative and differential of single variable function</a> <span class="toc-count">(25)</span></li><li><a href="#list-13">16 definite integral</a> <span class="toc-count">(19)</span></li></ol>
+      <ol>${tocHtml}</ol>
     </nav>
 
-    <section id="list-0">
-            <h2>1 sets</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>Set</td>
-                <td>集合</td>
-              </tr><tr>
-                <td>Universal set</td>
-                <td>全集</td>
-              </tr><tr>
-                <td>Complement</td>
-                <td>补集</td>
-              </tr><tr>
-                <td>enumeration</td>
-                <td>列举法</td>
-              </tr><tr>
-                <td>Empty set</td>
-                <td>空集</td>
-              </tr><tr>
-                <td>Venn diagram</td>
-                <td>韦恩图 / 文氏图</td>
-              </tr><tr>
-                <td>Rational numbers</td>
-                <td>有理数</td>
-              </tr><tr>
-                <td>Number of elements</td>
-                <td>元素个数</td>
-              </tr><tr>
-                <td>Union</td>
-                <td>并集</td>
-              </tr><tr>
-                <td>Disjoint sets</td>
-                <td>互斥集</td>
-              </tr><tr>
-                <td>Element</td>
-                <td>元素</td>
-              </tr><tr>
-                <td>Integers</td>
-                <td>整数</td>
-              </tr><tr>
-                <td>Positive integers</td>
-                <td>正整数</td>
-              </tr><tr>
-                <td>Subset</td>
-                <td>子集</td>
-              </tr><tr>
-                <td>Factor</td>
-                <td>因数</td>
-              </tr><tr>
-                <td>Natural numbers</td>
-                <td>自然数</td>
-              </tr><tr>
-                <td>Real numbers</td>
-                <td>实数</td>
-              </tr><tr>
-                <td>Square numbers</td>
-                <td>完全平方数</td>
-              </tr><tr>
-                <td>Proper subset</td>
-                <td>真子集</td>
-              </tr><tr>
-                <td>Prime numbers</td>
-                <td>质数 / 素数</td>
-              </tr><tr>
-                <td>Multiple</td>
-                <td>倍数</td>
-              </tr><tr>
-                <td>Set builder notation</td>
-                <td>集合建造表示法</td>
-              </tr><tr>
-                <td>Finite set</td>
-                <td>有限集</td>
-              </tr><tr>
-                <td>Irrational numbers</td>
-                <td>无理数</td>
-              </tr><tr>
-                <td>Intersection</td>
-                <td>交集</td>
-              </tr><tr>
-                <td>Infinite set</td>
-                <td>无限集</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-1">
-            <h2>3 equality and inequality</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>Critical value</td>
-                <td>临界值</td>
-              </tr><tr>
-                <td>Linear equation</td>
-                <td>一次方程（线性方程）</td>
-              </tr><tr>
-                <td>Discriminant</td>
-                <td>判别式</td>
-              </tr><tr>
-                <td>apex</td>
-                <td>顶点</td>
-              </tr><tr>
-                <td>Linear inequality</td>
-                <td>一次不等式</td>
-              </tr><tr>
-                <td>Term</td>
-                <td>项</td>
-              </tr><tr>
-                <td>Factorise</td>
-                <td>因式分解</td>
-              </tr><tr>
-                <td>Variable</td>
-                <td>变量</td>
-              </tr><tr>
-                <td>Greater than</td>
-                <td>大于</td>
-              </tr><tr>
-                <td>straight line</td>
-                <td>直线</td>
-              </tr><tr>
-                <td>Quadratic equation</td>
-                <td>二次方程</td>
-              </tr><tr>
-                <td>repeated roots</td>
-                <td>重根</td>
-              </tr><tr>
-                <td>Substitution</td>
-                <td>换元法</td>
-              </tr><tr>
-                <td>Expand</td>
-                <td>展开</td>
-              </tr><tr>
-                <td>Axis</td>
-                <td>坐标轴</td>
-              </tr><tr>
-                <td>Tangent</td>
-                <td>相切</td>
-              </tr><tr>
-                <td>Constant</td>
-                <td>常数</td>
-              </tr><tr>
-                <td>Intersect</td>
-                <td>相交</td>
-              </tr><tr>
-                <td>less than</td>
-                <td>小于</td>
-              </tr><tr>
-                <td>Greater than or equal to</td>
-                <td>大于或等于</td>
-              </tr><tr>
-                <td>Simultaneous equations</td>
-                <td>联立方程组</td>
-              </tr><tr>
-                <td>Inequality sign</td>
-                <td>不等号</td>
-              </tr><tr>
-                <td>Curve</td>
-                <td>曲线</td>
-              </tr><tr>
-                <td>Point of intersection</td>
-                <td>交点</td>
-              </tr><tr>
-                <td>simplify</td>
-                <td>简化</td>
-              </tr><tr>
-                <td>Turning point</td>
-                <td>转折点</td>
-              </tr><tr>
-                <td>Less than or equal to</td>
-                <td>小于或等于</td>
-              </tr><tr>
-                <td>Elimination</td>
-                <td>消元法</td>
-              </tr><tr>
-                <td>System of equations</td>
-                <td>方程组</td>
-              </tr><tr>
-                <td>Inequality</td>
-                <td>不等式</td>
-              </tr><tr>
-                <td>Solid line</td>
-                <td>实线</td>
-              </tr><tr>
-                <td>Rearrange</td>
-                <td>改写</td>
-              </tr><tr>
-                <td>Dotted line</td>
-                <td>虚线</td>
-              </tr><tr>
-                <td>Solution</td>
-                <td>解</td>
-              </tr><tr>
-                <td>Coefficient</td>
-                <td>系数</td>
-              </tr><tr>
-                <td>Quadratic inequality</td>
-                <td>二次不等式</td>
-              </tr><tr>
-                <td>Equation</td>
-                <td>方程</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-2">
-            <h2>4 functions</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>power</td>
-                <td>幂次</td>
-              </tr><tr>
-                <td>asymptote</td>
-                <td>渐近线</td>
-              </tr><tr>
-                <td>exponent</td>
-                <td>指数</td>
-              </tr><tr>
-                <td>sketch</td>
-                <td>绘制草图</td>
-              </tr><tr>
-                <td>dilate</td>
-                <td>扩张</td>
-              </tr><tr>
-                <td>input</td>
-                <td>输入值；自变量</td>
-              </tr><tr>
-                <td>output</td>
-                <td>输出值；因变量</td>
-              </tr><tr>
-                <td>variable</td>
-                <td>变量</td>
-              </tr><tr>
-                <td>many-one function</td>
-                <td>多对一函数</td>
-              </tr><tr>
-                <td>composite function</td>
-                <td>复合函数</td>
-              </tr><tr>
-                <td>intercept</td>
-                <td>截距</td>
-              </tr><tr>
-                <td>inverse function</td>
-                <td>反函数</td>
-              </tr><tr>
-                <td>reflection</td>
-                <td>反射（关于...对称）</td>
-              </tr><tr>
-                <td>vertex</td>
-                <td>顶点</td>
-              </tr><tr>
-                <td>translation</td>
-                <td>平移</td>
-              </tr><tr>
-                <td>reciprocal</td>
-                <td>倒数</td>
-              </tr><tr>
-                <td>surd</td>
-                <td>根式；无理数</td>
-              </tr><tr>
-                <td>common ratio</td>
-                <td>公比</td>
-              </tr><tr>
-                <td>geometric sequence</td>
-                <td>等比数列</td>
-              </tr><tr>
-                <td>range</td>
-                <td>值域</td>
-              </tr><tr>
-                <td>substitution</td>
-                <td>换元法</td>
-              </tr><tr>
-                <td>complete the square</td>
-                <td>配方法</td>
-              </tr><tr>
-                <td>quadratic function</td>
-                <td>二次函数</td>
-              </tr><tr>
-                <td>horizontal transformation</td>
-                <td>水平变换</td>
-              </tr><tr>
-                <td>exponential growth</td>
-                <td>指数增长</td>
-              </tr><tr>
-                <td>symmetrical about</td>
-                <td>关于...对称</td>
-              </tr><tr>
-                <td>one-one function</td>
-                <td>一一对应函数</td>
-              </tr><tr>
-                <td>natural logarithm</td>
-                <td>自然对数</td>
-              </tr><tr>
-                <td>logarithm</td>
-                <td>对数</td>
-              </tr><tr>
-                <td>base of logarithm</td>
-                <td>对数底数</td>
-              </tr><tr>
-                <td>function</td>
-                <td>函数</td>
-              </tr><tr>
-                <td>scale factor</td>
-                <td>放大缩小系数</td>
-              </tr><tr>
-                <td>real numbers</td>
-                <td>实数集</td>
-              </tr><tr>
-                <td>horizontal asymptote</td>
-                <td>水平渐近线</td>
-              </tr><tr>
-                <td>simplify</td>
-                <td>化简</td>
-              </tr><tr>
-                <td>expand brackets</td>
-                <td>展开括号</td>
-              </tr><tr>
-                <td>mapping</td>
-                <td>映射</td>
-              </tr><tr>
-                <td>gradient</td>
-                <td>斜率</td>
-              </tr><tr>
-                <td>piecewise function</td>
-                <td>分段函数</td>
-              </tr><tr>
-                <td>cubic function</td>
-                <td>三次函数</td>
-              </tr><tr>
-                <td>vertical transformation</td>
-                <td>竖直变换</td>
-              </tr><tr>
-                <td>exponential decay</td>
-                <td>指数衰减</td>
-              </tr><tr>
-                <td>initial value</td>
-                <td>初始值</td>
-              </tr><tr>
-                <td>exponential function</td>
-                <td>指数函数</td>
-              </tr><tr>
-                <td>stretch factor</td>
-                <td>伸缩比例系数</td>
-              </tr><tr>
-                <td>parallel to</td>
-                <td>平行于</td>
-              </tr><tr>
-                <td>real root</td>
-                <td>实数根</td>
-              </tr><tr>
-                <td>stretch</td>
-                <td>拉伸</td>
-              </tr><tr>
-                <td>irrational number</td>
-                <td>无理数</td>
-              </tr><tr>
-                <td>real solution</td>
-                <td>实数解</td>
-              </tr><tr>
-                <td>self-inverse function</td>
-                <td>自反函数</td>
-              </tr><tr>
-                <td>domain</td>
-                <td>定义域</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-3">
-            <h2>5 trigonometric function</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>segment</td>
-                <td>弓形</td>
-              </tr><tr>
-                <td>clockwise rotation</td>
-                <td>顺时针旋转</td>
-              </tr><tr>
-                <td>sector</td>
-                <td>扇形</td>
-              </tr><tr>
-                <td>principal angle</td>
-                <td>主角</td>
-              </tr><tr>
-                <td>obtuse angle</td>
-                <td>钝角</td>
-              </tr><tr>
-                <td>major sector</td>
-                <td>大扇形</td>
-              </tr><tr>
-                <td>major segment</td>
-                <td>大弓形</td>
-              </tr><tr>
-                <td>circumference</td>
-                <td>圆周长</td>
-              </tr><tr>
-                <td>quadrant</td>
-                <td>象限</td>
-              </tr><tr>
-                <td>isosceles triangle</td>
-                <td>等腰三角形</td>
-              </tr><tr>
-                <td>complete revolution</td>
-                <td>一周；整圈</td>
-              </tr><tr>
-                <td>chord</td>
-                <td>弦</td>
-              </tr><tr>
-                <td>origin</td>
-                <td>坐标原点</td>
-              </tr><tr>
-                <td>acute angle</td>
-                <td>锐角</td>
-              </tr><tr>
-                <td>congruent triangle</td>
-                <td>全等三角形</td>
-              </tr><tr>
-                <td>anticlockwise rotation</td>
-                <td>逆时针旋转</td>
-              </tr><tr>
-                <td>horizontal asymptote</td>
-                <td>水平渐近线</td>
-              </tr><tr>
-                <td>oscillate</td>
-                <td>振荡</td>
-              </tr><tr>
-                <td>radian</td>
-                <td>弧度</td>
-              </tr><tr>
-                <td>major arc</td>
-                <td>优弧</td>
-              </tr><tr>
-                <td>perpendicular bisector</td>
-                <td>垂直平分线</td>
-              </tr><tr>
-                <td>minor arc</td>
-                <td>劣弧</td>
-              </tr><tr>
-                <td>Cartesian plane</td>
-                <td>直角坐标平面</td>
-              </tr><tr>
-                <td>coordinate</td>
-                <td>坐标</td>
-              </tr><tr>
-                <td>perimeter of sector</td>
-                <td>扇形周长</td>
-              </tr><tr>
-                <td>minor segment</td>
-                <td>小弓形</td>
-              </tr><tr>
-                <td>vertical displacement</td>
-                <td>竖直位移</td>
-              </tr><tr>
-                <td>inverse trigonometric function</td>
-                <td>反三角函数</td>
-              </tr><tr>
-                <td>period</td>
-                <td>周期</td>
-              </tr><tr>
-                <td>degree</td>
-                <td>角度</td>
-              </tr><tr>
-                <td>unit circle</td>
-                <td>单位圆</td>
-              </tr><tr>
-                <td>horizontal displacement</td>
-                <td>水平位移</td>
-              </tr><tr>
-                <td>periodic function</td>
-                <td>周期函数</td>
-              </tr><tr>
-                <td>arc length</td>
-                <td>弧长</td>
-              </tr><tr>
-                <td>substitute into</td>
-                <td>代入</td>
-              </tr><tr>
-                <td>subtend</td>
-                <td>对（角）</td>
-              </tr><tr>
-                <td>tangent</td>
-                <td>正切</td>
-              </tr><tr>
-                <td>trigonometric identity</td>
-                <td>三角恒等式</td>
-              </tr><tr>
-                <td>principal value</td>
-                <td>主值</td>
-              </tr><tr>
-                <td>central angle</td>
-                <td>圆心角</td>
-              </tr><tr>
-                <td>inscribed angle</td>
-                <td>圆周角</td>
-              </tr><tr>
-                <td>diameter</td>
-                <td>直径</td>
-              </tr><tr>
-                <td>amplitude</td>
-                <td>振幅</td>
-              </tr><tr>
-                <td>opposite side</td>
-                <td>对边</td>
-              </tr><tr>
-                <td>minor sector</td>
-                <td>小扇形</td>
-              </tr><tr>
-                <td>right triangle</td>
-                <td>直角三角形</td>
-              </tr><tr>
-                <td>radius</td>
-                <td>半径</td>
-              </tr><tr>
-                <td>equilateral triangle</td>
-                <td>等边三角形</td>
-              </tr><tr>
-                <td>center</td>
-                <td>圆心</td>
-              </tr><tr>
-                <td>sine</td>
-                <td>正弦</td>
-              </tr><tr>
-                <td>adjacent side</td>
-                <td>邻边</td>
-              </tr><tr>
-                <td>Pythagorean theorem</td>
-                <td>勾股定理</td>
-              </tr><tr>
-                <td>hypotenuse</td>
-                <td>斜边</td>
-              </tr><tr>
-                <td>cosine</td>
-                <td>余弦</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-4">
-            <h2>6 preliminary solid geometry</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>length</td>
-                <td>长</td>
-              </tr><tr>
-                <td>right prism</td>
-                <td>直棱柱</td>
-              </tr><tr>
-                <td>cross-section</td>
-                <td>截面</td>
-              </tr><tr>
-                <td>pentagon</td>
-                <td>五边形</td>
-              </tr><tr>
-                <td>width</td>
-                <td>宽</td>
-              </tr><tr>
-                <td>right triangle</td>
-                <td>直角三角形</td>
-              </tr><tr>
-                <td>volume</td>
-                <td>体积</td>
-              </tr><tr>
-                <td>regular polygon</td>
-                <td>正多边形</td>
-              </tr><tr>
-                <td>altitude</td>
-                <td>高</td>
-              </tr><tr>
-                <td>locus</td>
-                <td>轨迹</td>
-              </tr><tr>
-                <td>face</td>
-                <td>面</td>
-              </tr><tr>
-                <td>revolution solid</td>
-                <td>旋转体</td>
-              </tr><tr>
-                <td>regular tetrahedron</td>
-                <td>正四面体</td>
-              </tr><tr>
-                <td>radius of sphere</td>
-                <td>球半径</td>
-              </tr><tr>
-                <td>frustum of a cone</td>
-                <td>圆台</td>
-              </tr><tr>
-                <td>cube</td>
-                <td>正方体</td>
-              </tr><tr>
-                <td>vertex</td>
-                <td>顶点</td>
-              </tr><tr>
-                <td>equilateral triangle</td>
-                <td>等边三角形</td>
-              </tr><tr>
-                <td>axis of revolution</td>
-                <td>旋转轴</td>
-              </tr><tr>
-                <td>regular polyhedron</td>
-                <td>正多面体</td>
-              </tr><tr>
-                <td>pyramid</td>
-                <td>棱锥</td>
-              </tr><tr>
-                <td>regular pyramid</td>
-                <td>正棱锥</td>
-              </tr><tr>
-                <td>cone</td>
-                <td>圆锥</td>
-              </tr><tr>
-                <td>thickness</td>
-                <td>厚度</td>
-              </tr><tr>
-                <td>dihedral angle</td>
-                <td>二面角</td>
-              </tr><tr>
-                <td>centre of sphere</td>
-                <td>球心</td>
-              </tr><tr>
-                <td>cylinder</td>
-                <td>圆柱</td>
-              </tr><tr>
-                <td>semicircle</td>
-                <td>半圆</td>
-              </tr><tr>
-                <td>diagonal of a polyhedron</td>
-                <td>多面体对角线</td>
-              </tr><tr>
-                <td>cuboid</td>
-                <td>长方体</td>
-              </tr><tr>
-                <td>three-dimensional</td>
-                <td>三维的</td>
-              </tr><tr>
-                <td>quadrilateral</td>
-                <td>四边形</td>
-              </tr><tr>
-                <td>regular hexahedron</td>
-                <td>正六面体（正方体）</td>
-              </tr><tr>
-                <td>parallelepiped</td>
-                <td>平行六面体</td>
-              </tr><tr>
-                <td>base</td>
-                <td>底面</td>
-              </tr><tr>
-                <td>rectangular solid</td>
-                <td>长方体</td>
-              </tr><tr>
-                <td>secant line</td>
-                <td>割线</td>
-              </tr><tr>
-                <td>polyhedron</td>
-                <td>多面体</td>
-              </tr><tr>
-                <td>frustum of a pyramid</td>
-                <td>棱台</td>
-              </tr><tr>
-                <td>right circular cone</td>
-                <td>直圆锥</td>
-              </tr><tr>
-                <td>height</td>
-                <td>高</td>
-              </tr><tr>
-                <td>generatrix</td>
-                <td>母线</td>
-              </tr><tr>
-                <td>dimension</td>
-                <td>维度；尺寸</td>
-              </tr><tr>
-                <td>diameter of sphere</td>
-                <td>球直径</td>
-              </tr><tr>
-                <td>prism</td>
-                <td>棱柱</td>
-              </tr><tr>
-                <td>trapezium</td>
-                <td>梯形</td>
-              </tr><tr>
-                <td>sphere</td>
-                <td>球体</td>
-              </tr><tr>
-                <td>trapezoid</td>
-                <td>梯形</td>
-              </tr><tr>
-                <td>lateral face</td>
-                <td>侧面</td>
-              </tr><tr>
-                <td>parallel</td>
-                <td>平行的</td>
-              </tr><tr>
-                <td>edge</td>
-                <td>棱；边</td>
-              </tr><tr>
-                <td>right circular cylinder</td>
-                <td>直圆柱</td>
-              </tr><tr>
-                <td>solid</td>
-                <td>立体；几何体</td>
-              </tr><tr>
-                <td>perpendicular</td>
-                <td>垂直的</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-5">
-            <h2>7 planetary analytic geometry</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>congruent</td>
-                <td>全等</td>
-              </tr><tr>
-                <td>hyperbola</td>
-                <td>双曲线</td>
-              </tr><tr>
-                <td>parallelogram</td>
-                <td>平行四边形</td>
-              </tr><tr>
-                <td>parabola</td>
-                <td>抛物线</td>
-              </tr><tr>
-                <td>conic section</td>
-                <td>圆锥曲线</td>
-              </tr><tr>
-                <td>ellipse</td>
-                <td>椭圆</td>
-              </tr><tr>
-                <td>origin</td>
-                <td>坐标原点 (0,0)</td>
-              </tr><tr>
-                <td>focus</td>
-                <td>焦点</td>
-              </tr><tr>
-                <td>transverse axis</td>
-                <td>实轴（双曲线）</td>
-              </tr><tr>
-                <td>eccentricity</td>
-                <td>离心率</td>
-              </tr><tr>
-                <td>directrix</td>
-                <td>准线</td>
-              </tr><tr>
-                <td>ellipse major axis</td>
-                <td>椭圆长轴</td>
-              </tr><tr>
-                <td>ellipse minor axis</td>
-                <td>椭圆短轴</td>
-              </tr><tr>
-                <td>standard form</td>
-                <td>标准形式</td>
-              </tr><tr>
-                <td>conjugate axis</td>
-                <td>虚轴（双曲线）</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-6">
-            <h2>8 plane vectors and 9 space vectors</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>right angle</td>
-                <td>直角</td>
-              </tr><tr>
-                <td>line segment</td>
-                <td>线段</td>
-              </tr><tr>
-                <td>component form</td>
-                <td>分量形式</td>
-              </tr><tr>
-                <td>modulus</td>
-                <td>模长</td>
-              </tr><tr>
-                <td>vector addition</td>
-                <td>向量加法</td>
-              </tr><tr>
-                <td>cosine rule for vectors</td>
-                <td>向量余弦公式</td>
-              </tr><tr>
-                <td>scalar</td>
-                <td>标量</td>
-              </tr><tr>
-                <td>acute angle</td>
-                <td>锐角</td>
-              </tr><tr>
-                <td>polar form</td>
-                <td>极坐标形式</td>
-              </tr><tr>
-                <td>unit vector</td>
-                <td>单位向量</td>
-              </tr><tr>
-                <td>column vector</td>
-                <td>列向量</td>
-              </tr><tr>
-                <td>perpendicular vectors</td>
-                <td>垂直向量</td>
-              </tr><tr>
-                <td>perpendicular bisector</td>
-                <td>垂直平分线</td>
-              </tr><tr>
-                <td>two-dimensional vector</td>
-                <td>二维向量</td>
-              </tr><tr>
-                <td>magnitude-direction form</td>
-                <td>大小-方向式</td>
-              </tr><tr>
-                <td>obtuse angle</td>
-                <td>钝角</td>
-              </tr><tr>
-                <td>resultant vector</td>
-                <td>和向量；合向量</td>
-              </tr><tr>
-                <td>magnitude</td>
-                <td>大小</td>
-              </tr><tr>
-                <td>three-dimensional vector</td>
-                <td>三维向量</td>
-              </tr><tr>
-                <td>vector subtraction</td>
-                <td>向量减法</td>
-              </tr><tr>
-                <td>parameter</td>
-                <td>参数</td>
-              </tr><tr>
-                <td>perpendicular distance</td>
-                <td>垂直距离</td>
-              </tr><tr>
-                <td>dot product</td>
-                <td>点积</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-7">
-            <h2>10 sequence of numbers</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>nth term</td>
-                <td>第 n 项</td>
-              </tr><tr>
-                <td>sum of first n terms</td>
-                <td>前 n 项和</td>
-              </tr><tr>
-                <td>infinite sequence</td>
-                <td>无穷数列</td>
-              </tr><tr>
-                <td>binomial coefficient</td>
-                <td>二项式系数</td>
-              </tr><tr>
-                <td>sequence</td>
-                <td>数列</td>
-              </tr><tr>
-                <td>finite sequence</td>
-                <td>有限数列</td>
-              </tr><tr>
-                <td>rearrange</td>
-                <td>移项整理</td>
-              </tr><tr>
-                <td>binomial expansion</td>
-                <td>二项式展开</td>
-              </tr><tr>
-                <td>first term</td>
-                <td>首项</td>
-              </tr><tr>
-                <td>factorial</td>
-                <td>阶乘</td>
-              </tr><tr>
-                <td>descending powers of x</td>
-                <td>降幂排列</td>
-              </tr><tr>
-                <td>common ratio</td>
-                <td>公比</td>
-              </tr><tr>
-                <td>geometric sequence</td>
-                <td>等比数列</td>
-              </tr><tr>
-                <td>Pascal’s triangle</td>
-                <td>帕斯卡三角形</td>
-              </tr><tr>
-                <td>reciprocate</td>
-                <td>取倒数</td>
-              </tr><tr>
-                <td>binomial theorem</td>
-                <td>二项式定理</td>
-              </tr><tr>
-                <td>last term</td>
-                <td>末项</td>
-              </tr><tr>
-                <td>arithmetic sequence</td>
-                <td>等差数列</td>
-              </tr><tr>
-                <td>common difference</td>
-                <td>公差</td>
-              </tr><tr>
-                <td>ascending powers of x</td>
-                <td>升幂排列</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-8">
-            <h2>11 complex numbers</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>Cartesian coordinate system</td>
-                <td>笛卡尔坐标系</td>
-              </tr><tr>
-                <td>polar form</td>
-                <td>极坐标形式</td>
-              </tr><tr>
-                <td>imaginary unit</td>
-                <td>虚数单位</td>
-              </tr><tr>
-                <td>real part</td>
-                <td>实部</td>
-              </tr><tr>
-                <td>pure imaginary number</td>
-                <td>纯虚数</td>
-              </tr><tr>
-                <td>complex number</td>
-                <td>复数</td>
-              </tr><tr>
-                <td>real axis</td>
-                <td>实轴</td>
-              </tr><tr>
-                <td>repeated root</td>
-                <td>重根</td>
-              </tr><tr>
-                <td>complex plane</td>
-                <td>复平面</td>
-              </tr><tr>
-                <td>modulus</td>
-                <td>模长</td>
-              </tr><tr>
-                <td>complex conjugate</td>
-                <td>共轭复数</td>
-              </tr><tr>
-                <td>argument</td>
-                <td>辐角</td>
-              </tr><tr>
-                <td>principal argument</td>
-                <td>主辐角</td>
-              </tr><tr>
-                <td>imaginary axis</td>
-                <td>虚轴</td>
-              </tr><tr>
-                <td>imaginary part</td>
-                <td>虚部</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-9">
-            <h2>12 counting principle</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>favourable outcome</td>
-                <td>有利结果</td>
-              </tr><tr>
-                <td>event</td>
-                <td>事件</td>
-              </tr><tr>
-                <td>combination</td>
-                <td>组合</td>
-              </tr><tr>
-                <td>probability</td>
-                <td>概率</td>
-              </tr><tr>
-                <td>counting without replacement</td>
-                <td>无放回计数</td>
-              </tr><tr>
-                <td>distinct objects</td>
-                <td>互不相同物体</td>
-              </tr><tr>
-                <td>conditional probability</td>
-                <td>条件概率</td>
-              </tr><tr>
-                <td>permutation</td>
-                <td>排列</td>
-              </tr><tr>
-                <td>equiprobable</td>
-                <td>等可能</td>
-              </tr><tr>
-                <td>unit digit</td>
-                <td>个位</td>
-              </tr><tr>
-                <td>mutually exclusive cases</td>
-                <td>互斥情况</td>
-              </tr><tr>
-                <td>Venn diagram</td>
-                <td>韦恩图</td>
-              </tr><tr>
-                <td>thousands digit</td>
-                <td>千位</td>
-              </tr><tr>
-                <td>hundreds digit</td>
-                <td>百位</td>
-              </tr><tr>
-                <td>total possible outcome</td>
-                <td>全部可能结果</td>
-              </tr><tr>
-                <td>permutation of r from n</td>
-                <td>从 n 个中选 r 个排列</td>
-              </tr><tr>
-                <td>complement event</td>
-                <td>对立事件</td>
-              </tr><tr>
-                <td>without replacement</td>
-                <td>无放回</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-10">
-            <h2>13 probability</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>Possibility space</td>
-                <td>样本空间</td>
-              </tr><tr>
-                <td>Outcome</td>
-                <td>结果</td>
-              </tr><tr>
-                <td>Event</td>
-                <td>事件</td>
-              </tr><tr>
-                <td>Favourable outcome</td>
-                <td>有利结果</td>
-              </tr><tr>
-                <td>Exhaustive events</td>
-                <td>完备事件组</td>
-              </tr><tr>
-                <td>Empty set</td>
-                <td>空集</td>
-              </tr><tr>
-                <td>Mutually exclusive events</td>
-                <td>互斥事件</td>
-              </tr><tr>
-                <td>Equiprobable</td>
-                <td>等可能的</td>
-              </tr><tr>
-                <td>Union</td>
-                <td>并集</td>
-              </tr><tr>
-                <td>Random selection</td>
-                <td>随机选择</td>
-              </tr><tr>
-                <td>Intersection</td>
-                <td>交集</td>
-              </tr><tr>
-                <td>Conditional probability</td>
-                <td>条件概率</td>
-              </tr><tr>
-                <td>Probability</td>
-                <td>概率 / 几率</td>
-              </tr><tr>
-                <td>Trial</td>
-                <td>单次试验</td>
-              </tr><tr>
-                <td>Dependent events</td>
-                <td>相关事件</td>
-              </tr><tr>
-                <td>Relative frequency</td>
-                <td>相对频率</td>
-              </tr><tr>
-                <td>Complementary event</td>
-                <td>互补事件</td>
-              </tr><tr>
-                <td>disjoint events</td>
-                <td>互斥事件</td>
-              </tr><tr>
-                <td>Independent events</td>
-                <td>独立事件</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-11">
-            <h2>14 statistics</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>Chi-square Test</td>
-                <td>卡方检验</td>
-              </tr><tr>
-                <td>Mode</td>
-                <td>众数</td>
-              </tr><tr>
-                <td>Contingency Table</td>
-                <td>列联表</td>
-              </tr><tr>
-                <td>Sampling</td>
-                <td>抽样</td>
-              </tr><tr>
-                <td>Independence Test</td>
-                <td>独立性检验</td>
-              </tr><tr>
-                <td>Frequency Distribution Table</td>
-                <td>频率分布表</td>
-              </tr><tr>
-                <td>Box-and-Whisker Plot</td>
-                <td>箱线图 / 盒须图</td>
-              </tr><tr>
-                <td>Median</td>
-                <td>中位数</td>
-              </tr><tr>
-                <td>Interquartile Range (IQR)</td>
-                <td>四分位距</td>
-              </tr><tr>
-                <td>Population</td>
-                <td>总体</td>
-              </tr><tr>
-                <td>Paired Data</td>
-                <td>成对数据 / 偶数据</td>
-              </tr><tr>
-                <td>Positive Correlation</td>
-                <td>正相关</td>
-              </tr><tr>
-                <td>Histogram</td>
-                <td>直方图</td>
-              </tr><tr>
-                <td>Categorical Variable</td>
-                <td>分类变量</td>
-              </tr><tr>
-                <td>Variance</td>
-                <td>方差</td>
-              </tr><tr>
-                <td>Sample Size</td>
-                <td>样本容量</td>
-              </tr><tr>
-                <td>Sampling Bias / Error</td>
-                <td>抽样偏差 / 抽样误差</td>
-              </tr><tr>
-                <td>Scatter Plot</td>
-                <td>散点图</td>
-              </tr><tr>
-                <td>Simple Random Sampling</td>
-                <td>简单随机抽样</td>
-              </tr><tr>
-                <td>Linear Regression</td>
-                <td>线性回归</td>
-              </tr><tr>
-                <td>Slope and Intercept</td>
-                <td>斜率与截距</td>
-              </tr><tr>
-                <td>Pie Chart</td>
-                <td>饼图</td>
-              </tr><tr>
-                <td>Residual</td>
-                <td>残差</td>
-              </tr><tr>
-                <td>Least Squares Method</td>
-                <td>最小二乘法</td>
-              </tr><tr>
-                <td>Correlation</td>
-                <td>相关性</td>
-              </tr><tr>
-                <td>Quartile</td>
-                <td>四分位数</td>
-              </tr><tr>
-                <td>Bar Chart</td>
-                <td>条形图</td>
-              </tr><tr>
-                <td>Regression Line</td>
-                <td>回归直线</td>
-              </tr><tr>
-                <td>Mean</td>
-                <td>均值 / 平均数</td>
-              </tr><tr>
-                <td>Correlation Coefficient</td>
-                <td>相关系数</td>
-              </tr><tr>
-                <td>Sample</td>
-                <td>样本</td>
-              </tr><tr>
-                <td>Systematic Sampling</td>
-                <td>系统抽样</td>
-              </tr><tr>
-                <td>Stratified Sampling</td>
-                <td>分层抽样</td>
-              </tr><tr>
-                <td>Range</td>
-                <td>极差</td>
-              </tr><tr>
-                <td>Standard Deviation</td>
-                <td>标准差</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-12">
-            <h2>15 dervative and differential of single variable function</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>Differential</td>
-                <td>微分</td>
-              </tr><tr>
-                <td>Local Extrema</td>
-                <td>极值</td>
-              </tr><tr>
-                <td>Concavity</td>
-                <td>凹凸性（凹 / 凸）</td>
-              </tr><tr>
-                <td>Implicit Differentiation</td>
-                <td>隐函数求导</td>
-              </tr><tr>
-                <td>Tangent Line</td>
-                <td>切线</td>
-              </tr><tr>
-                <td>Absolute Extrema</td>
-                <td>最值</td>
-              </tr><tr>
-                <td>Differentiable</td>
-                <td>可导的 / 可微分的</td>
-              </tr><tr>
-                <td>Power Rule</td>
-                <td>幂法则</td>
-              </tr><tr>
-                <td>Monotonicity</td>
-                <td>单调性</td>
-              </tr><tr>
-                <td>Secant Line</td>
-                <td>割线</td>
-              </tr><tr>
-                <td>maximmum</td>
-                <td>最大值</td>
-              </tr><tr>
-                <td>Linear Approximation</td>
-                <td>线性近似</td>
-              </tr><tr>
-                <td>Quotient Rule</td>
-                <td>除法法则</td>
-              </tr><tr>
-                <td>Differentiability</td>
-                <td>可导性 / 可微性</td>
-              </tr><tr>
-                <td>Inflection Point</td>
-                <td>拐点</td>
-              </tr><tr>
-                <td>Chain Rule</td>
-                <td>链式法则</td>
-              </tr><tr>
-                <td>Product Rule</td>
-                <td>乘法法则</td>
-              </tr><tr>
-                <td>Derivative</td>
-                <td>导数</td>
-              </tr><tr>
-                <td>Rate of Change</td>
-                <td>变化率</td>
-              </tr><tr>
-                <td>minimum</td>
-                <td>最小值</td>
-              </tr><tr>
-                <td>Higher-order Derivative</td>
-                <td>高阶导数</td>
-              </tr><tr>
-                <td>Limit</td>
-                <td>极限</td>
-              </tr><tr>
-                <td>Critical Point</td>
-                <td>临界点</td>
-              </tr><tr>
-                <td>concave up</td>
-                <td>上凹</td>
-              </tr><tr>
-                <td>Normal Line</td>
-                <td>法线</td>
-              </tr></tbody>
-            </table>
-          </section><section id="list-13">
-            <h2>16 definite integral</h2>
-            <table>
-              <thead><tr><th class="col-eng">English</th><th>Chinese</th></tr></thead>
-              <tbody><tr>
-                <td>Riemann Sum</td>
-                <td>黎曼和</td>
-              </tr><tr>
-                <td>Frustum of a Pyramid</td>
-                <td>棱台</td>
-              </tr><tr>
-                <td>Integration by Parts</td>
-                <td>分部积分法</td>
-              </tr><tr>
-                <td>Indefinite Integral</td>
-                <td>不定积分</td>
-              </tr><tr>
-                <td>Cross-section</td>
-                <td>横截面</td>
-              </tr><tr>
-                <td>Circular Cone</td>
-                <td>圆锥</td>
-              </tr><tr>
-                <td>Substitution Method</td>
-                <td>换元积分法</td>
-              </tr><tr>
-                <td>Integrand</td>
-                <td>被积函数</td>
-              </tr><tr>
-                <td>Upper Limit of Integration</td>
-                <td>积分上限</td>
-              </tr><tr>
-                <td>Lower Limit of Integration</td>
-                <td>积分下限</td>
-              </tr><tr>
-                <td>Frustum of a Cone</td>
-                <td>圆台</td>
-              </tr><tr>
-                <td>Volume of Revolution</td>
-                <td>旋转体体积</td>
-              </tr><tr>
-                <td>Antiderivative</td>
-                <td>反导数 / 原函数</td>
-              </tr><tr>
-                <td>Area under a curve</td>
-                <td>曲线下方的面积</td>
-              </tr><tr>
-                <td>Fundamental Theorem of Calculus</td>
-                <td>微积分基本定理</td>
-              </tr><tr>
-                <td>Sphere</td>
-                <td>球体</td>
-              </tr><tr>
-                <td>Definite Integral</td>
-                <td>定积分</td>
-              </tr><tr>
-                <td>Triangular Pyramid</td>
-                <td>三棱锥</td>
-              </tr><tr>
-                <td>Closed Figure</td>
-                <td>封闭图形</td>
-              </tr></tbody>
-            </table>
-          </section>
+    ${sectionsHtml}
 
     <a class="back-to-top" href="#top">&uarr; Back to top</a>
   </div>
+</body>
+</html>`;
+
+        const blob = new Blob([docHtml], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'all_word_lists.html';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error("Export all as HTML failed:", err);
+        alert("Failed exporting all word lists as HTML:\n" + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      }
+    }
+
+    function sanitizeFilename(name) {
+      return String(name)
+        .replace(/[\\/:*?"<>|]/g, '_')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 120) || 'word_list';
+    }
+
+    /* ============================================================
+       FILE PARSING / NEW LIST CREATION
+       ============================================================ */
+
+    document.getElementById('excelFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+
+          parsedVocabularyData = [];
+          const tbody = document.getElementById('previewBody');
+          tbody.innerHTML = '';
+
+          for(let i = 0; i < rows.length; i++) {
+            if (!rows[i] || rows[i].length < 2) continue;
+
+            const eng = rows[i][0] ? String(rows[i][0]).trim() : '';
+            const chn = rows[i][1] ? String(rows[i][1]).trim() : '';
+
+            if (eng.toLowerCase() === 'english' || chn.toLowerCase() === 'chinese' || eng.toLowerCase() === 'vocabulary') {
+              continue;
+            }
+
+            if (eng) {
+              parsedVocabularyData.push({ english: eng, chinese: chn });
+
+              const tr = document.createElement('tr');
+              tr.className = "hover:bg-slate-50/80 transition-colors";
+
+              const tdEng = document.createElement('td');
+              tdEng.className = "px-4 py-3 font-medium text-slate-900 border-r border-slate-100";
+              tdEng.textContent = eng;
+
+              const tdChn = document.createElement('td');
+              tdChn.className = "px-4 py-3 text-slate-500 font-mono text-xs sm:text-sm";
+              tdChn.textContent = chn;
+
+              tr.appendChild(tdEng);
+              tr.appendChild(tdChn);
+              tbody.appendChild(tr);
+            }
+          }
+
+          if(parsedVocabularyData.length > 0) {
+            document.getElementById('fileFeedback').style.setProperty('display', 'flex', 'important');
+            document.getElementById('itemCount').textContent = parsedVocabularyData.length;
+            const container = document.getElementById('previewContainer');
+            container.style.setProperty('display', 'block', 'important');
+            container.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            alert("Could not extract any vocabulary items. Verify Column A is English and Column B is Chinese.");
+          }
+        } catch (err) {
+          alert("Excel processing error: " + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById('uploadBtn').addEventListener('click', async function() {
+      const listName = document.getElementById('listName').value.trim();
+      if (!listName) {
+        alert("Please enter a name for this Word List before saving.");
+        return;
+      }
+
+      if (!parsedVocabularyData.length) {
+        alert("There are no vocabulary items to save.");
+        return;
+      }
+
+      this.disabled = true;
+      this.textContent = "Uploading to database...";
+
+      try {
+        const nextOrderIndex = existingLists.length;
+
+        const { data: listData, error: listError } = await rQuizAdminClient
+          .from('ast_word_lists')
+          .insert([{ list_name: listName, sort_order: nextOrderIndex }])
+          .select()
+          .single();
+
+        if (listError) throw listError;
+
+        const listId = listData.id;
+        const bulkPayload = parsedVocabularyData.map(item => ({
+          list_id: listId,
+          english: item.english,
+          chinese: item.chinese
+        }));
+
+        const { error: vocabError } = await rQuizAdminClient
+          .from('ast_vocabularies').insert(bulkPayload);
+
+        if (vocabError) throw vocabError;
+
+        alert(`Successfully saved "${listName}" with ${bulkPayload.length} terms!`);
+        window.location.reload();
+
+      } catch (err) {
+        console.error(err);
+        alert("Database upload failed: " + err.message);
+        this.disabled = false;
+        this.textContent = "Save Word List to Database";
+      }
+    });
+
+    /* ============================================================
+       UTILITY FUNCTIONS
+       ============================================================ */
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeJs(str) {
+      return String(str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n')
+        .replace(/</g, '\\x3c')
+        .replace(/>/g, '\\x3e');
+    }
+  </script>
+  <script>
+    document.getElementById('exportAllBtn').addEventListener('click', exportAllListsAsHTML);
+  </script>
 </body>
 </html>

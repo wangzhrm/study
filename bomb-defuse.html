@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Defuse Together (online)</title>
+<style>
+:root{--bg:#14171c;--panel:#232830;--metal:#3a414c;--ink:#e9edf2;--dim:#9aa4b2;--red:#e5484d;--blue:#3b82f6;--green:#22c55e;--black:#0a0a0a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Trebuchet MS",Verdana,sans-serif;min-height:100vh;user-select:none;-webkit-user-select:none;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+h1,h2,h3{margin:.2em 0;font-family:Impact,"Arial Black",sans-serif;letter-spacing:.03em;font-weight:400}
+button{font:inherit;cursor:pointer}
+.view{display:none;max-width:980px;margin:0 auto;padding:16px}.view.on{display:block}
+.home{text-align:center;padding-top:8vh}.home h1{font-size:clamp(40px,9vw,80px);color:var(--red)}
+.home p{max-width:520px;margin:12px auto;color:var(--dim)}
+.big{display:block;width:min(340px,90%);margin:14px auto;padding:16px;border:0;border-radius:10px;font-size:20px;font-weight:700;background:var(--red);color:#fff}
+.big.alt{background:var(--blue)}
+#code{width:min(340px,90%);padding:14px;font:700 34px "Courier New",monospace;text-align:center;text-transform:uppercase;letter-spacing:.3em;border-radius:10px;border:3px solid var(--metal);background:var(--black);color:var(--ink);user-select:text}
+#err{color:#fca5a5;min-height:24px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--black);border:3px solid var(--metal);border-radius:12px;padding:10px 18px}
+#clock{font:700 clamp(44px,10vw,72px)/1 "Courier New",monospace;color:var(--red);text-shadow:0 0 14px #e5484d88}
+#strikes{font-size:34px;letter-spacing:6px;color:#444}#strikes b{color:var(--red);font-weight:400}
+.side{display:flex;gap:14px;flex-wrap:wrap;margin:12px 0;color:var(--dim)}
+.tag{background:var(--panel);border:2px solid var(--metal);border-radius:8px;padding:6px 14px}
+.tag b{color:var(--ink);font:700 22px "Courier New",monospace}
+.mods{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.mod{position:relative;background:var(--metal);border:3px solid #5a6472;border-radius:12px;padding:14px;min-height:270px}
+.mod h3{font-size:15px;color:var(--dim)}
+.led{position:absolute;top:12px;right:12px;width:16px;height:16px;border-radius:50%;background:#333;border:2px solid #111}
+.mod.done .led{background:var(--green);box-shadow:0 0 10px var(--green)}
+.mod.done .live{opacity:.35;pointer-events:none}
+.wire{height:36px;display:flex;align-items:center;cursor:pointer;margin:6px 0}
+.wire i{display:block;width:100%;height:10px;border-radius:5px;box-shadow:0 2px 3px #0008}
+.wire.cut i{width:38%;opacity:.5}
+#btnWrap{display:flex;align-items:center;justify-content:center;gap:20px;padding-top:12px}
+.bigbtn{width:130px;height:130px;border-radius:50%;border:6px solid #111;font:700 16px Verdana,sans-serif;color:#111;touch-action:none;box-shadow:0 6px 0 #0007}
+.bigbtn:active{transform:translateY(4px);box-shadow:0 2px 0 #0007}
+.strip{width:22px;height:130px;border-radius:6px;background:#222;border:2px solid #111}
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.key{height:74px;font-size:38px;background:#d9d2b8;color:#222;border:3px solid #111;border-radius:8px}
+.key.ok{background:var(--green);color:#052e12}
+.shake{animation:sh .35s}@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.flash{animation:fl .5s}@keyframes fl{0%{background:#7f1d1d}}
+#over{position:fixed;inset:0;background:#000d;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:9}
+#over.on{display:flex}#over h1{font-size:clamp(44px,12vw,100px)}
+.paper{background:#f4efe1;color:#222;border-radius:6px;padding:18px 22px;margin:14px 0;box-shadow:0 4px 12px #0008;user-select:text;-webkit-user-select:text}
+.paper h2{border-bottom:3px solid #222;font-size:28px}.paper h3{font-size:20px;margin-top:16px}
+.paper li{margin:4px 0}.paper ol{padding-left:22px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.col{border:2px solid #222;border-radius:6px;padding:6px;text-align:center}.col div{font-size:30px;line-height:1.4}
+.link{background:none;border:0;color:var(--dim);text-decoration:underline;margin:10px 0}
+</style></head><body>
+
+<section class="view home on" id="home">
+<h1>DEFUSE TOGETHER</h1>
+<p>Every game gets its own bomb <b>and its own rulebook</b>, saved online under a 4-letter game code. Last game's tricks won't work this time!</p>
+<button class="big" id="goBomb">I'm the Defuser (start a game)</button>
+<div style="margin-top:26px;color:var(--dim)">Experts: type the code the Defuser reads out.</div>
+<input id="code" maxlength="4" placeholder="CODE" autocomplete="off">
+<button class="big alt" id="goManual">I'm an Expert (load manual)</button>
+<div id="err"></div>
+</section>
+
+<section class="view" id="bombV">
+<div class="top"><div id="clock">5:00</div><div id="strikes"></div></div>
+<div class="side"><div class="tag">Game code <b id="gc"></b></div><div class="tag">Serial number <b id="serial"></b></div><div class="tag">Batteries <b id="batt"></b></div></div>
+<div class="mods" id="mods"></div>
+<button class="link" id="quit">Quit to menu</button>
+</section>
+
+<section class="view" id="manualV">
+<div class="paper"><h2>Bomb Defusal Manual <span id="mcode"></span></h2>
+<p>This rulebook belongs to <b>this game code only</b>. Ask the Defuser: <i>"How many wires? What colors, top to bottom? What does the serial number end with?"</i> The bomb has 3 modules, and 3 strikes ends the game. Each strike makes the clock run faster.</p>
+<p><b>Serial number:</b> look at the <b>last digit</b> (ignore letters). It's odd (1, 3, 5, 7, 9) or even (0, 2, 4, 6, 8).</p></div>
+<div id="manDyn"></div>
+<button class="link" id="backM">Back to menu</button>
+</section>
+
+<div id="over"><h1 id="ot"></h1><p id="os"></p><button class="big" id="again">New game (new rulebook)</button><button class="big alt" id="menu">Menu</button></div>
+
+<script>
+// ---- Supabase settings (publishable key only; safe to be in the page) ----
+const SB_URL='https://btwdbphheotbqrmbswgk.supabase.co';
+const SB_KEY='sb_publishable_9lY3A1HrgERNIC597NEAKQ_YTCmkh2k';
+const H={apikey:SB_KEY,'Content-Type':'application/json'};
+async function saveGame(code,rules){const r=await fetch(SB_URL+'/rest/v1/defuse_games',{method:'POST',headers:{...H,Prefer:'return=minimal'},body:JSON.stringify({code,rules})});if(r.status===409)return false;if(!r.ok)throw new Error(await r.text());return true}
+async function loadGame(code){const r=await fetch(`${SB_URL}/rest/v1/defuse_games?code=eq.${code}&select=rules`,{headers:H});if(!r.ok)throw new Error('load');const j=await r.json();return j[0]&&j[0].rules}
+
+const $=s=>document.querySelector(s),rnd=n=>Math.floor(Math.random()*n),pick=a=>a[rnd(a.length)];
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+const CL={red:'#e5484d',blue:'#3b82f6',yellow:'#facc15',white:'#f1f5f9',black:'#0a0a0a',green:'#22c55e'};
+const W=['red','blue','yellow','white','black'],ORD=['first','second','third','fourth','fifth'];
+const SYM=['★','☽','♠','♣','✿','☂','⚓','✂','☎','♥','♦','✈'];
+let AC,G;
+function beep(f,d,t='square',v=.04){try{AC=AC||new AudioContext();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===id))}
+
+// ---- rulebook generator: a new one every game ----
+function genW(n){const T=['none','one','many','last','first','odd','even'],r=[];
+  for(let i=0;i<3;i++){const t=pick(T),x=pick(W),oe=t==='odd'||t==='even';let a=['nth',rnd(n)];
+    if(!oe&&t!=='none'&&Math.random()<.6)a=[pick(['lastc','firstc']),x];r.push({c:oe?[t]:[t,x],a})}
+  return{r,d:['nth',rnd(n)]}}
+function genB(){const C=['red','blue','yellow','white'],L=['ABORT','HOLD','PRESS','DETONATE'],A=()=>pick(['tap','hold']),d=shuf([0,1,2,3,4,5,6,7,8,9]);
+  return{r:[{c:pick(C),l:pick(L),a:A()},{b:'>1',l:pick(L),a:A()},{c:pick(C),a:A()},{b:'0',l:pick(L),a:A()}],d:A(),dg:{blue:d[0],white:d[1],yellow:d[2],other:d[3]}}}
+function genRules(){const s=shuf(SYM);return{w:{3:genW(3),4:genW(4),5:genW(5)},b:genB(),s:[0,1,2].map(()=>shuf(SYM).slice(0,7))}}
+function newCode(){const L='ABCDEFGHJKLMNPQRSTUVWXYZ';return Array.from({length:4},()=>pick(L)).join('')}
+
+// ---- rule evaluation ----
+function wOK(c,w,odd){const[t,x]=c,k=w.filter(y=>y===x).length;return t==='none'?!k:t==='one'?k===1:t==='many'?k>1:t==='last'?w[w.length-1]===x:t==='first'?w[0]===x:t==='odd'?odd:!odd}
+function wAns(a,w){return a[0]==='nth'?a[1]:a[0]==='lastc'?w.lastIndexOf(a[1]):w.indexOf(a[1])}
+function bOK(z,col,lab,batt){return(!z.c||z.c===col)&&(!z.l||z.l===lab)&&(!z.b||(z.b==='>1'?batt>1:batt===0))}
+
+// ---- manual text built from the same rules ----
+function cTxt([t,x]){return{none:`there are no ${x} wires`,one:`there is exactly one ${x} wire`,many:`there is more than one ${x} wire`,last:`the last wire is ${x}`,first:`the first wire is ${x}`,odd:"the serial number's last digit is odd",even:"the serial number's last digit is even"}[t]}
+function aTxt(a,n){return a[0]==='nth'?`cut the <b>${a[1]===n-1?'last':ORD[a[1]]}</b> wire`:`cut the <b>${a[0]==='lastc'?'last':'first'} ${a[1]}</b> wire`}
+function manual(R){
+  let h=`<div class="paper"><h2>Module 1: Wires</h2><p>Count wires <b>top to bottom</b>. Use the section for the number of wires and the <b>first rule that fits</b>. Cut one wire.</p>`;
+  [3,4,5].forEach(n=>{const q=R.w[n];h+=`<h3>${n} wires</h3><ol>`+q.r.map((z,i)=>`<li>${i?'Otherwise, if':'If'} ${cTxt(z.c)}: ${aTxt(z.a,n)}.</li>`).join('')+`<li>Otherwise: ${aTxt(q.d,n)}.</li></ol>`});
+  h+=`</div><div class="paper"><h2>Module 2: The Button</h2><p>Ask for the button's <b>color</b>, its <b>word</b> and the <b>batteries</b> on the bomb. Use the <b>first rule that fits</b>. <b>Tap</b> = press and let go right away.</p><ol>`;
+  h+=R.b.r.map((z,i)=>{const p=[];if(z.c)p.push(`the button is ${z.c}`);if(z.l)p.push(`it says ${z.l}`);if(z.b)p.push(z.b==='>1'?'the bomb has more than 1 battery':'the bomb has no batteries');return `<li>${i?'Otherwise, if':'If'} ${p.join(' and ')}: <b>${z.a}</b>.</li>`}).join('')+`<li>Otherwise: <b>${R.b.d}</b>.</li></ol>`;
+  const g=R.b.dg;h+=`<h3>If you must hold</h3><p>Keep holding. A colored strip lights up. Let go when that digit is <b>anywhere on the clock</b> (4:<u>4</u>7 has a 4):</p><ol style="list-style:none;padding:0"><li><b>Blue strip:</b> release on a <b>${g.blue}</b>.</li><li><b>White strip:</b> release on a <b>${g.white}</b>.</li><li><b>Yellow strip:</b> release on a <b>${g.yellow}</b>.</li><li><b>Any other color:</b> release on a <b>${g.other}</b>.</li></ol></div>`;
+  h+=`<div class="paper"><h2>Module 3: Symbols</h2><p>The Defuser sees 4 symbols. Find the <b>one column</b> holding all 4, then press them in that column's order, <b>top to bottom</b>. Wrong press = strike.</p><div class="cols">`+R.s.map(c=>`<div class="col">${c.map(s=>`<div>${s}</div>`).join('')}</div>`).join('')+`</div></div>`;
+  return h}
+
+// ---- menus ----
+const err=m=>$('#err').textContent=m||'';
+$('#backM').onclick=$('#menu').onclick=()=>{stop();$('#over').classList.remove('on');show('home')};
+$('#quit').onclick=()=>{stop();show('home')};
+$('#again').onclick=()=>{$('#over').classList.remove('on');startGame()};
+$('#goBomb').onclick=()=>{AC=AC||new (window.AudioContext||window.webkitAudioContext)();startGame()};
+$('#goManual').onclick=async()=>{const c=$('#code').value.trim().toUpperCase();err();
+  if(!/^[A-Z]{4}$/.test(c))return err('Enter the 4-letter game code.');
+  $('#goManual').textContent='Loading…';
+  try{const R=await loadGame(c);if(!R)err('No game with that code (games last 24 hours). Check the letters.');else{$('#manDyn').innerHTML=manual(R);$('#mcode').textContent='· '+c;show('manualV');scrollTo(0,0)}}
+  catch(e){err('Could not reach the game server. Check your internet connection.')}
+  $('#goManual').textContent="I'm an Expert (load manual)"};
+function stop(){if(G){G.over=true;clearInterval(G.iv)}}
+async function startGame(){
+  err();const b=$('#goBomb');b.textContent='Creating game…';let code,R;
+  try{for(let i=0;i<6;i++){code=newCode();R=genRules();if(await saveGame(code,R))break;code=null}}catch(e){code=null}
+  b.textContent="I'm the Defuser (start a game)";
+  if(!code){show('home');return err('Could not save the game online. Check your internet connection and try again.')}
+  play(code,R)}
+
+// ---- the bomb ----
+function play(code,R){
+  stop();const L='ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const serial=pick(L)+pick(L)+rnd(10)+pick(L)+rnd(10)+rnd(10);
+  G={t:300,strikes:0,left:3,over:false,last:300,serial,batt:rnd(5),R};
+  const odd=+serial.match(/\d/g).pop()%2===1;
+  $('#gc').textContent=code;$('#serial').textContent=serial;$('#batt').textContent=G.batt;
+  $('#mods').innerHTML='';drawStrikes();$('#clock').textContent='5:00';
+  $('#mods').append(wires(odd),button(),symbols());
+  show('bombV');scrollTo(0,0);G.iv=setInterval(tick,100)}
+function tick(){if(G.over)return;G.t-=.1*(1+.25*G.strikes);const s=Math.max(0,Math.ceil(G.t));
+  if(s!==G.last){G.last=s;beep(s<30?1400:1000,.05)}$('#clock').textContent=clock();if(G.t<=0)end(false,'Time ran out!')}
+function clock(){const s=Math.max(0,Math.ceil(G.t));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function drawStrikes(){$('#strikes').innerHTML=[0,1,2].map(i=>i<G.strikes?'<b>✖</b>':'✖').join('')}
+function strike(el){if(G.over)return;G.strikes++;drawStrikes();beep(110,.45,'sawtooth',.1);
+  if(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake')}
+  document.body.classList.remove('flash');void document.body.offsetWidth;document.body.classList.add('flash');
+  if(G.strikes>=3)end(false,'Three strikes!')}
+function solved(m){if(G.over)return;m.classList.add('done');beep(880,.15,'sine',.08);if(--G.left===0)end(true)}
+function end(win,why){G.over=true;clearInterval(G.iv);
+  const t=$('#ot');t.textContent=win?'BOMB DEFUSED!':'BOOM!';t.style.color=win?'var(--green)':'var(--red)';
+  $('#os').textContent=win?'Great teamwork! Time left: '+clock():why+' Next game has a brand-new rulebook, so Experts must load the new code.';
+  if(win)[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.2,'sine',.08),i*150));else{beep(70,1,'sawtooth',.2);beep(50,1.2,'square',.15)}
+  $('#over').classList.add('on')}
+function mod(t){const m=document.createElement('div');m.className='mod';m.innerHTML=`<div class="led"></div><h3>${t}</h3><div class="live"></div>`;return m}
+
+function wires(odd){
+  const n=3+rnd(3),w=Array.from({length:n},()=>pick(W)),q=G.R.w[n];
+  const hit=q.r.find(z=>wOK(z.c,w,odd)),ans=wAns(hit?hit.a:q.d,w);
+  const m=mod('Wires'),L=m.querySelector('.live');
+  w.forEach((col,i)=>{const d=document.createElement('div');d.className='wire';d.innerHTML=`<i style="background:${CL[col]};${col==='black'?'outline:1px solid #555':''}"></i>`;
+    d.onclick=()=>{if(G.over||d.classList.contains('cut'))return;d.classList.add('cut');beep(300,.08);i===ans?solved(m):strike(m)};L.append(d)});
+  return m}
+
+function button(){
+  const col=pick(['red','blue','yellow','white']),lab=pick(['ABORT','HOLD','PRESS','DETONATE']),B=G.R.b;
+  const hit=B.r.find(z=>bOK(z,col,lab,G.batt)),hold=(hit?hit.a:B.d)==='hold';
+  const strip=pick(['blue','white','yellow','red','green']),digit=String(B.dg[strip]!==undefined?B.dg[strip]:B.dg.other);
+  const m=mod('Button'),L=m.querySelector('.live');
+  L.innerHTML=`<div id="btnWrap"><button class="bigbtn" style="background:${CL[col]}">${lab}</button><div class="strip"></div></div>`;
+  const b=L.querySelector('button'),st=L.querySelector('.strip');let t0=0,tm;
+  b.onpointerdown=e=>{if(G.over)return;e.preventDefault();b.setPointerCapture(e.pointerId);t0=Date.now();tm=setTimeout(()=>st.style.background=CL[strip],350)};
+  b.onpointerup=()=>{if(!t0||G.over)return;clearTimeout(tm);const held=Date.now()-t0>=350;t0=0;st.style.background='#222';
+    if(!held)hold?strike(m):solved(m);else if(!hold)strike(m);else clock().includes(digit)?solved(m):strike(m)};
+  b.oncontextmenu=e=>e.preventDefault();return m}
+
+function symbols(){
+  const C=G.R.s;let pk,ci,tries=0;
+  do{ci=rnd(3);pk=shuf(C[ci]).slice(0,4);tries++}while(C.filter(c=>pk.every(s=>c.includes(s))).length!==1&&tries<2000);
+  const order=[...pk].sort((a,b)=>C[ci].indexOf(a)-C[ci].indexOf(b));let step=0;
+  const m=mod('Symbols'),L=m.querySelector('.live');L.innerHTML='<div class="keys"></div>';
+  shuf(pk).forEach(s=>{const k=document.createElement('button');k.className='key';k.textContent=s;
+    k.onclick=()=>{if(G.over||k.classList.contains('ok'))return;
+      if(s===order[step]){k.classList.add('ok');step++;beep(660,.08,'sine');if(step===4)solved(m)}else strike(k)};L.firstChild.append(k)});
+  return m}
+</script></body></html>

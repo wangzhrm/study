@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vocab Arena · Host Console</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--card:#1e1e40;--acc:#ffd54a;--ok:#3ddc97}
+*{box-sizing:border-box}
+body{margin:0;padding:18px;font-family:"Trebuchet MS",system-ui,sans-serif;background:radial-gradient(circle at 20% 0,#2f2270,#12122a 60%) fixed;color:#f3f3ff}
+h1{margin:0;font-size:30px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-top:16px}
+.c{background:var(--card);border-radius:16px;padding:16px;border:1px solid #3a3a70}
+.c h2{margin:0 0 10px;font-size:17px;color:var(--acc)}
+.sc{max-height:340px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:5px;border-bottom:1px solid #2f2f5c;text-align:left}
+input{background:#12122a;border:1px solid #444a8a;color:#fff;border-radius:8px;padding:6px 8px;width:100%}
+button{background:#3a3a80;color:#fff;border:0;border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:bold}
+button:hover{filter:brightness(1.25)}button:disabled{opacity:.4;cursor:not-allowed}
+.go{background:linear-gradient(90deg,#ff4d8d,#ff9f43);font-size:20px;padding:14px 28px;width:100%;margin-top:10px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#555;margin-right:8px}
+.dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.row{display:flex;gap:10px;align-items:center;margin:8px 0}.row label{flex:1;font-size:14px}.row input{width:80px}
+#vb input{min-width:90px}#vb td:first-child input{min-width:160px}
+#ov{position:fixed;inset:0;background:#12122a;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;z-index:9}
+#ov input{width:240px}
+#lv{display:none;margin-top:16px}
+#lph{font-size:24px;font-weight:bold}
+</style></head><body>
+<div id="ov"><h1>🎮 Vocab Arena</h1><input id="lu" placeholder="Admin username"><input id="lp" type="password" placeholder="Password" onkeydown="if(event.key=='Enter')lg()"><button onclick="lg()">Log in</button></div>
+
+<h1>🎮 Vocab Arena · Host Console</h1>
+<div class="g">
+ <div class="c"><h2>Students (<span id="onc">0</span> online)</h2>
+  <div class="sc"><table><tr><th>Username</th><th>Password</th></tr><tbody id="st"></tbody></table></div></div>
+ <div class="c" style="grid-column:span 2"><h2>Questions (<span id="vc">0</span> complete)</h2>
+  <div class="row"><input type="file" id="xl" accept=".xlsx,.xls" style="width:auto"><small>Column A = question, B = <b>correct</b> option, C &amp; D = wrong options. The correct option is shuffled on the player page.</small></div>
+  <div class="sc"><table><tr><th>Question</th><th>✔ Correct (2nd)</th><th>Option 3</th><th>Option 4</th><th></th></tr><tbody id="vb"></tbody></table></div>
+  <div class="row"><button onclick="vocab.push(['','','','']);rv();sv()">+ Add row</button><button onclick="if(confirm('Clear all questions?')){vocab=[['','','','']];rv();sv()}">Clear all</button></div></div>
+ <div class="c"><h2>Game settings</h2>
+  <div class="row"><label>Explore phase (minutes)</label><input id="em" type="number" min="0.5" step="0.5" value="2"></div>
+  <div class="row"><label>Slaughter phase (minutes) — "x"</label><input id="sm" type="number" min="0.5" step="0.5" value="3"></div>
+  <div class="row"><label>Number of boxes on map</label><input id="nb" type="number" min="3" value="12"></div>
+  <small>Only students who are logged in (green dot) when you press Start will play. Players who disconnect stay in the game (static) and can log in again to resume.</small>
+  <button class="go" id="go" onclick="start()">🚀 START GAME</button></div>
+</div>
+<div class="c" id="lv"><h2>Live game</h2><div id="lph"></div>
+ <div class="row"><button onclick="fin()">End game now</button><button onclick="G=null;live()">Back to lobby (new round)</button></div>
+ <div class="g"><div class="sc"><table><tr><th>#</th><th>Player</th><th>Marks</th><th>Status</th></tr><tbody id="sb"></tbody></table></div><div id="lg" class="sc"></div></div></div>
+
+<script>
+const sb=supabase.createClient('https://btwdbphheotbqrmbswgk.supabase.co','sb_publishable_9lY3A1HrgERNIC597NEAKQ_YTCmkh2k');
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cl=(v,a,b)=>Math.min(b,Math.max(a,v)),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const fmt=r=>{const s=Math.ceil(r/1000);return (s/60|0)+':'+String(s%60).padStart(2,'0')};
+let vocab=JSON.parse(localStorage.va_vocab||'[["","","",""]]').map(r=>[0,1,2,3].map(j=>r[j]||'')),students=[],G=null,ch;
+if(!vocab.length)vocab=[['','','','']];
+const sv=()=>localStorage.va_vocab=JSON.stringify(vocab);
+const full=r=>r.every(c=>String(c).trim());
+const tx=(e,p)=>ch.send({type:'broadcast',event:e,payload:p});
+
+function lg(){if($('lu').value==='wangzhrm'&&$('lp').value==='wang123'){sessionStorage.va_host=1;$('ov').remove();boot()}else alert('Wrong credentials')}
+
+function rv(){$('vb').innerHTML=vocab.map((r,i)=>'<tr>'+[0,1,2,3].map(j=>`<td><input value="${esc(r[j])}" oninput="vocab[${i}][${j}]=this.value;sv();cnt()"></td>`).join('')+`<td><button onclick="vocab.splice(${i},1);if(!vocab.length)vocab=[['','','','']];rv();sv()">✕</button></td></tr>`).join('');cnt()}
+const cnt=()=>$('vc').textContent=vocab.filter(full).length;
+
+$('xl').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+ r.onload=q=>{const wb=XLSX.read(new Uint8Array(q.target.result),{type:'array'});
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
+  const add=rows.map(r=>[0,1,2,3].map(j=>r[j]==null?'':String(r[j]).trim())).filter(full);
+  vocab=vocab.filter(r=>r.some(c=>c)).concat(add);if(!vocab.length)vocab=[['','','','']];rv();sv();e.target.value='';alert(add.length+' questions imported (rows need all 4 columns filled).')};
+ r.readAsArrayBuffer(f)};
+
+const online=()=>new Set(Object.keys(ch?ch.presenceState():{}).filter(k=>k!=='HOST'));
+const pwOf=r=>{const k=Object.keys(r).find(k=>/pass|pwd|pin/i.test(k));return k?r[k]:null};
+async function loadStudents(){
+ const a=await sb.from('student_accounts').select('username,password').order('username');
+ const b=await sb.from('trading_students').select('*').order('username');
+ if(a.error)alert('Load student_accounts failed: '+a.error.message);
+ if(b.error)alert('Load trading_students failed: '+b.error.message);
+ students=(a.data||[]).map(s=>({username:s.username,password:s.password,src:''}))
+  .concat((b.data||[]).map(s=>({username:s.username,password:pwOf(s)??'(no password column found)',src:'Trading Sim'})));
+ rs()}
+function rs(){const on=online();
+ $('st').innerHTML=students.map(s=>`<tr><td><span class="dot ${on.has(s.username)?'on':''}"></span>${esc(s.username)}${s.src?` <small style="background:#e0a800;color:#332;padding:1px 6px;border-radius:5px">${s.src}</small>`:''}</td><td>${esc(s.password)}</td></tr>`).join('');
+ $('onc').textContent=on.size+' / '+students.length;if(G)live()}
+
+function boot(){rv();
+ loadStudents();
+ ch=sb.channel('vocab-arena',{config:{presence:{key:'HOST'},broadcast:{self:false}}});
+ const act=()=>G&&(G.ph==='explore'||G.ph==='slaughter');
+ ch.on('presence',{event:'sync'},rs)
+ .on('broadcast',{event:'pos'},({payload:m})=>{const p=G&&G.P[m.u];if(p&&G.ph!=='ended'){p.x=cl(m.x,0,G.W);p.y=cl(m.y,0,G.H)}})
+ .on('broadcast',{event:'open'},({payload:m})=>{
+  if(!act())return;const p=G.P[m.u],b=G.boxes[m.b];if(!p||!b)return;
+  if(m.x!=null){p.x=cl(m.x,0,G.W);p.y=cl(m.y,0,G.H)}
+  if(b.d.includes(m.u))return tx('res',{u:m.u,b:m.b,er:'You already answered this box!'});
+  if(dist(p,b)>200)return tx('res',{u:m.u,er:'Too far from the box'});
+  p.b=m.b;tx('q',{u:m.u,b:m.b,w:b.w,o:b.o})})
+ .on('broadcast',{event:'ans'},({payload:m})=>{
+  if(!act())return;const p=G.P[m.u],b=p&&G.boxes[m.b];if(!b||p.b!==m.b||b.d.includes(m.u))return;
+  p.b=null;b.d.push(m.u);const ok=b.o[m.i]===b.c;p.s=Math.max(0,p.s+(ok?10:-10));
+  tx('res',{u:m.u,b:m.b,ok,c:b.c,s:p.s})})
+ .on('broadcast',{event:'chal'},({payload:m})=>{
+  if(!G||G.ph!=='slaughter')return;const a=G.P[m.u],t=G.P[m.t],now=Date.now();
+  if(!a||!t||a.o||t.o||m.u===m.t||now<a.cd||dist(a,t)>220)return;
+  a.cd=now+1200;const w=a.s>t.s?a:t.s>a.s?t:Math.random()<.5?a:t,l=w===a?t:a;
+  w.s+=10;l.s=Math.max(0,l.s-10);l.o=1;
+  const wn=w===a?m.u:m.t,ln=w===a?m.t:m.u;
+  G.duels.push({a:m.u,t:m.t,w:wn});
+  tx('duel',{a:m.u,t:m.t,w:wn});ev(`⚔️ ${wn} defeated ${ln}!`)})
+ .subscribe(s=>{console.log('[VocabArena] host channel status:',s);if(s==='SUBSCRIBED')ch.track({host:1})});
+ setInterval(tick,200)}
+
+function start(){
+ const v=vocab.filter(full).map(r=>r.map(c=>String(c).trim()));
+ if(!v.length)return alert('Add at least 1 complete question (question + correct option + 2 wrong options).');
+ const names=[...online()];if(!names.length)return alert('No students are logged in yet.');
+ const W=2400,H=1600,n=+$('nb').value||12,boxes=[],P={};
+ for(let i=0;i<n;i++){const w=v[Math.random()*v.length|0];
+  boxes.push({x:150+Math.random()*(W-300),y:150+Math.random()*(H-300),w:w[0],c:w[1],o:shuf([w[1],w[2],w[3]]),d:[]})}
+ // Roster is fixed at start: players are never removed if they disconnect.
+ const AVS=shuf([...'🐱🐶🦊🐼🐸🐵🦁🐯🐰🐨🐷🐙🦄🐧🐢🦉🐻🐮🐔🦋🐞🐳🐬🦈🐝🦀🐊🦒🦓🐘🦔🦜🦩🐲🐺🦖🦕🐌🦑']),H0=Math.random()*360,HS=shuf(names.map((_,i)=>i));
+ // Random look per round, unrelated to the student's name
+ names.forEach((u,i)=>P[u]={x:200+Math.random()*(W-400),y:200+Math.random()*(H-400),s:100,o:0,cd:0,b:null,a:AVS[i%AVS.length],h:Math.round((H0+HS[i]*360/names.length)%360)});
+ G={ph:'explore',e:Date.now()+(+$('em').value||2)*60000,slay:(+$('sm').value||3)*60000,W,H,boxes,P,log:[],duels:[]};
+ ev('🚀 Game started with '+names.length+' players!')}
+
+function ev(t){G.log.unshift(t);tx('ev',{t});$('lg').innerHTML=G.log.slice(0,15).map(l=>`<div>${esc(l)}</div>`).join('')}
+function ensureBoxes(){
+ // Keep a healthy supply of unopened boxes during explore, so players are never left with nothing to open.
+ if(!G||G.ph!=='explore'||G.boxes.length>=400)return;
+ const onlineCount=Math.max(1,online().size);
+ const remaining=G.boxes.filter(b=>b.d.length<onlineCount).length;
+ const target=Math.max(6,+$('nb').value||12);
+ if(remaining<Math.ceil(target/2)){
+  const v=vocab.filter(full).map(r=>r.map(c=>String(c).trim()));
+  if(!v.length)return;
+  const add=Math.min(Math.ceil(target/2),400-G.boxes.length);
+  for(let i=0;i<add;i++){const w=v[Math.random()*v.length|0];
+   G.boxes.push({x:150+Math.random()*(G.W-300),y:150+Math.random()*(G.H-300),w:w[0],c:w[1],o:shuf([w[1],w[2],w[3]]),d:[]})}
+ }}
+
+function fin(){if(G&&G.ph!=='ended'){G.ph='ended';ev('🏁 Game over!')}}
+
+function tick(){
+ if(!G){tx('st',{p:'lobby',n:Date.now()});live();return}
+ const now=Date.now();
+ if(G.ph==='explore'&&now>=G.e){G.ph='slaughter';G.e=now+G.slay;ev('⚔️ SLAUGHTER PHASE BEGINS!')}
+ if(G.ph==='slaughter'){const all=Object.values(G.P),act=all.filter(p=>!p.o).length;if(now>=G.e||(all.length>1&&act<=1))fin()}
+ ensureBoxes();
+ tx('st',{p:G.ph,e:G.e,n:now,W:G.W,H:G.H,b:G.boxes.map(b=>[b.x|0,b.y|0]),pl:Object.fromEntries(Object.entries(G.P).map(([k,p])=>[k,[p.x|0,p.y|0,p.s,p.o,p.a,p.h]])),dl:G.duels});
+ live()}
+
+function live(){$('lv').style.display=G?'block':'none';$('go').disabled=!!G;if(!G)return;const on=online();
+ $('lph').textContent=({explore:'🔍 Explore phase',slaughter:'⚔️ Slaughter phase',ended:'🏁 Game over'})[G.ph]+(G.ph==='ended'?'':' — '+fmt(Math.max(0,G.e-Date.now())));
+ $('sb').innerHTML=Object.entries(G.P).sort((a,b)=>b[1].s-a[1].s).map(([n,p],i)=>`<tr><td>${i+1}</td><td><span class="dot ${on.has(n)?'on':''}"></span>${esc(n)}</td><td>${p.s}</td><td>${p.o?'💀 out':'⚔️ active'}${on.has(n)?'':' · offline'}</td></tr>`).join('')}
+
+if(sessionStorage.va_host){$('ov').remove();boot()}
+</script></body></html>

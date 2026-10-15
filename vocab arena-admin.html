@@ -40,7 +40,10 @@ button:hover{filter:brightness(1.25)}button:disabled{opacity:.4;cursor:not-allow
   <div class="row"><label>Explore phase (minutes)</label><input id="em" type="number" min="0.5" step="0.5" value="2"></div>
   <div class="row"><label>Slaughter phase (minutes) — "x"</label><input id="sm" type="number" min="0.5" step="0.5" value="3"></div>
   <div class="row"><label>Number of boxes on map</label><input id="nb" type="number" min="3" value="12"></div>
-  <small>Only students who are logged in (green dot) when you press Start will play. Players who disconnect stay in the game (static) and can log in again to resume.</small>
+  <div class="row"><label><input type="checkbox" id="sn" checked style="width:auto"> Show player names above avatars</label></div>
+  <div class="row"><label><input type="checkbox" id="ss" checked style="width:auto"> Show current marks above avatars</label></div>
+  <div class="row"><label><input type="checkbox" id="sbx" checked style="width:auto"> Allow opening boxes during slaughter phase</label></div>
+  <small>The three checkboxes above apply live, even in the middle of a game.<br><br>Only students who are logged in (green dot) when you press Start will play. Players who disconnect stay in the game (static) and can log in again to resume.</small>
   <button class="go" id="go" onclick="start()">🚀 START GAME</button></div>
 </div>
 <div class="c" id="lv"><h2>Live game</h2><div id="lph"></div>
@@ -87,9 +90,10 @@ function rs(){const on=online();
  $('onc').textContent=on.size+' / '+students.length;if(G)live()}
 
 function boot(){rv();
+ ['sn','ss','sbx'].forEach(id=>{const e=$(id),v=localStorage['va_'+id];if(v!=null)e.checked=v==='1';e.onchange=()=>localStorage['va_'+id]=e.checked?'1':'0'});
  loadStudents();
  ch=sb.channel('vocab-arena',{config:{presence:{key:'HOST'},broadcast:{self:false}}});
- const act=()=>G&&(G.ph==='explore'||G.ph==='slaughter');
+ const act=()=>G&&(G.ph==='explore'||(G.ph==='slaughter'&&$('sbx').checked));
  ch.on('presence',{event:'sync'},rs)
  .on('broadcast',{event:'pos'},({payload:m})=>{const p=G&&G.P[m.u];if(p&&G.ph!=='ended'){p.x=cl(m.x,0,G.W);p.y=cl(m.y,0,G.H)}})
  .on('broadcast',{event:'open'},({payload:m})=>{
@@ -129,8 +133,8 @@ function start(){
 
 function ev(t){G.log.unshift(t);tx('ev',{t});$('lg').innerHTML=G.log.slice(0,15).map(l=>`<div>${esc(l)}</div>`).join('')}
 function ensureBoxes(){
- // Keep a healthy supply of unopened boxes during explore, so players are never left with nothing to open.
- if(!G||G.ph!=='explore'||G.boxes.length>=400)return;
+ // Keep a healthy supply of unopened boxes during explore and slaughter, so players are never left with nothing to open.
+ if(!G||G.ph==='ended'||(G.ph==='slaughter'&&!$('sbx').checked)||G.boxes.length>=400)return;
  const onlineCount=Math.max(1,online().size);
  const remaining=G.boxes.filter(b=>b.d.length<onlineCount).length;
  const target=Math.max(6,+$('nb').value||12);
@@ -150,7 +154,7 @@ function tick(){
  if(G.ph==='explore'&&now>=G.e){G.ph='slaughter';G.e=now+G.slay;ev('⚔️ SLAUGHTER PHASE BEGINS!')}
  if(G.ph==='slaughter'){const all=Object.values(G.P),act=all.filter(p=>!p.o).length;if(now>=G.e||(all.length>1&&act<=1))fin()}
  ensureBoxes();
- tx('st',{p:G.ph,e:G.e,n:now,W:G.W,H:G.H,b:G.boxes.map(b=>[b.x|0,b.y|0]),pl:Object.fromEntries(Object.entries(G.P).map(([k,p])=>[k,[p.x|0,p.y|0,p.s,p.o,p.a,p.h]])),dl:G.duels});
+ tx('st',{sn:+$('sn').checked,ss:+$('ss').checked,bx:+$('sbx').checked,p:G.ph,e:G.e,n:now,W:G.W,H:G.H,b:G.boxes.map(b=>[b.x|0,b.y|0]),pl:Object.fromEntries(Object.entries(G.P).map(([k,p])=>[k,[p.x|0,p.y|0,p.s,p.o,p.a,p.h]])),dl:G.duels});
  live()}
 
 function live(){$('lv').style.display=G?'block':'none';$('go').disabled=!!G;if(!G)return;const on=online();

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Say &amp; Flip</title>
+<style>
+:root{--felt:#12423a;--felt2:#0b2d27;--cream:#fbf6e9;--ink:#10231f;--gold:#f5b942}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;height:100vh;height:100dvh;background:radial-gradient(circle at 50% 40%,var(--felt),var(--felt2));color:var(--cream);font-family:"Trebuchet MS",system-ui,sans-serif;overflow:hidden;user-select:none}
+button,input{font:inherit}button{cursor:pointer;border:0;border-radius:14px;padding:12px 20px;font-weight:700}
+.gold{background:var(--gold);color:var(--ink)}
+#setup,#end{height:100%;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:16px;padding:24px}
+h1{font-size:40px;margin:0}.box{background:#0006;border-radius:18px;padding:16px;width:min(560px,100%)}
+.cat{display:flex;align-items:center;gap:10px;padding:8px;font-size:18px}.cat input{width:22px;height:22px}
+.num{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}.num button{background:#fff2;color:var(--cream)}.num button.on{background:var(--gold);color:var(--ink)}
+#game{display:none;height:100%;position:relative;overflow:hidden}
+#table{position:absolute;inset:112px 84px}
+.card{position:absolute;perspective:700px;cursor:pointer;transition:opacity .4s,transform .4s}
+.card.gone{opacity:0;transform:scale(.3);pointer-events:none}
+.in{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .45s}
+.card.up .in{transform:rotateY(180deg)}
+.f,.b{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center;border:4px solid #0004;box-shadow:0 5px 12px #0007}
+.b{background:repeating-conic-gradient(#1d7a6b 0 15deg,#16604f 15deg 30deg);color:#ffffff88;font-weight:800}
+.f{background:var(--cream);transform:rotateY(180deg);color:var(--ink);font-weight:700;text-align:center}
+.f img{width:76%;height:76%;object-fit:contain;pointer-events:none}
+.card.locked .b{background:repeating-conic-gradient(#7a4a8c 0 15deg,#5e3a6e 15deg 30deg);color:#fff;line-height:1.1;text-align:center}
+.card.cur .f{border-color:var(--gold);box-shadow:0 0 0 6px #f5b94277,0 5px 12px #0007}
+.msg{position:absolute;left:84px;right:84px;height:28px;text-align:center;font-size:18px;line-height:28px;pointer-events:none}
+.msg.top{top:80px;transform:rotate(180deg)}.msg.bot{bottom:80px}
+#quit{position:absolute;top:6px;left:6px;z-index:5;background:#fff2;color:#fff;padding:6px 12px;border-radius:10px}
+#hub{position:absolute;left:50%;top:50%;width:130px;height:130px;transform:translate(-50%,-50%);z-index:3;display:grid;place-items:center}
+#hub>*{grid-area:1/1}#hub svg{width:100%;height:100%;opacity:0;pointer-events:none}
+.trk{fill:#0006;stroke:#fff3;stroke-width:10}#ring{fill:none;stroke:var(--gold);stroke-width:10;stroke-linecap:round;stroke-dasharray:326.7}
+#ico{font-size:58px;pointer-events:none}
+#judge{display:none;gap:10px}
+#judge button{width:58px;height:58px;border-radius:50%;padding:0;font-size:30px;color:#fff}
+#yes{background:#2f9e44}#no{background:#e5484d}
+#players{position:absolute;inset:0;pointer-events:none;z-index:4}
+.pl{position:absolute;width:150px;height:68px;color:#fff;border-radius:16px;padding:6px;font-size:19px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;box-shadow:0 4px 0 #0005;opacity:.5;transition:width .2s,height .2s}
+.pl small{font-size:13px;font-weight:600}
+.pl.act{opacity:1;width:200px;height:82px;box-shadow:0 0 0 5px var(--gold),0 4px 0 #0005}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div id="setup">
+<h1>Say &amp; Flip</h1>
+<div class="box"><b>Categories</b><div id="cats">Loading…</div>
+<div id="cfg" style="display:none"><input id="url" placeholder="Supabase URL" style="width:100%;margin:4px 0"><input id="key" placeholder="anon / publishable key" style="width:100%"><button class="gold" onclick="saveCfg()" style="margin-top:6px">Connect</button></div></div>
+<div class="box"><b>Players</b><div class="num" id="pn"></div><b>Number of animal cards</b><div class="num" id="cn"></div><b>Seconds a wrong card stays face up</b><div class="num" id="fn"></div><b>Turns a wrong card stays locked (0 = no lock)</b><div class="num" id="ln"></div></div>
+<div class="box" style="font-size:15px;line-height:1.5"><b>How to play</b><br>1. On your turn, say an animal name out loud.<br>2. Then flip one card.<br>3. Everyone else taps ✔ if you said that animal before flipping, or ✘ if not.<br>4. ✔ = you keep the card and go again. ✘ = remember where it is, next player!</div>
+<button class="gold" style="font-size:24px;padding:16px 40px" onclick="start()">Deal cards</button>
+</div>
+<div id="game"><button id="quit" onclick="if(confirm('Quit this game?'))location.reload()">✕</button>
+<div class="msg top" id="msgT"></div><div id="table"></div><div class="msg bot" id="msgB"></div>
+<div id="hub"><svg viewBox="0 0 120 120"><circle class="trk" cx="60" cy="60" r="52"/><circle id="ring" cx="60" cy="60" r="52" transform="rotate(-90 60 60)"/></svg>
+<div id="ico">🗣️</div><div id="judge"><button id="yes" onclick="yes()" aria-label="Yes">✔</button><button id="no" onclick="no()" aria-label="No">✘</button></div></div>
+<div id="players"></div></div>
+<div id="end" style="display:none"></div>
+<script>
+const $=s=>document.querySelector(s);let cfg={url:'https://btwdbphheotbqrmbswgk.supabase.co',key:'sb_publishable_9lY3A1HrgERNIC597NEAKQ_YTCmkh2k'};
+const COLORS=['#e5484d','#3e63dd','#2f9e44','#9b51e0','#e07b00','#0e8f9c','#c2347a','#6b7280'];
+const SEATS={2:['B50','T50'],3:['B50','T30','T70'],4:['B30','B70','T30','T70'],5:['B30','B70','T30','T70','L50'],6:['B25','B75','T25','T75','L50','R50'],7:['B20','B50','B80','T25','T75','L50','R50'],8:['B20','B50','B80','T20','T50','T80','L50','R50']};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+let lists=[],np=2,cnt=12,fu=3,P=[],deck=[],turn=0,phase='',cur=-1,left=0,tid,LOCK=2;
+function pickers(){const row=(id,arr,v,k)=>$(id).innerHTML=arr.map(n=>`<button class="${n==v?'on':''}" onclick="${k}=${n};pickers()">${n}</button>`).join('');
+ row('#pn',[2,3,4,5,6,7,8],np,'np');row('#cn',[8,12,16,20,24],cnt,'cnt');row('#fn',[2,3,5],fu,'fu');row('#ln',[0,1,2,3,4,5],LOCK,'LOCK')}
+async function saveCfg(){cfg={url:$('#url').value.trim(),key:$('#key').value.trim()};load()}
+async function load(){if(!cfg.url){$('#cats').textContent='Connect to Supabase to load categories.';$('#cfg').style.display='block';return}
+ try{const r=await fetch(cfg.url.replace(/\/$/,'')+'/rest/v1/lists?select=id,name,words(word,image_url)&order=name',{headers:{apikey:cfg.key,Authorization:'Bearer '+cfg.key}});
+ if(!r.ok)throw 0;lists=await r.json();
+ $('#cats').innerHTML=lists.map((l,i)=>`<label class="cat"><input type="checkbox" value="${i}" ${i==0?'checked':''}>${esc(l.name)} <small>(${l.words.length} words)</small></label>`).join('')||'No lists saved yet.';$('#cfg').style.display='none'}
+ catch(e){$('#cats').textContent='Could not load categories. Check the connection details.';$('#cfg').style.display='block'}}
+function start(){const ch=[...document.querySelectorAll('#cats input:checked')].map(c=>lists[c.value]);
+ const m=new Map();ch.forEach(l=>l.words.forEach(w=>m.set(w.word.toLowerCase(),w)));const pool=[...m.values()];
+ if(pool.length<6)return alert('Choose categories with at least 6 words in total.');
+ P=Array.from({length:np},(_,i)=>({c:COLORS[i],score:0}));
+ deck=shuf(pool).slice(0,cnt).map(w=>({w,up:false,gone:false,lock:0}));left=deck.length;turn=0;
+ const T=$('#table');T.innerHTML='';
+ deck.forEach((c,i)=>{const d=document.createElement('div');d.className='card';
+  d.innerHTML=`<div class="in"><div class="b">?</div><div class="f">${c.w.image_url?`<img src="${esc(c.w.image_url)}" alt="">`:`<span>${esc(c.w.word)}</span>`}</div></div>`;
+  d.onclick=()=>flip(i);c.el=d;T.appendChild(d)});
+ $('#setup').style.display='none';$('#game').style.display='block';place();setPhase('flip')}
+function place(){if(!deck.length)return;const T=$('#table'),W=T.clientWidth,H=T.clientHeight,n=deck.length,R=72;let s=170,cells=[];
+ for(;s>=44;s-=2){const cell=s*1.1,cols=Math.floor(W/cell),rows=Math.floor(H/cell),ox=(W-cols*cell)/2,oy=(H-rows*cell)/2;cells=[];
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const x=ox+(c+.5)*cell,y=oy+(r+.5)*cell,d=Math.hypot(x-W/2,y-H/2);if(d>=R+s/2+4)cells.push({x,y,d})}
+  if(cells.length>=n)break}
+ cells=cells.sort((a,b)=>a.d-b.d).slice(0,n);
+ deck.forEach((c,i)=>{const k=cells[i]||{x:W/2,y:H/2},e=c.el;e.style.width=e.style.height=s+'px';e.style.left=k.x-s/2+'px';e.style.top=k.y-s/2+'px';e.style.fontSize=s*.17+'px'})}
+function msg(t){$('#msgT').textContent=t;$('#msgB').textContent=t}
+function locks(){deck.forEach(c=>{c.el.classList.toggle('locked',c.lock>0);c.el.querySelector('.b').innerHTML=c.lock>0?`🔒<br><span style="font-size:.5em">${'●'.repeat(c.lock)}</span>`:'?'})}
+function setPhase(p){phase=p;const who=turn+1;
+ if(p==='flip'&&deck.every(c=>c.gone||c.lock>0)){deck.forEach(c=>c.lock=0);locks()}
+ if(p==='flip')msg(`Player ${who}: say an animal name out loud, then flip a card!`);
+ $('#ico').style.display=p==='judge'?'none':'block';$('#ico').textContent=p==='show'?'👀':'🗣️';
+ $('#judge').style.display=p==='judge'?'flex':'none';status()}
+function status(){const tag={flip:'🗣️ Say it, then flip!',judge:'👂 Waiting for ✔ / ✘',show:'👀 Remember it!'}[phase]||'';
+ $('#players').innerHTML=P.map((p,i)=>{const s=SEATS[P.length][i],q=+s.slice(1),a=i===turn;
+  const [pos,rot]={B:[`left:${q}%;top:calc(100% - 46px)`,0],T:[`left:${q}%;top:46px`,180],L:[`left:46px;top:${q}%`,90],R:[`left:calc(100% - 46px);top:${q}%`,-90]}[s[0]];
+  return`<div class="pl${a?' act':''}" style="background:${p.c};${pos};transform:translate(-50%,-50%) rotate(${rot}deg)">Player ${i+1} · ⭐ ${p.score}${a?`<small>${tag}</small>`:''}</div>`}).join('')}
+function flip(i){const c=deck[i];if(phase!=='flip'||c.gone||c.up||c.lock>0)return;
+ c.up=true;cur=i;c.el.classList.add('up','cur');
+ msg(`Did Player ${turn+1} say “${c.w.word}” before flipping?  ✔ or ✘`);setPhase('judge');msg(`Did Player ${turn+1} say “${c.w.word}” before flipping?  ✔ or ✘`)}
+function yes(){if(phase!=='judge')return;const c=deck[cur];P[turn].score++;c.gone=true;c.el.classList.add('gone');left--;
+ if(!left){status();msg(`✔ Player ${turn+1} keeps the ${c.w.word}!`);phase='';return void setTimeout(endGame,1500)}
+ setPhase('flip');msg(`✔ Player ${turn+1} keeps the ${c.w.word}! Go again: say a name, then flip!`)}
+function no(){if(phase!=='judge')return;const c=deck[cur];setPhase('show');msg(`✘ It was the ${c.w.word}. Remember where it is!`);
+ const r=$('#ring');r.style.transition='none';r.style.strokeDashoffset=0;$('#hub svg').style.opacity=1;r.getBoundingClientRect();
+ r.style.transition=`stroke-dashoffset ${fu}s linear`;r.style.strokeDashoffset=326.7;
+ tid=setTimeout(()=>{c.up=false;c.el.classList.remove('up','cur');$('#hub svg').style.opacity=0;deck.forEach(x=>{if(x.lock>0)x.lock--});c.lock=LOCK;locks();turn=(turn+1)%P.length;setPhase('flip')},fu*1000)}
+function endGame(){clearTimeout(tid);$('#game').style.display='none';const e=$('#end');e.style.display='flex';
+ const r=P.map((p,i)=>({i,n:p.score,c:p.c})).sort((a,b)=>b.n-a.n);
+ e.innerHTML=`<h1>Game over</h1>`+r.map(x=>`<div class="box" style="border-left:10px solid ${x.c};font-size:22px">${x.n==r[0].n?'🏆 ':''}Player ${x.i+1} — ${x.n} cards</div>`).join('')+`<button class="gold" onclick="location.reload()">Play again</button>`}
+addEventListener('resize',place);pickers();load();
+</script></body></html>

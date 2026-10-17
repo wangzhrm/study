@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Say &amp; Flip – Admin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4f1ea;--ink:#1d2b2a;--card:#fff;--acc:#0f766e;--bad:#c2410c;--line:#d9d4c7}
+@media(prefers-color-scheme:dark){:root{--bg:#14201f;--ink:#eef2ee;--card:#1d2d2b;--acc:#2dd4bf;--bad:#fb923c;--line:#35504d}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,sans-serif;display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+@media(max-width:800px){body{grid-template-columns:1fr}}
+aside{padding:18px;border-right:1px solid var(--line)}main{padding:18px;max-width:900px}
+h1{font-size:20px;margin:0 0 12px}h2{font-size:16px;margin:18px 0 8px}
+input,textarea,button,select{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+button{cursor:pointer}button.p{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
+@media(prefers-color-scheme:dark){button.p{color:#06231f}}
+button.d{color:var(--bad)}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--acc)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.lst{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin:6px 0;background:var(--card);cursor:pointer}
+.lst.on{border-color:var(--acc);box-shadow:inset 3px 0 var(--acc)}
+#pa{display:none}
+@media print{body{display:block;background:#fff;color:#000}aside,main,#msg{display:none!important}#pa{display:block}
+#pa h1{font-size:22px;margin:0 0 12px}.pg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.pc{border:1px solid #999;border-radius:8px;padding:8px;text-align:center;break-inside:avoid;font-size:15px}
+.pc img,.pc .nb{width:100%;height:110px;object-fit:contain;display:block;margin-bottom:6px}.pc .nb{border:1px dashed #bbb;color:#999;font-size:11px;display:grid;place-items:center}}
+.w{display:grid;grid-template-columns:150px 64px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.w img,.ph{width:64px;height:64px;object-fit:contain;border-radius:8px;background:var(--card);border:1px solid var(--line)}
+.ph{display:grid;place-items:center;color:var(--bad);font-size:11px;text-align:center}
+.w input[type=text]{width:100%}@media(max-width:600px){.w{grid-template-columns:1fr 64px}}
+#msg{position:fixed;bottom:14px;right:14px;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;display:none;max-width:80vw}
+textarea{width:100%;height:90px}details{margin-bottom:10px}
+</style></head><body>
+<aside>
+<h1>Vocabulary lists</h1>
+<details id="cfgbox"><summary>Supabase connection</summary>
+<div class="row"><input id="url" placeholder="Project URL https://xxx.supabase.co" style="width:100%"><input id="key" placeholder="anon / publishable key" style="width:100%"><button onclick="saveCfg()">Connect</button></div></details>
+<button class="p" onclick="newList()" style="width:100%">+ New list</button>
+<div id="lists"></div>
+</aside>
+<main>
+<div class="row"><input id="name" placeholder="List name (e.g. Fruits)" style="flex:1;min-width:180px"><button class="p" onclick="save()">Save to Supabase</button><button onclick="printList()">🖨 Print / save as PDF</button></div>
+<h2>Add words</h2>
+<textarea id="bulk" placeholder="One word per line (aim for 8+ words per list)"></textarea>
+<div class="row"><button onclick="addBulk()">Add typed words</button>
+<label>or Excel/CSV (first column): <input type="file" accept=".xlsx,.xls,.csv" onchange="xl(this)"></label></div>
+<h2>Words <span id="cnt"></span></h2>
+<div class="row"><button onclick="findAll()">Find images for all missing</button><span id="prog"></span></div>
+<div id="words"></div>
+</main><div id="msg"></div><div id="pa"></div>
+<script>
+const $=s=>document.querySelector(s);let cfg={url:'https://btwdbphheotbqrmbswgk.supabase.co',key:'sb_publishable_9lY3A1HrgERNIC597NEAKQ_YTCmkh2k'};
+let cur={id:null,words:[]};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(t,ms=3500){const m=$('#msg');m.textContent=t;m.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>m.style.display='none',ms)}
+async function api(p,o={}){if(!cfg.url)throw Error('Enter your Supabase URL and key first');
+ const r=await fetch(cfg.url.replace(/\/$/,'')+'/rest/v1/'+p,{...o,headers:{apikey:cfg.key,Authorization:'Bearer '+cfg.key,'Content-Type':'application/json',Prefer:'return=representation',...o.headers}});
+ if(!r.ok)throw Error(await r.text());return r.json().catch(()=>null)}
+function saveCfg(){cfg={url:$('#url').value.trim(),key:$('#key').value.trim()};localStorage.sbcfg=JSON.stringify(cfg);loadLists()}
+async function loadLists(){try{const d=await api('lists?select=id,name,words(count)&order=name');
+ $('#lists').innerHTML=d.map(l=>`<div class="lst ${l.id==cur.id?'on':''}" onclick="openList('${l.id}')"><span>${esc(l.name)} <small>(${l.words[0]?.count||0})</small></span><button class="d" title="Delete list" onclick="event.stopPropagation();delList('${l.id}','${esc(l.name)}')">✕</button></div>`).join('')||'<p>No saved lists yet.</p>'}
+ catch(e){$('#lists').innerHTML='<p>Not connected.</p>';toast(e.message)}}
+async function printList(){const ws=cur.words.filter(w=>w.word);if(!ws.length)return toast('Open or create a list with words first');
+ $('#pa').innerHTML=`<h1>${esc($('#name').value||'Vocabulary list')} (${ws.length} words)</h1><div class="pg">`+ws.map(w=>`<div class="pc">${w.url?`<img src="${esc(w.url)}" alt="">`:'<div class="nb">no image</div>'}<b>${esc(w.word)}</b></div>`).join('')+'</div>';
+ toast('Loading images… choose "Save as PDF" in the print window',6000);
+ await Promise.all([...document.querySelectorAll('#pa img')].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r})));window.print()}
+function newList(){cur={id:null,words:[]};$('#name').value='';$('#bulk').value='';render();loadLists()}
+async function openList(id){try{const d=await api(`lists?id=eq.${id}&select=id,name,words(word,image_url,position)`);
+ const l=d[0];cur={id:l.id,words:l.words.sort((a,b)=>a.position-b.position).map(w=>({word:w.word,url:w.image_url||''}))};$('#name').value=l.name;$('#bulk').value=cur.words.map(w=>w.word).join('\n');render();loadLists()}catch(e){toast(e.message)}}
+async function delList(id,n){if(!confirm('Delete list "'+n+'" and all its words?'))return;try{await api('lists?id=eq.'+id,{method:'DELETE'});if(cur.id==id)newList();loadLists()}catch(e){toast(e.message)}}
+function render(){$('#cnt').textContent='('+cur.words.length+')';
+ $('#words').innerHTML=cur.words.map((w,i)=>`<div class="w"><input type="text" value="${esc(w.word)}" onchange="cur.words[${i}].word=this.value.trim()">
+ ${w.url?`<img src="${esc(w.url)}" alt="">`:`<div class="ph">${w.miss?'not found':'no image'}</div>`}
+ <div class="row" style="margin:0"><input type="text" placeholder="Image URL" value="${w.url.startsWith('data:')?'(uploaded image)':esc(w.url)}" style="flex:1;min-width:120px" onchange="cur.words[${i}].url=this.value.trim();render()">
+ <button onclick="findOne(${i}).then(render)">Find</button><label><input type="file" accept="image/*" hidden onchange="upl(${i},this)"><button type="button" onclick="this.previousElementSibling.click()">Upload</button></label></div>
+ <button class="d" onclick="cur.words.splice(${i},1);render()">Remove</button></div>`).join('')}
+function addWords(a){const s=new Set(cur.words.map(w=>w.word.toLowerCase()));a.map(x=>String(x??'').trim()).filter(x=>x&&!s.has(x.toLowerCase())&&s.add(x.toLowerCase())).forEach(x=>cur.words.push({word:x,url:''}));render()}
+function addBulk(){addWords($('#bulk').value.split(/\n/));$('#bulk').value=''}
+function xl(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{const wb=XLSX.read(e.target.result,{type:'array'});
+ const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});addWords(rows.map(r=>r[0]));inp.value=''};r.readAsArrayBuffer(f)}
+// All auto images come from ONE icon set (Fluent Emoji Flat) so they share a style.
+const SET='fluent-emoji-flat';
+async function findOne(i){const w=cur.words[i];try{
+ const r=await(await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(w.word)}&prefixes=${SET}&limit=1`)).json();
+ if(r.icons&&r.icons.length){const [p,n]=r.icons[0].split(':');w.url=`https://api.iconify.design/${p}/${n}.svg`;w.miss=false}else w.miss=true}catch(e){w.miss=true}}
+async function findAll(){let n=0;const todo=cur.words.map((w,i)=>i).filter(i=>!cur.words[i].url);
+ for(const i of todo){$('#prog').textContent=`Searching ${++n}/${todo.length}…`;await findOne(i)}
+ $('#prog').textContent='';render();toast(cur.words.filter(w=>!w.url).length+' word(s) still need a manual image')}
+function upl(i,inp){const f=inp.files[0];if(!f)return;const im=new Image();im.onload=()=>{const s=256/Math.max(im.width,im.height,256),c=document.createElement('canvas');
+ c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);cur.words[i].url=c.toDataURL('image/png');render()};im.src=URL.createObjectURL(f)}
+async function save(){const name=$('#name').value.trim();if(!name)return toast('Give the list a name');
+ const ws=cur.words.filter(w=>w.word);if(!ws.length)return toast('Add at least one word');
+ try{if(cur.id){await api('lists?id=eq.'+cur.id,{method:'PATCH',body:JSON.stringify({name})});await api('words?list_id=eq.'+cur.id,{method:'DELETE'})}
+ else{const d=await api('lists',{method:'POST',body:JSON.stringify({name})});cur.id=d[0].id}
+ await api('words',{method:'POST',body:JSON.stringify(ws.map((w,i)=>({list_id:cur.id,word:w.word,image_url:w.url||null,position:i})))});
+ toast('Saved "'+name+'"');loadLists()}catch(e){toast(e.message,7000)}}
+$('#url').value=cfg.url||'';$('#key').value=cfg.key||'';if(!cfg.url)$('#cfgbox').open=true;else{loadLists()}render();
+</script></body></html>

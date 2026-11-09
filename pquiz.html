@@ -204,6 +204,10 @@
     let permanentMistakesLog = []; 
     let isAwaitingNextQuestion = false;
 
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
     // --- AUTHENTICATION & SESSION MANAGEMENT ---
     window.addEventListener('DOMContentLoaded', () => {
       const savedStudent = sessionStorage.getItem('rquiz_student');
@@ -594,7 +598,7 @@
         feedbackBanner.className = "p-4 rounded-xl font-medium text-sm bg-red-50 text-red-700 border border-red-200 text-left space-y-1 animate-fade-in";
         feedbackBanner.innerHTML = `
           <div class="font-bold">✗ Incorrect!</div>
-          <div class="text-xs text-red-600 font-semibold mb-1">Correct Answer: <span class="underline font-mono text-sm">${rawTargetWord}</span></div>
+          <div class="text-xs text-red-600 font-semibold mb-1">Correct Answer: <span class="underline font-mono text-sm">${escapeHtml(rawTargetWord)}</span></div>
           <div class="text-xs text-slate-500">Choose to try writing this term over again, or skip to drop into the next question framework row.</div>
         `;
         
@@ -626,9 +630,9 @@
           const row = document.createElement('tr');
           row.className = "hover:bg-slate-50 transition-colors";
           row.innerHTML = `
-            <td class="px-4 py-3 font-medium text-slate-900 border-r border-slate-100">${err.item}</td>
-            <td class="px-4 py-3 text-emerald-600 font-semibold">${err.solution}</td>
-            <td class="px-4 py-3 text-red-500 font-mono text-xs sm:text-sm">${err.input}</td>
+            <td class="px-4 py-3 font-medium text-slate-900 border-r border-slate-100">${escapeHtml(err.item)}</td>
+            <td class="px-4 py-3 text-emerald-600 font-semibold">${escapeHtml(err.solution)}</td>
+            <td class="px-4 py-3 text-red-500 font-mono text-xs sm:text-sm">${escapeHtml(err.input)}</td>
           `;
           errTable.appendChild(row);
         });
@@ -651,8 +655,15 @@
       const date = String(now.getDate()).padStart(2, '0');
       const hours = String(now.getHours()).padStart(2, '0');
       const minutes = String(now.getMinutes()).padStart(2, '0');
-      
-      const customListName = `${year}${month}${date}${hours}${minutes}`;
+
+      // Get the logged-in student's username (fallback: "student")
+      let username = 'student';
+      try {
+        const savedStudent = JSON.parse(sessionStorage.getItem('rquiz_student'));
+        if (savedStudent && savedStudent.username) username = savedStudent.username;
+      } catch (e) {}
+
+      const customListName = `${username}_${year}${month}${date}${hours}${minutes}`;
 
       try {
         const { data: newList, error: listErr } = await rQuizStudentClient

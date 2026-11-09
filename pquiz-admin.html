@@ -92,6 +92,19 @@
       <button id="saveManagementChangesBtn" class="w-full px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold rounded-xl shadow-md shadow-emerald-100 transition-all disabled:opacity-50 text-sm cursor-pointer hidden">
         Save Management Changes
       </button>
+
+      <!-- Merge panel -->
+      <div id="mergePanel" class="hidden mt-6 p-4 bg-indigo-50/50 border border-indigo-200 rounded-xl">
+        <label class="block text-xs font-bold uppercase tracking-wider text-indigo-700 mb-1">Combine Lists Into a New One</label>
+        <p class="text-xs text-slate-500 mb-3">Tick two or more lists above (<span id="mergeCount" class="font-bold">0</span> selected). The original lists are kept.</p>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input type="text" id="mergeListName" placeholder="New combined list name" class="flex-1 px-3 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+          <button id="mergeBtn" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm cursor-pointer disabled:opacity-50">Combine</button>
+        </div>
+        <label class="flex items-center gap-2 mt-3 text-xs font-semibold text-slate-600 cursor-pointer">
+          <input type="checkbox" id="mergeDedupe" checked class="cursor-pointer"> Remove duplicate words
+        </label>
+      </div>
     </div>
 
     <!-- ================= 4. STUDENT ACCOUNTS ================= -->
@@ -124,6 +137,32 @@
       <div id="studentsLoading" class="text-center py-6 text-sm text-slate-400">Loading student accounts...</div>
 
       <ul id="studentsContainer" class="divide-y divide-slate-100 border border-slate-100 rounded-xl hidden"></ul>
+    </div>
+  </div>
+
+  <!-- View word list modal -->
+  <div id="viewModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[85vh] flex flex-col">
+      <div class="flex items-start justify-between gap-3 p-5 border-b border-slate-100">
+        <div class="min-w-0">
+          <h3 id="viewModalTitle" class="text-lg font-bold text-slate-900 truncate">Word List</h3>
+          <p id="viewModalCount" class="text-xs text-slate-400 mt-0.5"></p>
+        </div>
+        <button id="viewModalClose" class="text-slate-400 hover:text-slate-700 text-xl leading-none cursor-pointer" aria-label="Close">✕</button>
+      </div>
+      <div class="overflow-auto p-5">
+        <div id="viewModalLoading" class="text-center py-6 text-sm text-slate-400">Loading words...</div>
+        <table id="viewModalTable" class="hidden min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-100 sticky top-0">
+            <tr>
+              <th class="px-3 py-2 text-left font-semibold text-slate-600 w-10">#</th>
+              <th class="px-3 py-2 text-left font-semibold text-slate-600">English</th>
+              <th class="px-3 py-2 text-left font-semibold text-slate-600">Chinese</th>
+            </tr>
+          </thead>
+          <tbody id="viewModalBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -197,13 +236,17 @@
         loader.classList.remove('hidden');
         container.classList.add('hidden');
         masterSaveBtn.classList.add('hidden');
+        document.getElementById('mergePanel').classList.add('hidden');
         return;
       }
 
       loader.classList.add('hidden');
       container.classList.remove('hidden');
       masterSaveBtn.classList.remove('hidden');
+      document.getElementById('mergePanel').classList.remove('hidden');
       container.innerHTML = '';
+      selectedMerge = new Set([...selectedMerge].filter(id => existingLists.some(l => String(l.id) === id)));
+      updateMergeCount();
 
       existingLists.forEach((list, index) => {
         const li = document.createElement('li');
@@ -211,6 +254,7 @@
         
         li.innerHTML = `
           <div class="flex items-center gap-3 flex-1">
+            <input type="checkbox" title="Select for combining" class="merge-check w-4 h-4 cursor-pointer" ${selectedMerge.has(String(list.id)) ? 'checked' : ''} onchange="toggleMerge('${list.id}', this.checked)">
             <div class="flex flex-col gap-0.5">
               <button onclick="moveList(${index}, -1)" class="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600 transition-colors disabled:opacity-30 disabled:pointer-events-none" ${index === 0 ? 'disabled' : ''}>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
@@ -225,6 +269,7 @@
           </div>
 
           <div class="flex items-center justify-end gap-2">
+            <button onclick="viewList('${list.id}')" class="px-3 py-1.5 text-indigo-600 hover:bg-indigo-50 border border-indigo-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer" title="View words">View</button>
             <button onclick="queueDeletion(${index}, '${list.id}', '${escapeHtml(list.list_name || '')}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer" title="Delete List">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
@@ -265,6 +310,7 @@
       }
       syncInputStateToData();
       pendingDeletions.push(id);
+      selectedMerge.delete(String(id));
       existingLists.splice(arrayIndex, 1);
       
       isOrderChanged = true; 
@@ -365,6 +411,161 @@
 
     function escapeHtml(str) {
       return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    /* --- View Word List (popup) --- */
+    function closeViewModal() {
+      document.getElementById('viewModal').classList.add('hidden');
+    }
+    document.getElementById('viewModalClose').addEventListener('click', closeViewModal);
+    document.getElementById('viewModal').addEventListener('click', (e) => {
+      if (e.target.id === 'viewModal') closeViewModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeViewModal();
+    });
+
+    async function viewList(id) {
+      const list = existingLists.find(l => String(l.id) === String(id));
+      const loading = document.getElementById('viewModalLoading');
+      const table = document.getElementById('viewModalTable');
+      const body = document.getElementById('viewModalBody');
+
+      document.getElementById('viewModalTitle').textContent = list ? list.list_name : 'Word List';
+      document.getElementById('viewModalCount').textContent = '';
+      loading.textContent = 'Loading words...';
+      loading.classList.remove('hidden');
+      table.classList.add('hidden');
+      body.innerHTML = '';
+      document.getElementById('viewModal').classList.remove('hidden');
+
+      try {
+        let words = [];
+        let from = 0;
+        const size = 1000;
+        while (true) {
+          const { data, error } = await rQuizAdminClient
+            .from('public_vocabularies')
+            .select('english, chinese')
+            .eq('list_id', id)
+            .range(from, from + size - 1);
+          if (error) throw error;
+          words = words.concat(data || []);
+          if (!data || data.length < size) break;
+          from += size;
+        }
+
+        if (words.length === 0) {
+          loading.textContent = 'This word list is empty.';
+          return;
+        }
+
+        words.forEach((w, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="px-3 py-2 text-slate-400 text-xs">${i + 1}</td>
+            <td class="px-3 py-2 font-medium text-slate-900">${escapeHtml(w.english)}</td>
+            <td class="px-3 py-2">${escapeHtml(w.chinese)}</td>`;
+          body.appendChild(tr);
+        });
+        document.getElementById('viewModalCount').textContent = `${words.length} words`;
+        loading.classList.add('hidden');
+        table.classList.remove('hidden');
+      } catch (err) {
+        loading.textContent = 'Failed to load words: ' + err.message;
+      }
+    }
+
+    /* --- Merge Word Lists --- */
+    let selectedMerge = new Set();
+
+    document.getElementById('mergeBtn').addEventListener('click', mergeSelectedLists);
+
+    function toggleMerge(id, checked) {
+      if (checked) selectedMerge.add(String(id)); else selectedMerge.delete(String(id));
+      updateMergeCount();
+    }
+
+    function updateMergeCount() {
+      document.getElementById('mergeCount').textContent = selectedMerge.size;
+    }
+
+    async function mergeSelectedLists() {
+      const btn = document.getElementById('mergeBtn');
+      const name = document.getElementById('mergeListName').value.trim();
+      const dedupe = document.getElementById('mergeDedupe').checked;
+      const ids = existingLists.map(l => String(l.id)).filter(id => selectedMerge.has(id));
+
+      if (ids.length < 2) return alert("Please tick at least two word lists to combine.");
+      if (!name) return alert("Please enter a name for the combined list.");
+      if ((pendingDeletions.length > 0 || isOrderChanged) &&
+          !confirm("You have unsaved management changes (order/deletions). They will be discarded after combining. Continue?")) return;
+
+      btn.disabled = true;
+      btn.textContent = "Combining...";
+      let newListId = null;
+
+      try {
+        // Fetch all words from each selected list (paged to avoid the 1000-row limit)
+        let combined = [];
+        for (const id of ids) {
+          let from = 0;
+          const size = 1000;
+          while (true) {
+            const { data, error } = await rQuizAdminClient
+              .from('public_vocabularies')
+              .select('english, chinese')
+              .eq('list_id', id)
+              .range(from, from + size - 1);
+            if (error) throw error;
+            combined = combined.concat(data || []);
+            if (!data || data.length < size) break;
+            from += size;
+          }
+        }
+
+        if (dedupe) {
+          const seen = new Set();
+          combined = combined.filter(w => {
+            const key = String(w.english).trim().toLowerCase() + '||' + String(w.chinese).trim();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+        }
+
+        if (combined.length === 0) throw new Error("The selected lists contain no words.");
+
+        const { data: newList, error: listErr } = await rQuizAdminClient
+          .from('public_word_lists')
+          .insert([{ list_name: name, sort_order: existingLists.length }])
+          .select()
+          .single();
+        if (listErr) throw listErr;
+        newListId = newList.id;
+
+        const payload = combined.map(w => ({ list_id: newListId, english: w.english, chinese: w.chinese }));
+        for (let i = 0; i < payload.length; i += 500) {
+          const { error } = await rQuizAdminClient.from('public_vocabularies').insert(payload.slice(i, i + 500));
+          if (error) throw error;
+        }
+
+        alert(`Created "${name}" with ${payload.length} words from ${ids.length} lists.`);
+        selectedMerge.clear();
+        document.getElementById('mergeListName').value = '';
+        await fetchExistingLists('force');
+      } catch (err) {
+        console.error(err);
+        if (newListId !== null) {
+          // Roll back the partly created list
+          await rQuizAdminClient.from('public_vocabularies').delete().eq('list_id', newListId);
+          await rQuizAdminClient.from('public_word_lists').delete().eq('id', newListId);
+        }
+        alert("Failed to combine lists: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Combine";
+      }
     }
 
     /* --- Student Account Management --- */

@@ -73,7 +73,7 @@
       </button>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 transition-all">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 mb-6 transition-all">
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
           <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-sm">3</span>
@@ -93,6 +93,38 @@
         Save Management Changes
       </button>
     </div>
+
+    <!-- ================= 4. STUDENT ACCOUNTS ================= -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-8 transition-all">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+          <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-sm">4</span>
+          <h2 class="text-lg font-bold text-slate-900">Manage Student Accounts</h2>
+        </div>
+        <button id="refreshStudentsBtn" class="text-xs font-semibold text-indigo-600 hover:text-indigo-500 cursor-pointer">↻ Refresh</button>
+      </div>
+
+      <!-- Add new -->
+      <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Add New Student</label>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input type="text" id="newStuUser" placeholder="Username" autocomplete="off" class="flex-1 px-3 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+          <input type="text" id="newStuPass" placeholder="Password" autocomplete="off" class="flex-1 px-3 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+          <button id="addStudentBtn" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm cursor-pointer disabled:opacity-50">Add</button>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Existing Students (<span id="studentCount">0</span>)</span>
+        <label class="flex items-center gap-2 text-xs font-semibold text-slate-500 cursor-pointer">
+          <input type="checkbox" id="showPassToggle" checked class="cursor-pointer"> Show passwords
+        </label>
+      </div>
+
+      <div id="studentsLoading" class="text-center py-6 text-sm text-slate-400">Loading student accounts...</div>
+
+      <ul id="studentsContainer" class="divide-y divide-slate-100 border border-slate-100 rounded-xl hidden"></ul>
+    </div>
   </div>
 
   <script>
@@ -106,7 +138,10 @@
     let pendingDeletions = []; 
     let isOrderChanged = false;
 
-    document.addEventListener('DOMContentLoaded', () => fetchExistingLists('force'));
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchExistingLists('force');
+      fetchStudents();
+    });
     document.getElementById('refreshBtn').addEventListener('click', () => fetchExistingLists('force'));
     document.getElementById('saveManagementChangesBtn').addEventListener('click', saveAllManagementChanges);
 
@@ -329,7 +364,152 @@
     }
 
     function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    /* --- Student Account Management --- */
+    let students = [];
+
+    document.getElementById('refreshStudentsBtn').addEventListener('click', fetchStudents);
+    document.getElementById('addStudentBtn').addEventListener('click', addStudent);
+    document.getElementById('showPassToggle').addEventListener('change', (e) => {
+      document.querySelectorAll('.stu-pass').forEach(inp => inp.type = e.target.checked ? 'text' : 'password');
+    });
+    document.getElementById('newStuPass').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addStudent();
+    });
+    document.getElementById('studentsContainer').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      if (btn.dataset.action === 'save') saveStudent(id, btn);
+      if (btn.dataset.action === 'delete') deleteStudent(id);
+    });
+
+    async function fetchStudents() {
+      const loader = document.getElementById('studentsLoading');
+      const container = document.getElementById('studentsContainer');
+      loader.textContent = "Loading student accounts...";
+      loader.classList.remove('hidden');
+      container.classList.add('hidden');
+
+      try {
+        const { data, error } = await rQuizAdminClient
+          .from('public_students')
+          .select('id, username, password')
+          .order('username', { ascending: true });
+        if (error) throw error;
+        students = data || [];
+        renderStudents();
+      } catch (err) {
+        loader.innerHTML = `<div class="text-rose-500 font-medium">Failed to load student accounts.</div>
+          <div class="text-xs text-slate-400 mt-1">Error: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderStudents() {
+      const loader = document.getElementById('studentsLoading');
+      const container = document.getElementById('studentsContainer');
+      document.getElementById('studentCount').textContent = students.length;
+
+      if (students.length === 0) {
+        loader.textContent = "No student accounts yet.";
+        loader.classList.remove('hidden');
+        container.classList.add('hidden');
+        return;
+      }
+
+      loader.classList.add('hidden');
+      container.classList.remove('hidden');
+      container.innerHTML = '';
+      const showPass = document.getElementById('showPassToggle').checked;
+      const inputCls = "flex-1 min-w-0 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:border-indigo-500 focus:bg-white focus:outline-none";
+
+      students.forEach(s => {
+        const li = document.createElement('li');
+        li.className = "flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-white";
+        li.innerHTML = `
+          <input type="text" class="stu-user ${inputCls}" data-id="${escapeHtml(s.id)}" value="${escapeHtml(s.username || '')}" placeholder="Username" autocomplete="off">
+          <input type="${showPass ? 'text' : 'password'}" class="stu-pass ${inputCls}" data-id="${escapeHtml(s.id)}" value="${escapeHtml(s.password || '')}" placeholder="Password" autocomplete="new-password">
+          <div class="flex gap-2 justify-end">
+            <button data-action="save" data-id="${escapeHtml(s.id)}" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg cursor-pointer disabled:opacity-50">Save</button>
+            <button data-action="delete" data-id="${escapeHtml(s.id)}" class="px-3 py-2 text-rose-600 hover:bg-rose-50 border border-rose-200 text-xs font-semibold rounded-lg cursor-pointer">Delete</button>
+          </div>`;
+        container.appendChild(li);
+      });
+    }
+
+    async function addStudent() {
+      const userEl = document.getElementById('newStuUser');
+      const passEl = document.getElementById('newStuPass');
+      const btn = document.getElementById('addStudentBtn');
+      const username = userEl.value.trim();
+      const password = passEl.value.trim();
+
+      if (!username || !password) return alert("Both username and password are required.");
+      if (students.some(s => (s.username || '').toLowerCase() === username.toLowerCase())) {
+        return alert(`Username "${username}" already exists.`);
+      }
+
+      btn.disabled = true;
+      try {
+        const { error } = await rQuizAdminClient.from('public_students').insert([{ username, password }]);
+        if (error) throw error;
+        userEl.value = '';
+        passEl.value = '';
+        await fetchStudents();
+      } catch (err) {
+        alert("Failed to add student: " + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function saveStudent(id, btn) {
+      const userEl = document.querySelector(`.stu-user[data-id="${CSS.escape(id)}"]`);
+      const passEl = document.querySelector(`.stu-pass[data-id="${CSS.escape(id)}"]`);
+      const username = userEl.value.trim();
+      const password = passEl.value.trim();
+
+      if (!username || !password) return alert("Username and password cannot be blank.");
+      if (students.some(s => String(s.id) !== String(id) && (s.username || '').toLowerCase() === username.toLowerCase())) {
+        return alert(`Username "${username}" is already used by another student.`);
+      }
+
+      btn.disabled = true;
+      btn.textContent = "...";
+      try {
+        const { data, error } = await rQuizAdminClient
+          .from('public_students')
+          .update({ username, password })
+          .eq('id', id)
+          .select();
+        if (error) throw error;
+        if (!data || data.length === 0) throw new Error("No row was updated. Check the table's Row Level Security update policy.");
+        alert(`Saved changes for "${username}".`);
+        await fetchStudents();
+      } catch (err) {
+        alert("Failed to update student: " + err.message);
+        btn.disabled = false;
+        btn.textContent = "Save";
+      }
+    }
+
+    async function deleteStudent(id) {
+      const s = students.find(x => String(x.id) === String(id));
+      if (!confirm(`Permanently delete student "${s ? s.username : id}"?`)) return;
+      try {
+        const { data, error } = await rQuizAdminClient
+          .from('public_students')
+          .delete()
+          .eq('id', id)
+          .select();
+        if (error) throw error;
+        if (!data || data.length === 0) throw new Error("No row was deleted. Check the table's Row Level Security delete policy.");
+        await fetchStudents();
+      } catch (err) {
+        alert("Failed to delete student: " + err.message);
+      }
     }
 
     /* --- File Parsing Core --- */

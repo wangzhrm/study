@@ -52,7 +52,7 @@
         <span class="text-xs uppercase font-bold tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">Vocabulary Practice</span>
         <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 tracking-tight">RQuiz Student Hub</h1>
       </div>
-      
+
       <div class="space-y-6">
         <div>
           <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">1. Choose a Word List</label>
@@ -73,7 +73,7 @@
               </div>
               <span class="text-[10px] text-slate-400 font-bold uppercase px-2 py-0.5 bg-slate-200/60 rounded group-hover:bg-indigo-100/80 transition-colors">MCQ</span>
             </label>
-            
+
             <label class="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-indigo-50/30 hover:border-indigo-300 transition-all group">
               <div class="flex items-center">
                 <input type="radio" name="quizMode" value="C2E" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
@@ -125,7 +125,7 @@
       </div>
 
       <div id="mcqContainer" class="hidden grid grid-cols-1 gap-3 mt-6"></div>
-      
+
       <div id="fibActionRow" class="hidden mt-8 text-center space-y-4">
         <div id="feedbackBanner" class="hidden p-4 rounded-xl font-medium text-sm transition-all"></div>
         <div class="flex flex-col sm:flex-row gap-3">
@@ -157,7 +157,7 @@
             📥 Save As New List
           </button>
         </div>
-        
+
         <div class="overflow-x-auto border border-slate-200 rounded-xl bg-slate-50 shadow-inner">
           <table class="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
             <thead class="bg-slate-100">
@@ -171,7 +171,7 @@
           </table>
         </div>
       </div>
-      
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 pt-4 border-t border-slate-100">
         <button id="retrySameListBtn" class="w-full px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all cursor-pointer shadow-sm">
           Try the Same List Again
@@ -188,24 +188,29 @@
   <script>
     const SUPABASE_URL = 'https://fepooifleoeseapsbisy.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_2dWpQ1VOvdSToPTXymandw_VOSZUpTy';
-    
+
     const { createClient } = supabase;
     const rQuizStudentClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Global Quiz State
     let activeVocabSet = [];
-    let globalPool = []; 
+    let globalPool = [];
     let activeIndex = 0;
     let selectedMode = '';
-    
+    let activeListName = ''; // NEW: name of the word list the student is being quizzed on
+
     let correctTrialsCount = 0;
     let totalTrialsCount = 0;
-    
-    let permanentMistakesLog = []; 
+
+    let permanentMistakesLog = [];
     let isAwaitingNextQuestion = false;
 
     function escapeHtml(str) {
       return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function escapeRegex(str) {
+      return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     // --- AUTHENTICATION & SESSION MANAGEMENT ---
@@ -286,18 +291,18 @@
           .select('id, list_name')
           .order('sort_order', { ascending: true })
           .order('created_at', { ascending: false });
-          
+
         if (error) {
           console.error("Supabase API Retrieval Fault:", error);
           alert(`Database Access Fault [${error.code}]: ${error.message}`);
           return;
         }
-        
+
         if (!data || data.length === 0) {
           selector.innerHTML = '<option value="">No configurations returned from database.</option>';
           return;
         }
-        
+
         selector.innerHTML = '<option value="">-- Choose target word list --</option>';
         data.forEach(list => {
           const opt = document.createElement('option');
@@ -313,20 +318,24 @@
 
     // --- QUIZ INITIALIZATION ---
     document.getElementById('startQuizBtn').addEventListener('click', async () => {
-      const listId = document.getElementById('listSelector').value;
+      const selectorEl = document.getElementById('listSelector');
+      const listId = selectorEl.value;
       selectedMode = document.querySelector('input[name="quizMode"]:checked').value;
 
       if (!listId) return alert('Select an active vocabulary dataset first.');
+
+      // NEW: remember the name of the word list the student chose
+      activeListName = selectorEl.options[selectorEl.selectedIndex].textContent.trim();
 
       try {
         const { data: listWords, error: err1 } = await rQuizStudentClient
           .from('public_vocabularies')
           .select('english, chinese')
           .eq('list_id', listId);
-          
+
         if (err1) throw err1;
         if (!listWords || listWords.length === 0) throw new Error("Target subset array mapping turned up empty.");
-        
+
         const isMcqMode = selectedMode === 'E2C' || selectedMode === 'E2C_20';
         if (listWords.length < 3 && isMcqMode) throw new Error("At least 3 context rows are required to map option clusters.");
 
@@ -334,7 +343,7 @@
           .from('public_vocabularies')
           .select('chinese')
           .limit(100);
-          
+
         if (err2) throw err2;
 
         setupQuizRun(listWords, poolWords);
@@ -345,14 +354,14 @@
 
     function setupQuizRun(listWords, poolWords) {
       let preparedSet = [...listWords].sort(() => 0.5 - Math.random());
-      
+
       if ((selectedMode === 'E2C_20' || selectedMode === 'C2E_20') && preparedSet.length > 20) {
         preparedSet = preparedSet.slice(0, 20);
       }
 
       activeVocabSet = preparedSet;
       if (poolWords) {
-        globalPool = [...new Set(poolWords.map(w => w.chinese))]; 
+        globalPool = [...new Set(poolWords.map(w => w.chinese))];
       }
 
       activeIndex = 0;
@@ -363,7 +372,7 @@
       document.getElementById('setupView').classList.add('hidden');
       document.getElementById('resultsView').classList.add('hidden');
       document.getElementById('quizView').classList.remove('hidden');
-      
+
       if (selectedMode.startsWith('E2C')) {
         document.getElementById('displayModeBadge').textContent = selectedMode.endsWith('20') ? "English ➔ Chinese (20 Items)" : "English ➔ Chinese";
       } else {
@@ -395,11 +404,11 @@
       document.getElementById('fibActionRow').classList.add('hidden');
       document.getElementById('letterBlanksWrapper').classList.add('hidden');
       document.getElementById('retryFibBtn').classList.add('hidden');
-      
+
       const feedbackBanner = document.getElementById('feedbackBanner');
       feedbackBanner.classList.add('hidden');
       feedbackBanner.innerHTML = '';
-      
+
       const submitBtn = document.getElementById('submitFibBtn');
       submitBtn.textContent = "Submit Answer";
       submitBtn.className = "flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
@@ -412,9 +421,9 @@
 
         let choices = [currentObj.chinese];
         let availableDistractors = globalPool.filter(c => c !== currentObj.chinese);
-        
+
         availableDistractors.sort(() => 0.5 - Math.random());
-        for(let i = 0; i < 2; i++) {
+        for (let i = 0; i < 2; i++) {
           if (availableDistractors[i]) choices.push(availableDistractors[i]);
           else choices.push("Fallback Target Definition Option");
         }
@@ -430,7 +439,7 @@
 
       } else {
         document.getElementById('targetPrompt').textContent = currentObj.chinese;
-        
+
         const labelsDiv = document.getElementById('letterBlanksWrapper');
         document.getElementById('fibActionRow').classList.remove('hidden');
         labelsDiv.classList.remove('hidden');
@@ -441,7 +450,7 @@
 
         for (let i = 0; i < rawTargetWord.length; i++) {
           const char = rawTargetWord[i];
-          
+
           if (char === ' ' || char === '-') {
             const separator = document.createElement('span');
             separator.className = "w-5 text-center font-bold text-slate-400 text-xl self-center mx-2";
@@ -452,22 +461,22 @@
             input.type = "text";
             input.maxLength = 1;
             input.autocomplete = "off";
-            
+
             input.setAttribute('autocapitalize', 'none');
             input.setAttribute('autocorrect', 'off');
             input.setAttribute('spellcheck', 'false');
 
             input.className = "letter-input w-6 h-11 sm:w-7 sm:h-12 text-center font-mono font-bold text-xl sm:text-2xl text-slate-900 border-b-4 border-slate-400 focus:border-indigo-500 focus:outline-none transition-all bg-transparent m-0 p-0 rounded-none lowercase mx-1";
             input.dataset.index = inputIndex;
-            
-            input.addEventListener('input', function(e) {
+
+            input.addEventListener('input', function (e) {
               if (this.value.length === 1) {
                 const nextInput = labelsDiv.querySelector(`.letter-input[data-index="${parseInt(this.dataset.index) + 1}"]`);
                 if (nextInput) nextInput.focus();
               }
             });
 
-            input.addEventListener('keydown', function(e) {
+            input.addEventListener('keydown', function (e) {
               if (e.key === 'Backspace' && this.value.length === 0) {
                 const prevInput = labelsDiv.querySelector(`.letter-input[data-index="${parseInt(this.dataset.index) - 1}"]`);
                 if (prevInput) {
@@ -485,7 +494,7 @@
             inputIndex++;
           }
         }
-        
+
         setTimeout(() => {
           const firstInput = labelsDiv.querySelector('.letter-input[data-index="0"]');
           if (firstInput) firstInput.focus();
@@ -495,7 +504,7 @@
 
     function verifyMcqAnswer(selected, obj) {
       const isCorrect = (selected === obj.chinese);
-      
+
       totalTrialsCount++;
       if (isCorrect) {
         correctTrialsCount++;
@@ -530,11 +539,11 @@
         inp.disabled = false;
         inp.value = '';
       });
-      
+
       document.getElementById('feedbackBanner').classList.add('hidden');
       document.getElementById('retryFibBtn').classList.add('hidden');
       isAwaitingNextQuestion = false;
-      
+
       const submitBtn = document.getElementById('submitFibBtn');
       submitBtn.textContent = "Submit Answer";
       submitBtn.className = "flex-1 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
@@ -549,7 +558,7 @@
       const currentObj = activeVocabSet[activeIndex];
       const inputs = document.getElementById('letterBlanksWrapper').querySelectorAll('.letter-input');
       const rawTargetWord = currentObj.english.trim();
-      
+
       let studentInput = '';
       let currentInputIdx = 0;
 
@@ -567,7 +576,7 @@
       const feedbackBanner = document.getElementById('feedbackBanner');
       const submitBtn = document.getElementById('submitFibBtn');
       const retryBtn = document.getElementById('retryFibBtn');
-      
+
       const isCorrect = studentInput.toLowerCase() === rawTargetWord.toLowerCase();
       inputs.forEach(inp => inp.disabled = true);
 
@@ -589,7 +598,7 @@
         feedbackBanner.className = "p-4 rounded-xl font-bold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 text-center animate-fade-in";
         feedbackBanner.innerHTML = `✓ Correct!`;
         retryBtn.classList.add('hidden');
-        
+
         isAwaitingNextQuestion = true;
         submitBtn.textContent = "Next Question ➔";
         submitBtn.className = "flex-1 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
@@ -601,9 +610,9 @@
           <div class="text-xs text-red-600 font-semibold mb-1">Correct Answer: <span class="underline font-mono text-sm">${escapeHtml(rawTargetWord)}</span></div>
           <div class="text-xs text-slate-500">Choose to try writing this term over again, or skip to drop into the next question framework row.</div>
         `;
-        
+
         retryBtn.classList.remove('hidden');
-        
+
         isAwaitingNextQuestion = true;
         submitBtn.textContent = "Skip Question ➔";
         submitBtn.className = "flex-1 px-6 py-3.5 bg-slate-400 hover:bg-slate-500 text-white font-bold rounded-xl transition-all shadow-sm text-sm cursor-pointer";
@@ -663,7 +672,14 @@
         if (savedStudent && savedStudent.username) username = savedStudent.username;
       } catch (e) {}
 
-      const customListName = `${username}_${year}${month}${date}${hours}${minutes}`;
+      // NEW: reduce a previously generated name (username_listname_YYYYMMDDHHMM)
+      // back to its base list name so repeated mistake lists don't nest.
+      const baseListName = (activeListName || 'list')
+        .replace(new RegExp(`^${escapeRegex(username)}_`), '')
+        .replace(/_\d{12}$/, '');
+
+      // NEW format: username_wordlistname_time
+      const customListName = `${username}_${baseListName}_${year}${month}${date}${hours}${minutes}`;
 
       try {
         const { data: newList, error: listErr } = await rQuizStudentClient
